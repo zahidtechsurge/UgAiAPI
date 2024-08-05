@@ -14,12 +14,17 @@ namespace AmazonFarmer.Core.Domain.Entities
         public int ID { get; set; }
         public int PlanCropID { get; set; }
         public int ProductID { get; set; }
-        public decimal Qty { get; set; }
+        public int Qty { get; set; }
         public DateTime Date { get; set; }
+        public EActivityStatus Status { get; set; } = EActivityStatus.Active;
+        public EOrderPaymentStatus PaymentStatus { get; set; } = EOrderPaymentStatus.NonPaid;
+        public EDeliveryStatus DeliveryStatus { get; set; } = EDeliveryStatus.None;
+        public int DeliveredQty { get; set; } = 0;
 
         [ForeignKey("PlanCropID")]
         public virtual tblPlanCrops PlanCrop { get; set; }
         [ForeignKey("ProductID")]
         public virtual TblProduct Product { get; set; }
+        public virtual TblOrderProducts OrderProduct { get; set; }
     }
 }

@@ -4,6 +4,8 @@ using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence;
 using AmazonFarmer.Infrastructure.Services.Repositories;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore;
 
 namespace AmazonFarmer.Infrastructure.Services
 {
@@ -20,6 +22,7 @@ namespace AmazonFarmer.Infrastructure.Services
         private ITehsilRepo _tehsilRepo;
         private IDistrictRepo _districtRepo;
         private ILanguageRepo _languageRepo;
+        private IOnlinePaymentRepo _onlinePaymentRepo;
         private IAttachmentRepo _attachmentRepo;
         private IFarmRepo _farmRepo;
         private IIntroRepo _introRepo;
@@ -30,11 +33,20 @@ namespace AmazonFarmer.Infrastructure.Services
         private IServiceRepo _serviceRepo;
         private ILocationRepo _locationRepo;
         private IPlanRepo _planRepo;
+        private IOrderRepo _orderRepo;
+        private INotificationRepo _notificationRepo;
         private ILoggingRepository _loggingRepository;
+        private IMonthRepo _monthRepository;
+        private IWeatherRepo _weatherRepository;
+        private IWarehouseRepo _warehouseRepository;
+        private IReasonRepo _reasonRepository;
+        public ICommonRepo _commonRepository;
+        public IPaymentAcknowledgmentFileRepo _paymentAcknowledgmentFileRepo;
+        public IPaymentAcknowledgmentRepo _paymentAcknowledgmentRepo;
         public RepositoryWrapper(
-            AmazonFarmerContext repositoryContext, 
-            SignInManager<TblUser> signInManager, 
-            UserManager<TblUser> userManager, 
+            AmazonFarmerContext repositoryContext,
+            SignInManager<TblUser> signInManager,
+            UserManager<TblUser> userManager,
             RoleManager<TblRole> roleManager)
         {
             _repoContext = repositoryContext;
@@ -43,13 +55,35 @@ namespace AmazonFarmer.Infrastructure.Services
             _roleManager = roleManager;
 
         }
+        public IReasonRepo ReasonRepo
+        {
+            get
+            {
+                if (_reasonRepository == null)
+                {
+                    _reasonRepository = new ReasonRepo(_repoContext);
+                }
+                return _reasonRepository;
+            }
+        }
+        public IWarehouseRepo WarehouseRepo
+        {
+            get
+            {
+                if (_warehouseRepository == null)
+                {
+                    _warehouseRepository = new WarehouseRepo(_repoContext);
+                }
+                return _warehouseRepository;
+            }
+        }
         public IUserRepo UserRepo
         {
             get
             {
                 if (_userRepo == null)
                 {
-                    _userRepo = new UserRepo(_repoContext,_signInManager, _roleManager, _userManager);
+                    _userRepo = new UserRepo(_repoContext, _signInManager, _roleManager, _userManager);
                 }
                 return _userRepo;
             }
@@ -241,6 +275,96 @@ namespace AmazonFarmer.Infrastructure.Services
                 return _loggingRepository;
             }
         }
+        public IOnlinePaymentRepo OnlinePaymentRepo
+        {
+            get
+            {
+                if (_onlinePaymentRepo == null)
+                {
+                    _onlinePaymentRepo = new OnlinePaymentRepo(_repoContext);
+                }
+                return _onlinePaymentRepo;
+            }
+        }
+        public IOrderRepo OrderRepo
+        {
+            get
+            {
+                if (_orderRepo == null)
+                {
+                    _orderRepo = new OrderRepo(_repoContext);
+                }
+                return _orderRepo;
+            }
+        }
+        public INotificationRepo NotificationRepo
+        {
+            get
+            {
+                if (_notificationRepo == null)
+                {
+                    _notificationRepo = new NotificationRepo(_repoContext);
+                }
+                return _notificationRepo;
+            }
+        }
+        public IMonthRepo MonthRepo
+        {
+            get
+            {
+                if (_monthRepository == null)
+                {
+                    _monthRepository = new MonthRepo(_repoContext);
+                }
+                return _monthRepository;
+            }
+        }
+        public ICommonRepo CommonRepo
+        {
+            get
+            {
+                if (_commonRepository == null)
+                {
+                    _commonRepository = new CommonRepo(_repoContext);
+                }
+                return _commonRepository;
+            }
+        }
+        public IWeatherRepo WeatherRepo
+        {
+            get
+            {
+                if (_weatherRepository == null)
+                {
+                    _weatherRepository = new WeatherRepo(_repoContext);
+                }
+                return _weatherRepository;
+            }
+        }
+
+        public IPaymentAcknowledgmentFileRepo PaymentAcknowledgmentFileRepo
+        {
+            get
+            {
+                if (_paymentAcknowledgmentFileRepo == null)
+                {
+                    _paymentAcknowledgmentFileRepo = new PaymentAcknowledgmentFileRepo(_repoContext);
+                }
+                return _paymentAcknowledgmentFileRepo;
+            }
+        } 
+
+        public IPaymentAcknowledgmentRepo PaymentAcknowledgmentRepo
+        {
+            get
+            {
+                if (_paymentAcknowledgmentRepo == null)
+                {
+                    _paymentAcknowledgmentRepo = new PaymentAcknowledgmentRepo(_repoContext);
+                }
+                return _paymentAcknowledgmentRepo;
+            }
+        }  
 
         public void Save()
         {
@@ -250,6 +374,15 @@ namespace AmazonFarmer.Infrastructure.Services
         public async Task SaveAsync()
         {
             await _repoContext.SaveChangesAsync();
+        }
+
+        public async Task SaveLogEntries()
+        {
+            await _repoContext.SaveOnlyWSDLLogsAsync();
+        }
+        public async Task DisposeAsync()
+        {
+            await _repoContext.DisposeAsync();
         }
 
     }

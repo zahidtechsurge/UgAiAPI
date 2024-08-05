@@ -34,6 +34,5 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
             }
             return resp; // Returning the API response
         }
-
     }
 }

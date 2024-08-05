@@ -17,6 +17,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         public string FarmName { get; set; }
         public string Address1 { get; set; }
         public string? Address2 { get; set; }
+        public string? Address3 { get; set; }
         public int CityID { get; set; }
         public int DistrictID { get; set; }
         public int TehsilID { get; set; }
@@ -31,6 +32,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedOn { get; set; }
         public string? SAPFarmCode { get; set; }
+        public string? FarmerComment { get; set; }
 
         [ForeignKey("FarmID")]
         public virtual tblfarm? Farm { get; set; } = null;

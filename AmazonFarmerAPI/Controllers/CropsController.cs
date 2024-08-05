@@ -12,6 +12,7 @@
 
 using AmazonFarmer.Core.Application;
 using AmazonFarmer.Core.Application.DTOs;
+using AmazonFarmerAPI.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -40,10 +41,11 @@ namespace AmazonFarmerAPI.Controllers
                 // Fetch crops asynchronously using repository.
                 GetCropDTO_Internal_req inReq = new GetCropDTO_Internal_req()
                 {
-                    farmID= req.farmID,
-                    seasonID= req.seasonID,
-                    languageCode = User.FindFirst("languageCode")?.Value
-            };
+                    farmID = req.farmID,
+                    seasonID = req.seasonID,
+                    languageCode = User.FindFirst("languageCode")?.Value,
+                    basePath = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL")
+                };
                 resp.response = await _repoWrapper.CropRepo.getCropsBySeasonAndDistrictID(inReq);
             }
             catch (Exception ex)

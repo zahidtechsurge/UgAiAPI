@@ -1,15 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AmazonFarmer.Core.Application.DTOs
 {
+    /// <summary>
+    /// Data Transfer Object (DTO) for Season information.
+    /// </summary>
     public class SeasonDTO
     {
+        // The ID of the season
         public int seasonID { get; set; }
-        public string seasonName { get; set;}
-        public string filePath { get; set;}
+
+        // The name of the season
+        public string seasonName { get; set; }
+
+        // The file path for the season
+        public string filePath { get; set; }
+        public List<getMonths> months { get; set; }
     }
 }

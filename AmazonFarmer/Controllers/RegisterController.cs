@@ -1,5 +1,6 @@
 ﻿using AmazonFarmer.Core.Application;
 using AmazonFarmer.Core.Application.DTOs;
+using AmazonFarmer.Core.Application.Exceptions;
 using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Helpers;
 using Microsoft.AspNetCore.Mvc;

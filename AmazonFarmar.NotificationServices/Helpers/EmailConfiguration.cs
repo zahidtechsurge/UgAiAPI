@@ -13,6 +13,7 @@
         public string Password { get; set; }
         public string Name { get; set; }
         public string FromEmail { get; set; }
+        public string ToFinanceEmail { get; set; } 
 
     }
 

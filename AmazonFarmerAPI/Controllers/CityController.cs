@@ -40,7 +40,7 @@ namespace AmazonFarmerAPI.Controllers
             {
                 // Check if language code is provided, throw exception if it's missing.
                 if (string.IsNullOrEmpty(req.languageCode))
-                    throw new Exception(_exceptions.languageCodeRequired);
+                   throw new AmazonFarmerException(_exceptions.languageCodeRequired);
 
                 // Fetch cities asynchronously using repository.
                 resp.response = await _repoWrapper.CityRepo.getCities(req);

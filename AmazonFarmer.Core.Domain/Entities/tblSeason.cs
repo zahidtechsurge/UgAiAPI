@@ -18,6 +18,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         public virtual List<tblCropTimings> CropTimings { get; set; } = null!;
         public virtual List<tblSeasonTranslation> SeasonTranslations { get; set; } = null!;
         public virtual List<tblPlan> plans { get; set; } = null;
+        public virtual List<tblMonth> Months { get; set; } = new List<tblMonth>();
     }
 
 }

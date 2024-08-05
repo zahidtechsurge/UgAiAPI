@@ -1,4 +1,7 @@
-﻿using AmazonFarmer.Core.Application.DTOs;
+﻿/*
+   This class implements the ISeasonRepo interface and provides methods for retrieving seasons from the database.
+*/
+using AmazonFarmer.Core.Application.DTOs;
 using AmazonFarmer.Core.Application.Interfaces;
 using AmazonFarmer.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -14,16 +17,20 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
     {
         private AmazonFarmerContext _context;
 
+        // Constructor to initialize the SeasonRepo with an instance of the AmazonFarmerContext
         public SeasonRepo(AmazonFarmerContext context)
         {
             _context = context;
         }
 
+        // Method to retrieve seasons based on language code
         public async Task<List<SeasonDTO>> getSeasonsByLanguageCode(LanguageReq req)
         {
             return await _context.SeasonTranslations
                 .Include(x => x.Season)
-                .Where(x=>x.LanguageCode == req.languageCode)
+                    .ThenInclude(x=>x.Months)
+                        .ThenInclude(x=>x.MonthTranslations)
+                .Where(x => x.LanguageCode == req.languageCode)
                 .Select(x => new SeasonDTO
                 {
                     seasonID = x.SeasonID,

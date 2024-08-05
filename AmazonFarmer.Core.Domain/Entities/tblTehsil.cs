@@ -12,6 +12,7 @@ namespace AmazonFarmer.Core.Domain.Entities
     {
         [Key]
         public int ID { get; set; }
+        public string TehsilCode { get; set; }
         public string Name { get; set; }
         public int CityID { get; set; }
         public EActivityStatus Status { get; set; } = EActivityStatus.Active;
@@ -21,7 +22,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         public virtual List<tblProfileChangeRequest> ProfileChangeRequest { get; set; } = null!;
         public virtual List<tblTehsilLanguages> TehsilLanguagess { get; set; } = null!;
         [ForeignKey("CityID")]
-        public virtual tblCity City { get; set; }
+        public virtual tblCity City { get; set; } 
     }
 
 }

@@ -13,15 +13,15 @@ namespace AmazonFarmer.Core.Domain.Entities
         [Key]
         public int ID { get; set; }
         public int IntroID { get; set; }
-        public string LanguageCode { get; set; }
-        public string Text { get; set; }
-        public string Image { get; set; }
+        public required string LanguageCode { get; set; }
+        public string Text { get; set; } = string.Empty;
+        public string Image { get; set; } = string.Empty;
 
 
         [ForeignKey("IntroID")]
-        public virtual tblIntro Intro { get; set; }
+        public virtual tblIntro Intro { get; set; } = null!;
         [ForeignKey("LanguageCode")]
-        public virtual tblLanguages Languages { get; set; }
+        public virtual tblLanguages Languages { get; set; } = null!;
     }
 
 }

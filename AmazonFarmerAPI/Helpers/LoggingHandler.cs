@@ -25,8 +25,7 @@ namespace AmazonFarmerAPI.Helpers
             };
 
             // Save request log to the database
-            logEntry = _repoWrapper.LoggingRepository.AddLogEntry(logEntry);
-            await _repoWrapper.SaveAsync();
+            logEntry = await _repoWrapper.LoggingRepository.AddLogEntry(logEntry);
 
             // Call the inner handler to continue the request
             var response = await base.SendAsync(request, cancellationToken);
@@ -37,8 +36,7 @@ namespace AmazonFarmerAPI.Helpers
             logEntry.ResponseTimestamp = DateTime.UtcNow;
 
             // Save response details to the database
-            _repoWrapper.LoggingRepository.UpdateLogEntry(logEntry);
-            await _repoWrapper.SaveAsync();
+            await _repoWrapper.LoggingRepository.UpdateLogEntry(logEntry);
 
             return response;
         }

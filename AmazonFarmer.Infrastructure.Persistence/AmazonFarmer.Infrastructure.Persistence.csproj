@@ -16,7 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AmazonFarmer.Core.Application\AmazonFarmer.Core.Application.csproj" />
     <ProjectReference Include="..\AmazonFarmer.Core.Domain\AmazonFarmer.Core.Domain.csproj" />
   </ItemGroup>
 

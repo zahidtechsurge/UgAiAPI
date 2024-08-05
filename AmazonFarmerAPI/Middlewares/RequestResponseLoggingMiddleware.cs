@@ -8,6 +8,10 @@ using Microsoft.AspNetCore.Http;
 using System.Text;
 using System.Text.Json.Nodes;
 using AmazonFarmerAPI.Helpers;
+using AmazonFarmer.Core.Application.Exceptions;
+using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AmazonFarmerAPI.Middlewares
 {
@@ -24,6 +28,12 @@ namespace AmazonFarmerAPI.Middlewares
 
         public async Task Invoke(HttpContext context, AmazonFarmerContext dbContext, IWebHostEnvironment _env)
         {
+            // Get the endpoint
+            var endpoint = context.GetEndpoint();
+
+            // Check if endpoint has AllowAnonymous attribute
+            var hasAllowAnonymous = endpoint?.Metadata.Any(m => m is AllowAnonymousAttribute) ?? false;
+
             if (context.Request.Path.Value.Contains("/swagger/"))
             {
                 await _next(context);
@@ -37,6 +47,10 @@ namespace AmazonFarmerAPI.Middlewares
                 {
                     requestLog = "{\"message\": \"Not saving body of sign in request\"}";
                 }
+                else if (context.Request.Path.ToString().ToLower().Contains("/api/Attachment/getAttachmentByGUID") || context.Request.Path.ToString().ToLower().Contains("/api/Attachment/uploadAttachments"))
+                {
+                    requestLog = "{\"message\": \"Not saving body of attachment request\"}";
+                }
 
                 var reqLog = dbContext.RequestLogs.Add(new RequestLog
                 {
@@ -47,6 +61,37 @@ namespace AmazonFarmerAPI.Middlewares
                 }).Entity;
 
                 await dbContext.SaveChangesAsync();
+
+
+                if (!hasAllowAnonymous)
+                {
+                    if (context.User != null && context.User.Identity != null && context.User.Identity.IsAuthenticated)
+                    {
+                        var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                        var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+                        var activeToken = await dbContext.ActiveTokens
+                            .FirstOrDefaultAsync(t => t.UserId == userId && t.Token == token);
+
+                        if (activeToken == null || activeToken.Expiration < DateTime.UtcNow)
+                        {
+                            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                            using (var transaction = dbContext.Database.BeginTransaction())
+                            {
+                                dbContext.ResponseLogs.Add(new ResponseLog
+                                {
+                                    StatusCode = context.Response.StatusCode,
+                                    Body = "{ \"isError\":true,\"message\": \"Token Expired/Removed\"}",
+                                    Timestamp = DateTime.UtcNow,
+                                    RequestId = reqLog.RequestId
+                                });
+                                await dbContext.SaveChangesAsync();
+                                transaction.Commit();
+                            }
+                            return;
+                        }
+                    }
+                }
 
                 // Temporary replace the response body to intercept the data being written to it
                 var originalBodyStream = context.Response.Body;
@@ -74,15 +119,33 @@ namespace AmazonFarmerAPI.Middlewares
                     var responseLog = await FormatResponse(responseBody);
                     _logger.LogInformation(responseLog);
 
-                    dbContext.ResponseLogs.Add(new ResponseLog
+                    dbContext.ChangeTracker.QueryTrackingBehavior = Microsoft.EntityFrameworkCore.QueryTrackingBehavior.NoTracking;
+                    foreach (var entry in dbContext.ChangeTracker.Entries())
                     {
-                        StatusCode = context.Response.StatusCode,
-                        Body = responseLog,
-                        Timestamp = DateTime.UtcNow,
-                        Request = reqLog
-                    });
-
-                    await dbContext.SaveChangesAsync();
+                        entry.State = EntityState.Detached;
+                    }
+                    using (var transaction = dbContext.Database.BeginTransaction())
+                    {
+                        if (context.Request.Path.ToString().ToLower().Contains("/attachments"))
+                        {
+                            responseLog = "{\"message\": \"Not saving body of attachment response\"}";
+                        }
+                        else if (context.Request.Path.ToString().ToLower().Contains("/api/Attachment/getAttachmentByGUID"))
+                        {
+                            requestLog = "{\"message\": \"Not saving body of attachment request\"}";
+                        }
+                        dbContext.ResponseLogs.Add(new ResponseLog
+                        {
+                            StatusCode = context.Response.StatusCode,
+                            Body = responseLog,
+                            Timestamp = DateTime.UtcNow,
+                            RequestId = reqLog.RequestId
+                        });
+                        //dbContext.Database.ExecuteSqlRaw("SET IDENTITY_INSERT RequestLogs ON");
+                        //dbContext.Database.ExecuteSqlRaw("SET IDENTITY_INSERT ResponseLogs ON");
+                        await dbContext.SaveChangesAsync();
+                        transaction.Commit();
+                    }
                 }
             }
         }
@@ -170,6 +233,6 @@ namespace AmazonFarmerAPI.Middlewares
             return $"{body}";
         }
 
-        
+
     }
 }

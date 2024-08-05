@@ -16,11 +16,13 @@ namespace AmazonFarmer.Core.Domain.Entities
         public int tblAttachmentTypeID { get; set; }
         public Guid Guid { get; set; }
         public DateTime SubmittedDate { get; set; }
+        public string Name { get; set; }
         public string Path { get; set; }
         public string FileType { get; set; }
         [ForeignKey("tblAttachmentTypeID")]
-        public virtual tblAttachmentTypes AttachmentType { get; set; }
+        public virtual tblAttachmentTypes AttachmentTypes { get; set; }
         public virtual List<tblFarmAttachments> FarmAttachments { get; set; } = null!;
         public virtual List<tblUserAttachments> UserAttachments { get; set; } = null!;
+        public virtual List<TblAuthorityLetters> AuthorityLetters { get; set; } = null;
     }
 }

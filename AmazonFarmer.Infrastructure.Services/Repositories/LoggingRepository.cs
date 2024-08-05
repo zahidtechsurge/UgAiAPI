@@ -1,12 +1,9 @@
-﻿using AmazonFarmer.Core.Application.Interfaces;
+﻿/*
+   This class implements the ILoggingRepository interface and provides methods for adding and updating log entries in the database.
+*/
+using AmazonFarmer.Core.Application.Interfaces; 
 using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AmazonFarmer.Infrastructure.Services.Repositories
 {
@@ -14,19 +11,65 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
     {
         private readonly AmazonFarmerContext _context;
 
+        // Constructor to initialize the LoggingRepository with an instance of the AmazonFarmerContext
         public LoggingRepository(AmazonFarmerContext context)
         {
             _context = context;
         }
 
-        public WSDLLog AddLogEntry(WSDLLog logEntry)
+        // Method to add a log entry to the database
+        public async Task<WSDLLog> AddLogEntry(WSDLLog logEntry)
         {
-            return _context.WSDLLogs.Add(logEntry).Entity; 
+            WSDLLog log = new WSDLLog();
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    log = _context.WSDLLogs.Add(logEntry).Entity;
+                    await _context.SaveChangesAsync();
+
+                    await transaction.CommitAsync();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            return log;
         }
 
-        public void UpdateLogEntry(WSDLLog logEntry)
+        // Method to update a log entry in the database
+        public async Task UpdateLogEntry(WSDLLog logEntry)
         {
-            _context.WSDLLogs.Update(logEntry); 
+            WSDLLog log = new WSDLLog();
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    _context.WSDLLogs.Update(logEntry);
+                    await _context.SaveChangesAsync();
+
+                    await transaction.CommitAsync();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+        }
+
+        // Method to add a notification log entry to the database
+        public NotificationLog AddNoticationLog(NotificationLog logEntry)
+        {
+            return _context.NotificationLog.Add(logEntry).Entity;
+        }
+
+        // Method to update a notification log entry in the database
+        public void UpdateNoticationLog(NotificationLog logEntry)
+        {
+            _context.NotificationLog.Update(logEntry);
         }
     }
 }

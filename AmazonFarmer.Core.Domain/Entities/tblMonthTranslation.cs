@@ -14,7 +14,8 @@ namespace AmazonFarmer.Core.Domain.Entities
         public int ID { get; set; }
         public int MonthID { get; set; }
         public string LanguageCode { get; set; }
-        public string Image { get; set; }
+        public string? Image { get; set; }
+        public string Text { get; set; }
         [ForeignKey("MonthID")]
         public virtual tblMonth Month { get; set; }
         [ForeignKey("LanguageCode")]

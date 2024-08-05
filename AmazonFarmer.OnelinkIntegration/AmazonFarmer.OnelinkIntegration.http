@@ -1,0 +1,6 @@
+@AmazonFarmer.OnelinkIntegration_HostAddress = http://localhost:5283
+
+GET {{AmazonFarmer.OnelinkIntegration_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

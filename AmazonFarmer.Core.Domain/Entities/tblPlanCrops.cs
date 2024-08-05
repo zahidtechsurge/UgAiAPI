@@ -13,12 +13,18 @@ namespace AmazonFarmer.Core.Domain.Entities
         [Key]
         public int ID { get; set; }
         public int PlanID { get; set; }
-        public int CropID { get; set; }
+        public int? CropID { get; set; }
+        public int CropGroupID { get; set; }
         public double Acre { get; set; }
+        public EPlanCropEndorse PlanCropEndorse { get; set; } = EPlanCropEndorse.Ok;
+        public EActivityStatus Status { get; set; } = EActivityStatus.Active;
+
         [ForeignKey("PlanID")]
-        public virtual tblPlan Plan { get; set; }
+        public virtual tblPlan? Plan { get; set; }
         [ForeignKey("CropID")]
-        public virtual tblCrop Crop { get; set; }
+        public virtual tblCrop? Crop { get; set; }
+        [ForeignKey("CropGroupID")]
+        public virtual tblCropGroup? CropGroup { get; set; }
         public virtual List<tblPlanProduct> PlanProducts { get; set; } = null!;
         public virtual List<tblPlanService> PlanServices { get; set; } = null!;
     }

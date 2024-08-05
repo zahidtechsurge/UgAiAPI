@@ -1,15 +1,26 @@
-﻿using AmazonFarmer.Core.Application.DTOs;
+﻿using AmazonFarmer.Core.Application.DTOs; // Importing necessary namespaces
+using AmazonFarmer.Core.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AmazonFarmer.Core.Application.Interfaces
+namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the interface
 {
-    public interface IProductRepo
+    public interface IProductRepo // Defining the interface for product repository
     {
-        Task<List<categoryDTO_Resp>> getProductsByLangugageID(LanguageReq req, int postDeliveryIn);
-        Task<ProductPrices_Resp> getProductByProductID(int productID, string languageCode);
+        Task<List<categoryDTO_Resp>> getProductsByLangugageID(GetProductDTO_Internal_req req, int postDeliveryIn); // Method signature for retrieving products by language ID and post delivery in
+        Task<ProductPrices_Resp> getProductByProductID(int productID, string languageCode); // Method signature for retrieving product by product ID and language code
+        Task<List<TblProduct>> getProductsByProductIDs(List<int> productIDs, string languageCode); // Method signature for retrieving product by product ID and language code
+        Task<List<ProductListDTO>> getAllProducts();
+        Task<List<TblOrderProducts>> getAllOrdersForProducts(List<int> productIds);
+        IQueryable<TblProduct> getProducts();
+        Task<List<tblUnitOfMeasure>> getUOMs();
+        IQueryable<tblProductCategory> getCategories();
+        void addCategory(tblProductCategory req);
+        Task<tblProductCategory> GetCategoryByID(int id);
+        void updateCategory(tblProductCategory req);
+        Task<tblProductCategoryTranslation> getProductCategoryTranslationByCatID(int catID, string languageCode);
     }
 }

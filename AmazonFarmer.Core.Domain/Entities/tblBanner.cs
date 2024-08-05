@@ -12,6 +12,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         [Key]
         public int ID { get; set; }
         public string Name { get; set; }
+        public EBannerType BannerType { get; set; }
         public EActivityStatus Status { get; set; } = EActivityStatus.Active;
         public virtual List<tblBannerLanguages> BannerLanguages { get; set; } = null!;
     }

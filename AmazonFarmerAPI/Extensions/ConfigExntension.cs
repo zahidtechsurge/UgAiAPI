@@ -1,4 +1,6 @@
-﻿namespace AmazonFarmerAPI.Extensions
+﻿using System.ComponentModel;
+
+namespace AmazonFarmerAPI.Extensions
 {
     public class ConfigExntension
     {
@@ -13,6 +15,12 @@
                     .Build();
 
             return configuration[ConfigName];
+        }
+        public static string GetEnumDescription(Enum value)
+        {
+            var field = value.GetType().GetField(value.ToString());
+            var attribute = (DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
+            return attribute == null ? value.ToString() : attribute.Description;
         }
     }
 }

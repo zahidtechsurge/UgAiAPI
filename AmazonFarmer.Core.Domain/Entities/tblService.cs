@@ -13,8 +13,9 @@ namespace AmazonFarmer.Core.Domain.Entities
         [Key]
         public int ID { get; set; }
         public string? Name { get; set; }
+        public string? Code { get; set; }
         public string? CreatedByID { get; set; }
-        public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public EActivityStatus Active { get; set; } = EActivityStatus.Active;
 
 

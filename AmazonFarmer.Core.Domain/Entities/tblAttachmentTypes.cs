@@ -11,6 +11,7 @@ namespace AmazonFarmer.Core.Domain.Entities
     {
         [Key]
         public int ID { get; set; }
+        public EAttachmentType AttachmentType { get; set; }
         public string TypeName { get; set; }
         public virtual List<tblAttachment> Attachment { get; set; } = null!;
     }

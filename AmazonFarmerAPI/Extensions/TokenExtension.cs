@@ -20,7 +20,7 @@ namespace AmazonFarmerAPI.Extensions
         {
             _httpContext = httpContext;
         }
-        public static TokenResponse GenerateJwt(UserDTO user, string secret, string issuer, int expirationInDays)
+        public static TokenResponse GenerateJwt(UserDTO user, string secret, string issuer, int expirationInDays, IEnumerable<Claim> pClaims)
         {
             var claims = new List<Claim>
             {
@@ -29,16 +29,18 @@ namespace AmazonFarmerAPI.Extensions
                 new Claim(ClaimTypes.NameIdentifier,user.userID),
                 new Claim(ClaimTypes.GivenName, user.firstName is null ? "" : user.firstName),
                 new Claim("userName", user.username is null ? "" : user.username),
-                new Claim("languageCode", user.languageCode is null ? "" : user.languageCode),
+                new Claim("languageCode", user.languageCode is null ? "EN" : user.languageCode),
                 new Claim( "isOTPVerified", user.isOTPVerified ? "true" : "false"),
+                new Claim( "designationID", user.designationID.ToString()), 
                 new Claim(ClaimTypes.Email, user.email is null ? "" : user.email),
-                new Claim("expOn", ((long)DateTime.Now.AddSeconds(expirationInDays).ToUniversalTime().Subtract(new DateTime(1970, 1, 1)).TotalSeconds).ToString())
-
+                new Claim("expOn", ((long)DateTime.UtcNow.AddDays(expirationInDays).ToUniversalTime().Subtract(new DateTime(1970, 1, 1)).TotalSeconds).ToString())
             };
+
+            claims.AddRange(pClaims);
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            DateTime expiresIn = DateTime.Now.AddSeconds(expirationInDays);
+            DateTime expiresIn = DateTime.UtcNow.AddDays(expirationInDays);
 
             var token = new JwtSecurityToken(
                issuer: issuer,

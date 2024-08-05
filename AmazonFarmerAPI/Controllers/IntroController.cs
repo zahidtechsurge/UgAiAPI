@@ -1,13 +1,14 @@
 ﻿using AmazonFarmer.Core.Application; // Importing necessary namespaces
 using AmazonFarmer.Core.Application.DTOs;
 using AmazonFarmer.Core.Application.Exceptions;
+using AmazonFarmerAPI.Extensions;
 using AmazonFarmerAPI.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
 {
-    [ApiController] // Indicates that this class is an API controller
+    [ApiController] // Indicates that this class is an API controller.
     [Route("api/[controller]")] // Defines the base route for API endpoints, where [controller] will be replaced by the controller name
     public class IntroController : ControllerBase // Inherits from ControllerBase for API controller functionality
     {
@@ -24,22 +25,19 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
         public async Task<APIResponse> getIntros(LanguageReq req) // Method to handle POST requests for getting intros
         {
             APIResponse resp = new APIResponse(); // Initializing API response object
-            try
-            {
-                // Checking if the language code is provided
-                if (req == null || string.IsNullOrEmpty(req.languageCode))
-                    throw new AmazonFarmerException(_exceptions.getExceptionByLanguageCode(req.languageCode, "languageCodeRequired"));
+                                                  // Checking if the language code is provided
+            if (req == null || string.IsNullOrEmpty(req.languageCode))
+                throw new AmazonFarmerException(_exceptions.languageCodeRequired); // Throwing exception if language code is missing
+            //throw new AmazonFarmerException(_exceptions.getExceptionByLanguageCode(req.languageCode, "languageCodeRequired"));
 
-                //throw new Exception(_exceptions.languageCodeRequired); // Throwing exception if language code is missing
 
-                // Fetching intros for the provided language code using repository
-                resp.response = await _repoWrapper.IntroRepo.getIntros(req);
-            }
-            catch (Exception ex) // Handling exceptions
+            // Fetching intros for the provided language code using repository
+            getIntroDTO inReq = new getIntroDTO()
             {
-                resp.isError = true; // Setting error flag in response
-                resp.message = ex.Message; // Setting error message in response
-            }
+                languageCode = req.languageCode,
+                basePath = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL")
+            };
+            resp.response = await _repoWrapper.IntroRepo.getIntros(inReq);
             return resp; // Returning the API response
         }
     }

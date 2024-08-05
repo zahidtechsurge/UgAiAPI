@@ -28,7 +28,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         public int DistrictID { get; set;}
         //public int TehsilID { get; set;}
         public string? SAPFarmerCode { get; set;}
-        public bool isApproved { get; set; } = false;
+        public EFarmerProfileStatus isApproved { get; set; } = EFarmerProfileStatus.Pending;
         public string? ApprovedByID { get; set; }
         public DateTime ApprovedDate { get; set; }
         public string SelectedLangCode { get; set; }
@@ -42,4 +42,5 @@ namespace AmazonFarmer.Core.Domain.Entities
         //public virtual tblTehsil Tehsil { get; set; }
 
     }
+    
 }

@@ -37,4 +37,9 @@
     <Folder Include="WSDLs\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\AmazonFarmer.Core.Application\AmazonFarmer.Core.Application.csproj" />
+    <ProjectReference Include="..\AmazonFarmer.Infrastructure.Persistence\AmazonFarmer.Infrastructure.Persistence.csproj" />
+  </ItemGroup>
+
 </Project>

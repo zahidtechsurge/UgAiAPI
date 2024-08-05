@@ -12,18 +12,27 @@ namespace AmazonFarmer.Core.Domain.Entities
     {
         [Key]
         public int ID { get; set; }
-        public string UserID { get; set; }
-        public int FarmID { get; set; }
-        public int SeasonID { get; set; }
+        public required string UserID { get; set; }
+        public required int FarmID { get; set; }
+        public required int WarehouseID { get; set; }
+        public required int SeasonID { get; set; }
         public string? Reason { get; set; }
-        public ERequestType Status { get; set; } = ERequestType.Draft;
+        public string? FarmerComment { get; set; }
+        public EPlanStatus Status { get; set; } = EPlanStatus.Draft;
+        public EPlanChangeRequest PlanChangeStatus { get; set; } = EPlanChangeRequest.Default;
+        public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
+
+        public bool IsPlanPaid { get; set; }
         [ForeignKey("UserID")]
-        public virtual TblUser User { get; set; }
+        public virtual TblUser? User { get; set; }
+        [ForeignKey("WarehouseID")]
+        public virtual tblwarehouse? Warehouse { get; set; }
         [ForeignKey("FarmID")]
-        public virtual tblfarm Farm { get; set; }
+        public virtual tblfarm? Farm { get; set; }
         [ForeignKey("SeasonID")]
-        public virtual tblSeason Season { get; set; }
+        public virtual tblSeason? Season { get; set; }
         public virtual List<tblPlanCrops>? PlanCrops { get; set; } = null;
         public virtual List<TblOrders>? Orders { get; set; } = null;
+        public virtual List<TblOrderService>? OrderServices { get; set; }
     }
 }

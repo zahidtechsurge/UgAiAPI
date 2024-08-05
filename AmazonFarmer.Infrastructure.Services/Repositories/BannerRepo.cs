@@ -22,6 +22,7 @@
 
 using AmazonFarmer.Core.Application.DTOs;
 using AmazonFarmer.Core.Application.Interfaces;
+using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -42,12 +43,21 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             // Retrieve banners asynchronously based on language code.
             return await _context.BannerLanguages.Include(x => x.Banner)
-                .Where(x => x.LanguageCode == req.languageCode)
+                .Where(x => x.LanguageCode == req.languageCode && x.Languages.Status == EActivityStatus.Active)
                 .Select(x => new BannerDTO
                 {
                     bannerName = x.Banner.Name,
                     filePath = x.Image
                 }).ToListAsync();
+        }
+
+        // Method to fetch banners.
+        public async Task<List<tblBanner>> getBanners()
+        {
+            return await _context.Banners
+                .Include(x => x.BannerLanguages)
+                .Where(x => x.Status == EActivityStatus.Active)
+                .ToListAsync();
         }
     }
 }

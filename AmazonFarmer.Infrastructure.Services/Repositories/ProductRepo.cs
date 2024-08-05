@@ -1,5 +1,9 @@
-﻿using AmazonFarmer.Core.Application.DTOs;
+﻿/*
+   This class implements the IProductRepo interface and provides methods for retrieving product-related data from the database.
+*/
+using AmazonFarmer.Core.Application.DTOs;
 using AmazonFarmer.Core.Application.Interfaces;
+using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,17 +18,23 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
     {
         private AmazonFarmerContext _context;
 
+        // Constructor to initialize the ProductRepo with an instance of the AmazonFarmerContext
         public ProductRepo(AmazonFarmerContext context)
         {
             _context = context;
         }
 
-        public async Task<List<categoryDTO_Resp>> getProductsByLangugageID(LanguageReq req, int postDeliveryIn)
+        // Method to retrieve products by language ID along with their categories
+        public async Task<List<categoryDTO_Resp>> getProductsByLangugageID(GetProductDTO_Internal_req req, int postDeliveryIn)
         {
             return await _context.ProductCategoryTranslation
                 .Include(x => x.ProductCategory)
-                .ThenInclude(x => x.Products)
-                .ThenInclude(x => x.ProductTranslations)
+                    .ThenInclude(x => x.Products)
+                        .ThenInclude(x => x.ProductTranslations.Where(x=>x.LanguageCode == req.languageCode))
+                .Include(x=>x.ProductCategory)
+                    .ThenInclude(x=>x.Products)
+                        .ThenInclude(x=>x.UOM)
+                            .ThenInclude(x=>x.UnitOfMeasureTranslation.Where(x => x.LanguageCode == req.languageCode))
                 .Where(x => x.LanguageCode == req.languageCode)
                 .Select(x => new categoryDTO_Resp
                 {
@@ -35,27 +45,94 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                     {
                         postDeliveryIn = postDeliveryIn,
                         productID = x.ID,
-                        filePath = x.ProductTranslations.FirstOrDefault(pt => pt.LanguageCode == req.languageCode).Image, //Get productImageIcon from ProductTranslations
-                        productName = x.ProductTranslations.FirstOrDefault(pt => pt.LanguageCode == req.languageCode).Text, // Get productName from ProductTranslations
+                        filePath = string.Concat(req.basePath,
+                        x.ProductTranslations.FirstOrDefault().Image), // Get product image icon from ProductTranslations
+                        productName = x.ProductTranslations.FirstOrDefault().Text, // Get product name from ProductTranslations
+                        uom = x.UOM.UnitOfMeasureTranslation.FirstOrDefault().Text, // Get product name from ProductTranslations
                     }).ToList()
 
                 }).ToListAsync();
         }
+        // Method to retrieve products by language ID along with their categories
+        public async Task<List<ProductListDTO>> getAllProducts()
+        {
+            return await _context.Products.Select(x => new ProductListDTO
+            {
+                productID = x.ID,
+                productName = x.Name,
+                productCode = x.ProductCode
+            }).ToListAsync();
+        }
+        public async Task<List<TblProduct>> getProductsByProductIDs(List<int> productIDs, string languageCode)
+        {
+            return await _context.Products
+                .Include(x=>x.UOM)
+                .Include(x=>x.ProductTranslations.Where(x => x.LanguageCode == languageCode))
+                .Where(x=> productIDs.Contains(x.ID))
+                .ToListAsync();
+        }
 
-
+        // Method to retrieve product details by product ID and language code
         public async Task<ProductPrices_Resp> getProductByProductID(int productID, string languageCode)
         {
             return await _context.ProductTranslations
                 .Include(x => x.Product)
-                .Where(x=>x.ProductID == productID && x.LanguageCode == languageCode)
+                .Where(x => x.ProductID == productID && x.LanguageCode == languageCode)
                 .Select(x => new ProductPrices_Resp
                 {
-                    productID= x.ProductID,
+                    productID = x.ProductID,
                     productCode = x.Product.ProductCode,
                     filePath = x.Image,
                     productName = x.Text,
-                    productPrice = Convert.ToDecimal(10)
+                    productPrice = Convert.ToDecimal(10) // Placeholder value for product price
                 }).FirstOrDefaultAsync();
+        }
+
+        public async Task<List<TblOrderProducts>> getAllOrdersForProducts(List<int> productIds)
+        {
+            return await _context.OrderProducts
+                  .Include(op => op.Order).ThenInclude(o => o.Plan).ThenInclude(p => p.OrderServices).ThenInclude(os => os.Service)
+                  .Include(op => op.Order).ThenInclude(o => o.Warehouse)
+                  .Include(op => op.Order).ThenInclude(o => o.ChildOrders.Where(co => co.PaymentStatus == EOrderPaymentStatus.NonPaid))
+                  .Include(op => op.Order).ThenInclude(o => o.User).ThenInclude(u => u.FarmerProfile)
+                  .Include(op => op.Product).ThenInclude(p => p.UOM)
+                  .Where(op => productIds.Contains(op.ProductID)
+                      && (op.Order.PaymentStatus != EOrderPaymentStatus.NonPaid && op.Order.PaymentStatus != EOrderPaymentStatus.Refund)
+                      && op.Order.OrderStatus != EOrderStatus.Deleted
+                      && op.Order.DeliveryStatus != EDeliveryStatus.ShipmentComplete
+                      ).ToListAsync();
+        }
+        public IQueryable<TblProduct> getProducts()
+        {
+            return _context.Products
+                .Include(x=>x.ProductTranslations)
+                .Include(x=>x.UOM)
+                .Include(x=>x.Category);
+        }
+        public async Task<List<tblUnitOfMeasure>> getUOMs()
+        {
+            return await _context.tblUnitOfMeasures.Include(x=>x.UnitOfMeasureTranslation).ToListAsync();
+        }
+        public IQueryable<tblProductCategory> getCategories()
+        {
+            return _context.ProductCategory
+                .Include(x => x.ProductCategoryTranslation);
+        }
+        public void addCategory(tblProductCategory req)
+        {
+            _context.ProductCategory.Add(req);
+        }
+        public async Task<tblProductCategory> GetCategoryByID(int id)
+        {
+            return await _context.ProductCategory.Where(x => x.ID == id).FirstOrDefaultAsync();
+        }
+        public void updateCategory(tblProductCategory req)
+        {
+            _context.ProductCategory.Update(req);
+        }
+        public async Task<tblProductCategoryTranslation> getProductCategoryTranslationByCatID(int  catID, string languageCode)
+        {
+            return await _context.ProductCategoryTranslation.Where(x => x.ID == catID && x.LanguageCode == languageCode).FirstOrDefaultAsync();
         }
     }
 }

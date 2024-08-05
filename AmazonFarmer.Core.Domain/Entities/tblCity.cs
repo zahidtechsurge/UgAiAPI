@@ -13,7 +13,9 @@ namespace AmazonFarmer.Core.Domain.Entities
         [Key]
         public int ID { get; set; }
         public string Name { get; set; }
+        public string CityCode { get; set; }
         public int DistrictID { get; set; }
+
         [ForeignKey("DistrictID")]
         public virtual tblDistrict District { get; set; }
         public EActivityStatus Status { get; set; } = EActivityStatus.Active;

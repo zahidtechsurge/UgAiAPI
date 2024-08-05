@@ -1,15 +1,16 @@
-﻿using AmazonFarmer.Core.Application.DTOs;
+﻿/*
+   This class implements the IUserRepo interface and provides methods for user-related operations such as user registration, authentication, and password management.
+*/
+
+// Consider providing XML documentation comments for the class and its members
+// to improve code readability and maintainability.
+using AmazonFarmer.Core.Application.DTOs;
 using AmazonFarmer.Core.Application.Exceptions;
 using AmazonFarmer.Core.Application.Interfaces;
 using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AmazonFarmer.Infrastructure.Services.Repositories
 {
@@ -19,6 +20,9 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         private readonly RoleManager<TblRole> _roleManager;
         private readonly UserManager<TblUser> _userManager;
         private AmazonFarmerContext _context;
+
+        // Constructor to initialize the UserRepo with an instance of the AmazonFarmerContext,
+        // SignInManager, RoleManager, and UserManager
         public UserRepo(AmazonFarmerContext context, SignInManager<TblUser> signInManager, RoleManager<TblRole> roleManager, UserManager<TblUser> userManager)
         {
             _context = context;
@@ -27,6 +31,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             _userManager = userManager;
         }
 
+        // Method to add a new user
         public async Task addUser(addUserDTO req)
         {
             try
@@ -41,7 +46,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
 
                 if (isExist > 0)
                 {
-                    throw new Exception(_exceptions.userAlreadyExist);
+                    throw new AmazonFarmerException(_exceptions.userAlreadyExist);
                 }
 
                 TblUser _req = new TblUser()
@@ -58,7 +63,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 updateResult = await _userManager.CreateAsync(_req, req.Password);
                 if (updateResult.Succeeded)
                 {
-                    IdentityRole newRole = await getRoleByRoleID(req.RoleID);
+                    TblRole newRole = await getRoleByRoleID(req.RoleID);
 
                     //await _userManager.AddToRoleAsync(_req, newRole.Name);
                     await _userManager.AddToRoleAsync(temp, newRole.Name);
@@ -67,11 +72,11 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 {
                     if (updateResult.Errors != null && updateResult.Errors.Count() > 0)
                     {
-                        throw new Exception(updateResult.Errors.FirstOrDefault().Description);
+                        throw new AmazonFarmerException(updateResult.Errors.FirstOrDefault().Description);
                     }
                     else
                     {
-                        throw new Exception(_exceptions.errorOccuredWhileAddingUser);
+                        throw new AmazonFarmerException(_exceptions.errorOccuredWhileAddingUser);
                     }
                 }
             }
@@ -81,14 +86,15 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             }
 
         }
-        public async Task<IdentityRole> getRoleByRoleID(string roleID)
+
+        // Method to retrieve a role by role ID
+        public async Task<TblRole> getRoleByRoleID(string roleID)
         {
             return await _roleManager.Roles.Where(x => x.Id == roleID).FirstOrDefaultAsync();
         }
-        public async Task<IdentityRole> getRoleByRoleName(string roleName)
-        {
-            return await _roleManager.Roles.Where(x => x.Name == roleName).FirstOrDefaultAsync();
-        }
+
+
+        // Method to authenticate user by email and password
         public async Task<UserDTO> getUserByEmailndPassword(loginReq req)
         {
             try
@@ -96,16 +102,16 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 TblUser _req = await _context.Users.Where(x => x.Email == req.Email).FirstOrDefaultAsync();
                 if (_req == null)
                 {
-                    throw new Exception(_exceptions.invalidEmail);
+                    throw new AmazonFarmerException(_exceptions.invalidEmail);
                 }
                 var result = await _signInManager.PasswordSignInAsync(_req, req.Password, false, lockoutOnFailure: false);
                 if (!result.Succeeded)
                 {
-                    throw new Exception(_exceptions.invalidPassword);
+                    throw new AmazonFarmerException(_exceptions.invalidPassword);
                 }
                 if (_req.Active != EActivityStatus.Active)
                 {
-                    throw new Exception(_exceptions.deactiveUser);
+                    throw new AmazonFarmerException(_exceptions.deactiveUser);
                 }
 
                 return new UserDTO()
@@ -122,210 +128,123 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 throw ex;
             }
         }
-        public async Task<UserDTO> getUserByUsernameandPassword(Login_Req req)
+
+        // Method to retrieve device token by user ID
+        public async Task<string> getDeviceTokenByUserID(string userID)
         {
-            try
+            string deviceToken = string.Empty;
+            if (!string.IsNullOrEmpty(userID))
             {
-                TblUser user = await _context.Users.Where(x => x.UserName == req.username).FirstOrDefaultAsync();
-                if (user == null)
-                {
-                    throw new Exception(_exceptions.invalidEmail);
-                }
-                if (user.isAccountLocked)
-                    throw new Exception(_exceptions.deactiveUser);
-
-                tblFarmerProfile _req = new tblFarmerProfile();
-                if (user.Designation == EDesignation.Farmer)
-                {
-                    _req = await _context.FarmerProfile.Include(x => x.User).Where(x => x.UserID == user.Id).FirstOrDefaultAsync();
-                }
-
-                var result = await _signInManager.PasswordSignInAsync(user, req.password, false, lockoutOnFailure: false);
-                if (!result.Succeeded)
-                {
-                    await wrongPasswordCounter(user);
-
-                    throw new Exception(_exceptions.invalidPassword);
-                }
-                if (user.Active != EActivityStatus.Active)
-                {
-                    throw new Exception(_exceptions.deactiveUser);
-                }
-                await emptyPasswordAttempts(user);
-
-                return new UserDTO()
-                {
-                    email = req.username,
-                    isApproved = _req.isApproved,
-                    isOTPVerified = user.isOTPApproved.Value,
-                    designationID = (int)user.Designation,
-                    firstName = user.FirstName,
-                    lastName = user.LastName,
-                    userID = user.Id,
-                    languageCode = _req.SelectedLangCode
-                };
-
+                deviceToken = await _context.Users.Where(x => x.Id == userID).Select(x => x.DeviceToken).FirstOrDefaultAsync();
             }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-        public async Task<UserDTO> isUsernameValid(forgetPassword_Req req)
-        {
-            return await _context.FarmerProfile.Include(x => x.User).Where(x => x.CNICNumber == req.cnicNumber).Select(x => new UserDTO
-            {
-                userID = x.User.Id,
-                firstName = x.User.FirstName,
-                lastName = x.User.LastName,
-                designationID = (int)x.User.Designation,
-                email = x.User.Email,
-                isOTPVerified = x.User.isOTPApproved.Value
-            }).FirstOrDefaultAsync();
-        }
-        public async Task<UserDTO> signupFarmer(farmerSignUp_Req req)
-        {
-            int isExist = await _context.Users.Where(x => x.UserName == req.username).CountAsync();
-
-            if (isExist != 0)
-                throw new Exception(_exceptions.usernameIsTaken);
-            isExist = await _context.FarmerProfile.Where(x => x.CNICNumber == req.cnicNumber).CountAsync();
-            if (isExist != 0)
-                throw new Exception(_exceptions.cnicIsTaken);
-            isExist = await _context.FarmerProfile.Where(x => x.NTNNumber == req.ntnNumber).CountAsync();
-            if (isExist != 0)
-                throw new Exception(_exceptions.ntnNumberIsTaken);
-            isExist = await _context.FarmerProfile.Where(x => x.STRNNumber == req.strnNumber).CountAsync();
-            if (isExist != 0)
-                throw new Exception(_exceptions.strnIsTaken);
-            isExist = await _context.FarmerProfile.Where(x => x.CellNumber == req.cellNumber).CountAsync();
-            if (isExist != 0)
-                throw new Exception(_exceptions.cellNumberIsTaken);
-            else
-            {
-                Microsoft.AspNetCore.Identity.IdentityResult updateResult = new Microsoft.AspNetCore.Identity.IdentityResult();
-                TblUser userReq = new TblUser
-                {
-                    FirstName = req.firstName,
-                    LastName = req.lastName,
-                    PhoneNumber = req.cellNumber,
-                    Email = req.emailAddress,
-                    UserName = req.username,
-                    NormalizedUserName = req.username.ToUpper(),
-                    Designation = EDesignation.Farmer,
-                    isOTPApproved = false,
-                    Active = EActivityStatus.Active,
-                    SignupAgreementDateTime = DateTime.Now
-                };
-                updateResult = await _userManager.CreateAsync(userReq, req.password);
-                if (updateResult.Succeeded)
-                {
-                    IdentityRole newRole = await getRoleByRoleName(EDesignation.Farmer.ToString());
-                    await _userManager.AddToRoleAsync(userReq, newRole.Name);
-
-                    userReq = await _context.Users.Where(x => x.UserName == req.username).FirstOrDefaultAsync();
-
-                    if (userReq != null)
-                    {
-                        tblFarmerProfile profile = await generateUserProfile(req, userReq);
-                        UserDTO resp = new UserDTO
-                        {
-                            email = userReq.Email,
-                            firstName = userReq.FirstName,
-                            lastName = userReq.LastName,
-                            designationID = (int)userReq.Designation,
-                            isOTPVerified = userReq.isOTPApproved.Value,
-                            isApproved = profile.isApproved,
-                            userID = userReq.Id
-                        };
-                        resp.languageCode = profile.SelectedLangCode;
-                        return resp;
-                    }
-                    else
-                    {
-                        throw new Exception(_exceptions.errorOccuredWhileAddingUser);
-                    }
-                }
-                else
-                {
-                    if (updateResult.Errors != null && updateResult.Errors.Count() > 0)
-                    {
-                        throw new Exception(updateResult.Errors.FirstOrDefault().Description);
-                    }
-                    else
-                    {
-                        throw new Exception(_exceptions.errorOccuredWhileAddingUser);
-                    }
-                }
-            }
+            return deviceToken;
         }
 
+        // Method to check if username is valid for password recovery
+        public async Task<UserDTO?> isUsernameValid(forgetPassword_Req req)
+        {
+            return await _context.Users.Include(x => x.FarmerProfile)
+                    .Where(x => x.CNICNumber == req.cnicNumber
+                    && x.FarmerProfile.FirstOrDefault().isApproved != EFarmerProfileStatus.Blocked)
+                    .Select(x => new UserDTO
+                    {
+                        userID = x.Id,
+                        firstName = x.FirstName,
+                        lastName = x.LastName,
+                        designationID = (int)x.Designation,
+                        email = x.Email,
+                        phone = x.PhoneNumber,
+                        isOTPVerified = x.isOTPApproved.Value
+                    }).FirstOrDefaultAsync();
+        }
+
+        // Method to set OTP for password recovery
         public async Task setOTP(string UserID, string OTPCode)
         {
             var user = await _context.Users.Where(x => x.Id == UserID).FirstOrDefaultAsync();
             if (user != null)
             {
                 user.OTP = OTPCode;
-                user.OTPExpiredOn = DateTime.Now.AddSeconds(60);
+                user.OTPExpiredOn = DateTime.UtcNow.AddSeconds(30);
                 _context.Users.Update(user);
-                _context.SaveChanges();
             }
         }
 
-        public async Task<bool> verifyOTP(string UserID, string OTPCode)
+        // Method to verify OTP for password recovery
+        public async Task<bool> verifyOTP(TblUser user)
         {
-            var user = await _context.Users.Where(x => x.Id == UserID).FirstOrDefaultAsync();
-            if (user != null)
-            {
-                if (user.OTPExpiredOn < DateTime.Now)
-                {
-                    throw new Exception(_exceptions.expiredOTP);
-                }
-                if (user.OTP == OTPCode)
-                {
-                    user.isOTPApproved = true;
-                    user.OTP = string.Empty;
-                    _context.Users.Update(user);
-                    _context.SaveChanges();
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                return false;
-            }
-        }
-        public async Task<bool> forgetPasswordOTP(string cnicNumber, string OTPCode)
-        {
-            bool isExist = false;
-            var user = await _context.FarmerProfile.Include(x => x.User).Where(x => x.CNICNumber == cnicNumber && x.User.OTP == OTPCode).FirstOrDefaultAsync();
-            if (user != null)
-            {
-                if (user.User.OTPExpiredOn < DateTime.Now)
-                {
-                    throw new Exception(_exceptions.expiredOTP);
-                }
-                //user.User.OTP = "";
-                user.User.OTPExpiredOn = DateTime.Now.AddMinutes(15);
-                await emptyPasswordAttempts(user.User);
-                isExist = true;
-            }
-            else
-            {
-                throw new Exception(_exceptions.invalidOTP);
-            }
-            return isExist;
+            user.isOTPApproved = true;
+            user.OTP = string.Empty;
+            _context.Users.Update(user);
+            return true;
         }
 
+        // Method to check OTP for forget password
+        public async Task<tblFarmerProfile> forgetPasswordOTP(string cnicNumber, string OTPCode)
+        {
+            return await _context.FarmerProfile.Include(x => x.User).Where(x => x.User.CNICNumber == cnicNumber
+               && x.User.OTP == OTPCode).FirstOrDefaultAsync();
+        }
+        // Method to check OTP for forget password
+        public async Task<TblUser> forgetUserPasswordOTP(string cnicNumber, string OTPCode)
+        {
+            return await _context.Users.Include(x => x.FarmerProfile).Where(x => x.CNICNumber == cnicNumber
+               && x.OTP == OTPCode).FirstOrDefaultAsync();
+        }
+
+        // Method to retrieve user profile by user ID
         public async Task<UserDTO> getUserProfileByUserID(string UserID)
         {
-            var farm = await _context.Farms.Where(x => x.UserID == UserID).OrderBy(x => x.FarmID).FirstOrDefaultAsync();
+            var farm = await _context.Farms.Where(x => x.UserID == UserID && x.Status != EFarmStatus.Deleted).ToListAsync();
+            var user = await _context.Users.Include(x => x.FarmerRoles).Where(x => x.Id == UserID).FirstOrDefaultAsync();
+            int isApprovalStatus = 0;
+            bool approvedByTSO = false;
+            bool approvedByRSM = false;
+            bool approvedByPatwari = false;
+            if (farm != null && farm.Any())
+            {
+                var firstApplicationID = farm.OrderBy(x => x.FarmID).First().ApplicationID;
+                var relevantFarms = farm.Where(x => x.ApplicationID == firstApplicationID).OrderBy(x => x.FarmID);
+                if (relevantFarms.Any(x => x.Status == EFarmStatus.PendingforRSM))
+                {
+                    approvedByTSO = true;
+                }
+                if (relevantFarms.Any(x => x.Status == EFarmStatus.PendingForPatwari))
+                {
+                    approvedByTSO = true;
+                    approvedByRSM = true;
+                }
 
-            var user = await _context.Users.Where(x => x.Id == UserID).FirstOrDefaultAsync();
+                if (relevantFarms.Any(x => x.Status == EFarmStatus.Approved))
+                {
+                    approvedByTSO = true;
+                    approvedByRSM = true;
+                    approvedByPatwari = true;
+                    isApprovalStatus = (int)EFarmStatus.Approved;
+                }
+                else if (relevantFarms.Any(x => x.Status == EFarmStatus.Rejected))
+                {
+                    isApprovalStatus = (int)EFarmStatus.Rejected;
+                }
+                else if (relevantFarms.Any(x => x.Status == EFarmStatus.Deleted))
+                {
+                    isApprovalStatus = (int)EFarmStatus.Deleted;
+                }
+                else if (relevantFarms.Any(x => x.Status == EFarmStatus.SendBack))
+                {
+                    isApprovalStatus = (int)EFarmStatus.SendBack;
+                }
+                else if (relevantFarms.Any())
+                {
+                    isApprovalStatus = (int)relevantFarms.First().Status;
+                }
+
+
+            }
+            else
+            {
+                isApprovalStatus = 0;
+            }
             UserDTO resp = new UserDTO()
             {
                 email = user.Email,
@@ -333,73 +252,36 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 lastName = user.LastName,
                 userID = user.Id,
                 username = user.UserName,
-                designationID = (int)user.Designation,
+                designationID = user.Designation == null ? 0 : (int)user.Designation,
                 isOTPVerified = user.isOTPApproved.Value,
-                hasFarms = (farm != null ? true : false),
-                isFarmApprovalAcknowledged = farm != null ? farm.isFarmApprovalAcknowledged : false,
-                applicationID = farm != null ? farm.ApplicationID.ToString().PadLeft(10, '0') : "0"
+                hasFarms = (farm != null && farm.Count(x => x.Status != EFarmStatus.Draft || x.Status != EFarmStatus.Deleted) > 0 ? true : false),
+                isFarmApprovalAcknowledged = farm != null && farm.Count(x => x.Status == EFarmStatus.Approved) > 0 ? farm.Where(x => x.Status == EFarmStatus.Approved).OrderBy(x => x.UpdatedOn).FirstOrDefault().isFarmApprovalAcknowledged : false,
+                //enableEdit = ((farm != null && farm.Count(x => x.Status == EFarmStatus.Draft) == farm.Count()) ? true : false),
+                applicationID = farm != null && farm.Any() ? farm.First().ApplicationID.ToString().PadLeft(10, '0') : "0",
+                isApprovalStatus = isApprovalStatus,
+                approvedByTSO = approvedByTSO,
+                approvedByRSM = approvedByRSM,
+                approvedByPatwari = approvedByPatwari
             };
             var userprofile = await _context.FarmerProfile.Where(x => x.UserID == UserID).FirstOrDefaultAsync();
             if (userprofile != null)
             {
                 resp.cnic = userprofile.CNICNumber;
-                resp.isApproved = userprofile.isApproved;
+                //resp.isApproved = (userprofile.isApproved == EFarmerProfileStatus.Approved ? true : false);
                 resp.languageCode = userprofile.SelectedLangCode;
+                resp.applicationMessage = "Changes required";
             }
-
             return resp;
         }
 
-        public async Task changePassword(changePassword_Req req, string userID)
-        {
-            var user = await _context.Users.Where(x => x.Id == userID).FirstOrDefaultAsync();
-            if (user != null)
-            {
-                var result = await _userManager.ChangePasswordAsync(user, req.currentPassword, req.password);
-                if (!result.Succeeded)
-                {
-                    throw new Exception(result.Errors.FirstOrDefault().Description.ToString());
-                }
-            }
-            else
-            {
-                throw new Exception(_exceptions.userNotFound);
-            }
-        }
+        // Method to set new password after password recovery
         public async Task newPassword(newPassword_Req req)
         {
-            var userProfile = await _context.FarmerProfile.Include(x => x.User).Where(x => x.CNICNumber == req.cnicNumber).FirstOrDefaultAsync();
-            if (userProfile != null && userProfile.User != null)
-            {
 
-                if (userProfile.User.OTPExpiredOn < DateTime.Now)
-                {
-                    throw new Exception(_exceptions.expiredOTP);
-                }
-                if (userProfile.User.OTP == req.otpCode)
-                {
-                    var token = await _userManager.GeneratePasswordResetTokenAsync(userProfile.User);
-
-                    var result = await _userManager.ResetPasswordAsync(userProfile.User, token, req.password);
-
-                    if (!result.Succeeded)
-                    {
-                        throw new Exception(result.Errors.FirstOrDefault().Description.ToString());
-                    }
-                    emptyPasswordAttempts(userProfile.User);
-                }
-                else
-                {
-                    throw new Exception(_exceptions.invalidOTP);
-                }
-            }
-            else
-            {
-                throw new Exception(_exceptions.userNotFound);
-            }
 
         }
 
+        // Method to check if username exists
         public async Task<bool> isUsernameExist(string username)
         {
             int isExist = await _context.Users.Where(x => x.UserName == username).CountAsync();
@@ -412,6 +294,8 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 return false;
             }
         }
+
+        // Method to get user info by username
         public async Task<UserDTO> getUserInfoByUsername(string username)
         {
             return await _context.Users.Where(x => x.UserName == username).Select(x => new UserDTO
@@ -425,10 +309,14 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             }).FirstOrDefaultAsync();
 
         }
+
+        // Method to upload signup documents
         public async Task uploadSignupDocuments()
         {
 
         }
+
+        // Method to get all usernames with OTPs
         public async Task<List<userotp_list>> getAllUsernameWithOTPs()
         {
             return await _context.Users.Where(x => x.OTP != "").Select(x => new userotp_list
@@ -438,66 +326,66 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             }).ToListAsync();
         }
 
-        public async Task<UserDTO> getUserInfoByCNIC(string CNIC)
+        // Method to get user info by CNIC
+        public async Task<UserDTO?> getUserInfoByCNIC(string CNIC)
         {
-            return await _context.FarmerProfile.Include(x => x.User).Where(x => x.CNICNumber == CNIC).Select(x => new UserDTO
-            {
-                email = x.User.Email,
-                firstName = x.User.FirstName,
-                lastName = x.User.LastName,
-                designationID = (int)x.User.Designation,
-                isOTPVerified = x.User.isOTPApproved.Value,
-                userID = x.User.Id,
-                languageCode = x.SelectedLangCode
-            }).FirstOrDefaultAsync();
+            return await _context.Users.Include(x => x.FarmerProfile)
+                .Where(x => x.CNICNumber == CNIC
+                && x.FarmerProfile.FirstOrDefault().isApproved != EFarmerProfileStatus.Blocked).Select(x => new UserDTO
+                {
+                    email = x.Email,
+                    firstName = x.FirstName,
+                    lastName = x.LastName,
+                    designationID = (int)x.Designation,
+                    isOTPVerified = x.isOTPApproved.Value,
+                    userID = x.Id,
+                    languageCode = x.FarmerProfile != null && x.FarmerProfile.Count() >= 1 ? x.FarmerProfile.First().SelectedLangCode : "EN",
+                    phone = x.PhoneNumber
+                }).FirstOrDefaultAsync();
         }
-        public async Task approveFarmAccountByUserID(string UserID, string ApproverID)
+
+        // Method to approve farm account by user ID
+        public async Task approveFarmAccountByUserID(tblFarmerProfile userInfo, string ApproverID)
         {
-            var userInfo = await _context.FarmerProfile.Where(x => x.UserID == UserID).FirstOrDefaultAsync();
             if (userInfo != null)
             {
-                userInfo.isApproved = true;
-                userInfo.ApprovedDate = DateTime.Now;
+                userInfo.isApproved = EFarmerProfileStatus.Pending;
+                userInfo.ApprovedDate = DateTime.UtcNow;
                 userInfo.ApprovedByID = ApproverID;
                 _context.FarmerProfile.Update(userInfo);
-                await _context.SaveChangesAsync();
             }
             else
             {
-                throw new Exception(_exceptions.userNotFound);
+                throw new AmazonFarmerException(_exceptions.userNotFound);
             }
         }
-        public async Task<getUserProfile_Resp> getUserProfile(string UserID)
+
+        public async Task<tblFarmerProfile?> getFarmerProfileByUserID(string UserID)
+        {
+            return await _context.FarmerProfile.Include(x => x.User).Where(x => x.UserID == UserID
+            && x.isApproved != EFarmerProfileStatus.Blocked).FirstOrDefaultAsync();
+        }
+
+        // Method to get user profile
+        public async Task<TblUser> getUserProfile(string UserID, string languageCode)
         {
             getUserProfile_Resp resp = new getUserProfile_Resp();
+            var query = _context.Users
+                .Include(x => x.FarmerProfile).ThenInclude(x => x.City).ThenInclude(x => x.CityLanguages)
+                .Include(x => x.UserAttachments)
+                    .ThenInclude(x => x.Attachment)
+                        .ThenInclude(x => x.AttachmentTypes)
+                .Include(x => x.FarmerProfile).ThenInclude(x => x.District).ThenInclude(x => x.DistrictLanguages)
 
-            var query = from user in _context.Users
-                        join profile in _context.FarmerProfile
-                            on user.Id equals profile.UserID into userProfile
-                        from up in userProfile.DefaultIfEmpty()
-                        where user.Id == UserID
-                        select new getUserProfile_Resp
-                        {
-                            firstName = user.FirstName,
-                            lastName = user.LastName ?? "", // Handle nullable last name
-                            dateOfBirth = up != null ? up.DateOfBirth : "", // Check if profile exists
-                            fatherName = up != null ? up.FatherName : "", // Check if profile exists
-                            cnicNumber = up != null ? up.CNICNumber : "", // Check if profile exists
-                            ntnNumber = up != null ? up.NTNNumber : "", // Check if profile exists
-                            strnNumber = up != null ? up.STRNNumber : "", // Check if profile exists
-                            cellNumber = user.PhoneNumber,
-                            emailAddress = user.Email,
-                            ownedLandAcreage = up != null ? up.OwnedLand : "", // Check if profile exists
-                            leasedLandAcreage = up != null ? up.LeasedLand : "" // Check if profile exists
-                        };
+                .Where(x => x.Id == UserID);
 
 
-            string queryString = query.ToQueryString();
             var userProfileData = await query.FirstOrDefaultAsync();
 
             return userProfileData;
         }
-        private async Task<tblFarmerProfile> generateUserProfile(farmerSignUp_Req req, TblUser user)
+        // Method to generate user profile
+        public async Task<tblFarmerProfile> generateUserProfile(farmerSignUp_Req req, TblUser user)
         {
             try
             {
@@ -516,43 +404,361 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                     CityID = req.cityID,
                     DistrictID = req.districtID,
                     CellNumber = req.cellNumber,
-                    //TehsilID = req.tehsilID,
-                    isApproved = false,
-                    SelectedLangCode = req.selectedLangCode
+                    isApproved = EFarmerProfileStatus.Pending,
+                    SelectedLangCode = req.selectedLangCode,
                 };
 
-                _req = _context.FarmerProfile.AddAsync(_req).Result.Entity;
-                _context.SaveChanges();
+                await _context.FarmerProfile.AddAsync(_req);
                 return _req;
             }
             catch (Exception ex)
             {
-
                 throw ex;
             }
         }
-        private async Task wrongPasswordCounter(TblUser user)
+
+        // Method to update device token
+        public async Task updateDeviceToken(TblUser user, string deviceToken)
         {
-            if (user.WrongPasswordAttempt == 2)
+            try
             {
-                user.isAccountLocked = true;
+                user.DeviceToken = deviceToken;
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
             }
-            user.WrongPasswordAttempt = (user.WrongPasswordAttempt + 1);
-
-
-            _context.Update(user);
-            _context.SaveChanges();
-
-            if (user.isAccountLocked)
-                throw new Exception(_exceptions.deactiveUser);
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
-        private async Task emptyPasswordAttempts(TblUser user)
+
+        // Method to empty password attempts
+        public async Task emptyPasswordAttempts(TblUser user)
         {
-            user.WrongPasswordAttempt = 0;
-            user.isAccountLocked = false;
-            user.OTP = null;
-            _context.Update(user);
-            _context.SaveChanges();
+            try
+            {
+                user.AccessFailedCount = 0;
+                _context.Users.Update(user);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
+
+        // Method to count wrong password attempts
+        public async Task wrongPasswordCounter(TblUser user)
+        {
+            try
+            {
+                user.AccessFailedCount++;
+                _context.Users.Update(user);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        // Method to lock user account
+        public async Task lockUserAccount(TblUser user)
+        {
+            user.isAccountLocked = true;
+            _context.Users.Update(user);
+        }
+
+        // Method to unlock user account
+        public async Task unlockUserAccount(TblUser user)
+        {
+            user.isAccountLocked = false;
+            _context.Users.Update(user);
+        }
+        public async Task approverFarmerProfile(tblFarmerProfile user)
+        {
+            _context.FarmerProfile.Update(user);
+        }
+        public async Task<TblUser?> getUserByUserName(string UserName)
+        {
+            return await _context.Users.Include(x => x.FarmerRoles).ThenInclude(x => x.Role).Where(x => x.UserName == UserName).FirstOrDefaultAsync();
+        }
+        public async Task<TblUser> getUserByUserID(string userID)
+        {
+            return await _context.Users
+                .Include(x => x.FarmerProfile)
+                    .ThenInclude(p => p.City)
+                .Include(x => x.UserAttachments.Where(x => x.Status == EActivityStatus.Active))
+                    .ThenInclude(ua => ua.Attachment)
+                        .ThenInclude(a => a.AttachmentTypes)
+                .Where(x => x.Id == userID).FirstOrDefaultAsync();
+        }
+
+        public async Task<tblFarmerProfile?> GetUserProfileByValidation(string cnicNumber, string cellNumber)
+        {
+            return await _context.FarmerProfile.Where(x =>
+                                        (x.CNICNumber == cnicNumber ||
+                                        x.CellNumber == cellNumber) &&
+                                        x.isApproved != EFarmerProfileStatus.Blocked
+                                        )
+                                        .FirstOrDefaultAsync();
+        }
+
+        public async Task<tblFarmerProfile?> GetUserProfileByValidation(string cnicNumber, string cellNumber,
+            string ntnNumber)
+        {
+            return await _context.FarmerProfile.Where(x =>
+                                        (x.CNICNumber == cnicNumber ||
+                                        x.NTNNumber == ntnNumber ||
+                                        x.CellNumber == cellNumber) &&
+                                        x.isApproved != EFarmerProfileStatus.Blocked
+                                        )
+                                        .FirstOrDefaultAsync();
+        }
+
+        public async Task<tblFarmerProfile?> GetUserProfileByValidation(string cnicNumber, string cellNumber,
+            string? ntnNumber = null,
+            string? strnNumber = null)
+        {
+            return await _context.FarmerProfile.Where(x =>
+                                    (x.CNICNumber == cnicNumber ||
+                                    x.CellNumber == cellNumber ||
+                                    (ntnNumber != null && x.NTNNumber == ntnNumber) ||
+                                    (strnNumber != null && x.STRNNumber == strnNumber)) &&
+                                    x.isApproved != EFarmerProfileStatus.Blocked
+                                    )
+                                    .FirstOrDefaultAsync();
+        }
+        public async Task<TblUser?> getFarmerProfileByUserCNIC(string cnicNumber)
+        {
+            return await _context.Users.Include(x => x.FarmerProfile).Where(x =>
+                                        x.CNICNumber == cnicNumber &&
+                                        x.FarmerProfile.FirstOrDefault().isApproved != EFarmerProfileStatus.Blocked
+                                        )
+                                        .FirstOrDefaultAsync();
+        }
+        public async Task<getFarmerInfoResp> getFarmerInfoByFarmerIDAndLanguageCode(string userID, string languageCode)
+        {
+            return await _context.Users
+                .Include(x => x.FarmerProfile)
+                .Include(x => x.UserAttachments)
+                    .ThenInclude(x => x.Attachment)
+                        .ThenInclude(x => x.AttachmentTypes)
+                .Include(x => x.farms).ThenInclude(f => f.FarmAttachments)
+                .Where(x => x.Id == userID)
+                .Select(user => new getFarmerInfoResp
+                {
+                    cityID = user.FarmerProfile.FirstOrDefault().CityID,
+                    city = user.FarmerProfile.FirstOrDefault().City.CityLanguages.Where(x => x.LanguageCode == languageCode).FirstOrDefault().Translation,
+                    districtID = user.FarmerProfile.FirstOrDefault().DistrictID,
+                    district = user.FarmerProfile.FirstOrDefault().District.DistrictLanguages.Where(x => x.LanguageCode == languageCode).FirstOrDefault().Translation,
+                    firstName = user.FirstName,
+                    status = (int)user.FarmerProfile.First().isApproved,
+                    address1 = user.FarmerProfile.First().Address1,
+                    address2 = user.FarmerProfile.First().Address2,
+                    lastName = user.LastName ?? "", // Handle nullable last name
+                    dateOfBirth = user.FarmerProfile.Any() ? user.FarmerProfile.First().DateOfBirth : "", // Check if profile exists
+                    fatherName = user.FarmerProfile.Any() ? user.FarmerProfile.First().FatherName : "", // Check if profile exists
+                    cnicNumber = user.FarmerProfile.Any() ? user.FarmerProfile.First().CNICNumber : "", // Check if profile exists
+                    ntnNumber = user.FarmerProfile.Any() ? user.FarmerProfile.First().NTNNumber : "", // Check if profile exists
+                    strnNumber = user.FarmerProfile.Any() ? user.FarmerProfile.First().STRNNumber : "", // Check if profile exists
+                    cellNumber = user.PhoneNumber,
+                    emailAddress = user.Email,
+                    ownedLandAcreage = user.FarmerProfile.Any() ? user.FarmerProfile.First().OwnedLand : "", // Check if profile exists
+                    leasedLandAcreage = user.FarmerProfile.Any() ? user.FarmerProfile.First().LeasedLand : "", // Check if profile exists
+                    cnic = user.UserAttachments.Any() ? user.UserAttachments.Where(x =>
+                    x.Attachment.AttachmentTypes.AttachmentType == EAttachmentType.User_CNIC_Document
+                    ).Select(x => new uploadAttachmentResp
+                    {
+                        id = x.tblAttachmentID,
+                        name = x.Attachment.Name,
+                        guid = x.Attachment.Guid.ToString(),
+                        type = x.Attachment.FileType
+                    }).ToList() : null, // Check if profile exists
+                    ntn = user.UserAttachments.Any() ? user.UserAttachments.Where(x =>
+                    x.Attachment.AttachmentTypes.AttachmentType == EAttachmentType.User_NTN_Document
+                    ).Select(x => new uploadAttachmentResp
+                    {
+                        id = x.tblAttachmentID,
+                        name = x.Attachment.Name,
+                        guid = x.Attachment.Guid.ToString(),
+                        type = x.Attachment.FileType
+                    }).ToList() : null, // Check if profile exists
+                    messages = user.farms.Where(x => x.RevertedReason != null && x.Status != EFarmStatus.Deleted).Select(x => x.RevertedReason).ToList(),
+                    farms = user.farms.Where(x => x.Status != EFarmStatus.Deleted).Select(farm => new farmDetail_Resp()
+                    {
+                        cityID = farm.CityID,
+                        districtID = farm.DistrictID,
+                        tehsilID = farm.TehsilID,
+                        farmID = farm.FarmID,
+                        farmName = farm.FarmName,
+                        acreage = farm.Acreage,
+                        address1 = farm.Address1,
+                        address2 = farm.Address2,
+                        city = farm.City.CityLanguages.Where(x => x.LanguageCode == languageCode).First().Translation,
+                        district = farm.District.DistrictLanguages.Where(x => x.LanguageCode == languageCode).First().Translation,
+                        tehsil = farm.Tehsil.TehsilLanguagess.Where(x => x.LanguageCode == languageCode).First().Translation,
+                        isApproved = farm.isApproved,
+                        isLeased = farm.isLeased,
+                        isPrimary = farm.isPrimary,
+                        revertedReason = farm.RevertedReason,
+                        sapFarmID = farm.SAPFarmCode.PadLeft(10, '0'),
+                        status = (int)farm.Status,
+                        attachmentGUID = farm.FarmAttachments.Where(fa => fa.Status == EActivityStatus.Active).Select(x => new uploadAttachmentResp
+                        {
+                            id = x.Attachment.ID,
+                            type = x.Attachment.FileType,
+                            name = x.Attachment.Name,
+                            guid = x.Attachment.Guid.ToString()
+                        }).ToList(),
+                        farmerProfile = new farmerProfileDTO
+                        {
+                            firstName = farm.Users.FirstName,
+                            LastName = farm.Users.LastName,
+                            email = farm.Users.Email,
+                            phone = farm.Users.PhoneNumber,
+                            dateOfBirth = farm.Users.FarmerProfile.FirstOrDefault().DateOfBirth,
+                            fatherName = farm.Users.FarmerProfile.FirstOrDefault().FatherName,
+                            strnNumber = farm.Users.FarmerProfile.FirstOrDefault().STRNNumber,
+                            cnicNumber = farm.Users.FarmerProfile.FirstOrDefault().CNICNumber,
+                            cnicAttachment = farm.Users.UserAttachments
+                                    .Where(y => y.Attachment.AttachmentTypes.AttachmentType == EAttachmentType.User_CNIC_Document)
+                                    .Select(y => new uploadAttachmentResp
+                                    {
+                                        id = y.Attachment.ID,
+                                        type = y.Attachment.FileType,
+                                        name = y.Attachment.Name,
+                                        guid = y.Attachment.Guid.ToString()
+                                    }).ToList(),
+                            ntnNumber = farm.Users.FarmerProfile.FirstOrDefault().NTNNumber,
+                            ntnAttachment = farm.Users.UserAttachments
+                                    .Where(y => y.Attachment.AttachmentTypes.AttachmentType == EAttachmentType.User_NTN_Document)
+                                    .Select(y => new uploadAttachmentResp
+                                    {
+                                        id = y.Attachment.ID,
+                                        type = y.Attachment.FileType,
+                                        name = y.Attachment.Name,
+                                        guid = y.Attachment.Guid.ToString()
+                                    }).ToList(),
+                        }
+                    }).ToList()
+                }).FirstOrDefaultAsync();
+        }
+        public async Task<TblUser> getFarmerInfoByFarmerIDAndLanguageCodeUdpated(string userID, string languageCode)
+        {
+
+            return await _context.Users
+                .Include(x => x.FarmerProfile).ThenInclude(fp => fp.City).ThenInclude(c => c.CityLanguages.Where(x => x.LanguageCode == languageCode))
+                .Include(x => x.FarmerProfile).ThenInclude(fp => fp.District).ThenInclude(c => c.DistrictLanguages.Where(x => x.LanguageCode == languageCode))
+                .Include(x => x.UserAttachments.Where(x => x.Status == EActivityStatus.Active))
+                    .ThenInclude(x => x.Attachment)
+                        .ThenInclude(x => x.AttachmentTypes)
+                .Include(x => x.farms.Where(x => x.Status != EFarmStatus.Deleted)).ThenInclude(f => f.FarmAttachments.Where(x => x.Status == EActivityStatus.Active)).ThenInclude(fa => fa.Attachment)
+                .Include(x => x.farms.Where(x => x.Status != EFarmStatus.Deleted)).ThenInclude(f => f.District).ThenInclude(d => d.DistrictLanguages.Where(x => x.LanguageCode == languageCode))
+                .Include(x => x.farms.Where(x => x.Status != EFarmStatus.Deleted)).ThenInclude(f => f.City).ThenInclude(d => d.CityLanguages.Where(x => x.LanguageCode == languageCode))
+                .Include(x => x.farms.Where(x => x.Status != EFarmStatus.Deleted)).ThenInclude(f => f.Tehsil).ThenInclude(d => d.TehsilLanguagess.Where(x => x.LanguageCode == languageCode))
+                .Where(x => x.Id == userID).FirstOrDefaultAsync();
+        }
+        public async Task updateUser(TblUser user)
+        {
+            _context.Users.Update(user);
+        }
+        public async Task updateFarmerProfile(tblFarmerProfile userProfile)
+        {
+            _context.FarmerProfile.Update(userProfile);
+        }
+        public async Task<TblUser> getFarmerByFarmApplicationID(int applicationID)
+        {
+            return await _context.Users.Include(x => x.FarmerProfile).Include(x => x.farms).Where(x => x.farms.Any(x => x.ApplicationID == applicationID)).FirstOrDefaultAsync();
+        }
+
+
+        public async Task<List<int>> GetDistrictIDsForTSO(string userId)
+        {
+            return await _context.EmployeeDistrictAssignments
+                .Where(e => e.UserID == userId && e.Status == EActivityStatus.Active)
+                 .Select(a => a.DitrictID).ToListAsync();
+        }
+
+        public async Task<List<TblUser>> getTSOsByDistrictIDs(List<int> districtIds)
+        {
+            return await _context.EmployeeDistrictAssignments
+                .Include(x => x.User)
+                .Where(d => districtIds.Contains(d.DitrictID))
+                .Select(d => d.User).ToListAsync();
+        }
+
+        public async Task<List<int>> GetRegionIDsForRSM(string userId)
+        {
+            List<int> regionIds = await _context.EmployeeRegionAssignments
+                .Where(e => e.UserID == userId && e.Status == EActivityStatus.Active)
+                 .Select(a => a.RegionID).ToListAsync();
+
+            return await _context.District.Where(d => regionIds.Contains(d.RegionId.Value)).Select(d => d.ID).ToListAsync();
+        }
+
+        public async Task<TblUser> getUserByPlanID(int planID)
+        {
+            return await _context.Users
+                .Include(x=>x.FarmerProfile)
+                .Include(x => x.plans)
+                .Include(x=>x.farms)
+                .Where(a => a.plans.Where(c => c.ID == planID).Count() > 0)
+                .FirstOrDefaultAsync();
+        }
+        public async Task<List<TblUser>> getRSMsByFarmID(int farmID)
+        {
+            return await _context.Users
+                .Include(x => x.EmployeeRegions).ThenInclude(x => x.Region).ThenInclude(x => x.Districts).ThenInclude(x => x.farms)
+                .Where(u => u.EmployeeRegions
+                        .Where(er => er.Region.Districts.Where(d => d.farms
+                            .Where(f => f.FarmID == farmID).Count() > 0)
+                        .Count() > 0)
+                .Count() > 0)
+                .ToListAsync();
+        }
+        public async Task<List<TblUser>> getTSOsByFarmID(int farmID)
+        {
+            return await _context.Users
+                .Include(x => x.EmployeeDistricts)
+                .ThenInclude(x => x.District)
+                .ThenInclude(x => x.farms)
+                .Where(x => x.EmployeeDistricts
+                    .Where(b => b.District.farms.Where(
+                        x => x.FarmID == farmID)
+                    .Count() > 0)
+                .Count() > 0)
+                .ToListAsync();
+        }
+        public async Task<List<TblUser>> getNSMsByFarmID(int farmID)
+        {
+            return await _context.Users.Where(x => x.Designation == EDesignation.National_Sales_Manager).ToListAsync();
+        }
+
+        public void RemoveActiveToken(ActiveToken token)
+        {
+            _context.ActiveTokens.Remove(token);
+        }
+
+        public async Task<List<ActiveToken>> GetActiveTokensForUser(string userId)
+        {
+            return await _context.ActiveTokens.Where(a => a.UserId == userId).ToListAsync();
+        }
+
+        public void AddActiveToken(ActiveToken token)
+        {
+            _context.ActiveTokens.Add(token);
+        }
+        public async Task<TblUser> getUserByUsername(string username, string phoneNumber)
+        {
+            return await _context.Users.Where(x => x.UserName == username || x.PhoneNumber == phoneNumber).FirstOrDefaultAsync();
+        }
+        public async Task<TblUser> getUserByUsername(string username, string phoneNumber, string emailAddress)
+        {
+            return await _context.Users.Where(x => x.UserName == username || x.PhoneNumber == phoneNumber || x.Email == emailAddress).FirstOrDefaultAsync();
+        }
+        public IQueryable<TblUser> getUsers()
+        {
+            return _context.Users;
+        }
+
     }
 }
