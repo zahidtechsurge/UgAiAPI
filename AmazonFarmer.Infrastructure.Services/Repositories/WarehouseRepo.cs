@@ -30,6 +30,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             return await _context.Warehouse
                 .Include(x => x.WarehouseTranslation)
+                    .ThenInclude(x=>x.Language)
                 .Include(x => x.WarehouseIncharge)
                 .Include(x => x.District)
                 .Where(x => x.ID == warehouseID)
@@ -54,11 +55,17 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         }
         public IQueryable<tblwarehouse> getWarehouses()
         {
-            return _context.Warehouse.Include(x => x.WarehouseTranslation).Include(x => x.District).Include(x => x.WarehouseIncharge);
+            return _context.Warehouse.Include(x => x.WarehouseTranslation).ThenInclude(x=>x.Language).Include(x => x.District).Include(x => x.WarehouseIncharge);
         }
         public async Task<List<tblwarehouseTranslation>> getWarehouseTranslationsByWarehouseID(int warehouseID)
         {
-            return await _context.WarehouseTranslation.Where(x => x.WarehouseID == warehouseID).ToListAsync();
+            return await _context.WarehouseTranslation.Include(x=>x.Language).Where(x => x.WarehouseID == warehouseID).ToListAsync();
+        }
+        public async Task<List<tblLanguages>> getWarehouseLanguagesByWarehouseID(int warehouseID)
+        {
+            return await _context.Languages.Include(x=>x.WarehouseTranslations.Where(x=> x.WarehouseID == warehouseID))
+                .Where(x=>x.Status == EActivityStatus.Active)
+                .ToListAsync();
         }
         public async void addWarehouse(tblwarehouse tblwarehouse)
         {

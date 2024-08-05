@@ -17,5 +17,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         public string Text { get; set; }
         [ForeignKey("WarehouseID")]
         public virtual tblwarehouse Warehouse { get; set; }
+        [ForeignKey("LanguageCode")]
+        public virtual tblLanguages Language { get; set; }
     }
 }

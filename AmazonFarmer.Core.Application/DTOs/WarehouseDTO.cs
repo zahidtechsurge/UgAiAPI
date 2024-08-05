@@ -28,6 +28,7 @@ namespace AmazonFarmer.Core.Application.DTOs
         public int translationID { get; set; }
         public int warehouseID { get; set; }
         public string languageCode { get; set; } = string.Empty;
+        public string language { get; set; } = string.Empty;
         public string text { get; set; } = string.Empty;
     }
     public class AddWarehouseDTO

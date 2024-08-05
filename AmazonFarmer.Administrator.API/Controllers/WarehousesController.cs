@@ -55,6 +55,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     translationID = t.ID,
                     warehouseID = t.WarehouseID,
                     languageCode = t.LanguageCode,
+                    language = t.Language.LanguageName,
                     text = t.Text
                 }).ToList(),
                 status = (int)x.Status
@@ -69,12 +70,22 @@ namespace AmazonFarmer.Administrator.API.Controllers
         public async Task<APIResponse> GetTranslations(int warehouseID)
         {
             APIResponse resp = new APIResponse();
+            //var lang = await _repoWrapper.WarehouseRepo.getWarehouseLanguagesByWarehouseID(warehouseID: warehouseID);
+            //resp.response = lang.Select(t => new WarehouseTranslationDTO
+            //{
+            //    translationID = t.WarehouseTranslations.FirstOrDefault() != null ? t.WarehouseTranslations.FirstOrDefault().ID : 0,
+            //    warehouseID = t.WarehouseTranslations.FirstOrDefault() != null ? t.WarehouseTranslations.FirstOrDefault().WarehouseID : 0,
+            //    languageCode = t.LanguageCode,
+            //    language = t.LanguageName,
+            //    text = t.WarehouseTranslations.FirstOrDefault() != null ? t.WarehouseTranslations.FirstOrDefault().Text : string.Empty
+            //}).ToList();
             var warehouseTranslations = await _repoWrapper.WarehouseRepo.getWarehouseTranslationsByWarehouseID(warehouseID: warehouseID);
             resp.response = warehouseTranslations.Select(t => new WarehouseTranslationDTO
             {
                 translationID = t.ID,
                 warehouseID = t.WarehouseID,
                 languageCode = t.LanguageCode,
+                language = t.Language.LanguageName,
                 text = t.Text
             }).ToList();
             return resp;
@@ -104,6 +115,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     translationID = t.ID,
                     warehouseID = t.WarehouseID,
                     languageCode = t.LanguageCode,
+                    language = t.Language.LanguageName,
                     text = t.Text
                 }).ToList(),
                 status = (int)x.Status

@@ -29,6 +29,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         public virtual List<tblReasonTranslation> ReasonTranslation { get; set; } = null!;
         public virtual List<tblDeviceNotificationTranslation> DeviceNotificationTranslations { get; set; } = null!;
         public virtual List<tblEmailNotificationTranslations> EmailNotificationTranslations { get; set; } = null!;
+        public virtual List<tblwarehouseTranslation> WarehouseTranslations { get; set; } = null!;
         //public virtual List<tblSequenceTranslation>? tblSequenceTranslation { get; set; } = null;
     }
 }

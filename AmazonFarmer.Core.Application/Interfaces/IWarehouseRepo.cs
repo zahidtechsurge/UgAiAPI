@@ -13,6 +13,7 @@ namespace AmazonFarmer.Core.Application.Interfaces
         Task<TblUser> getWarehouseInchargeByWarehouseID(int warehouseID); // Method signature for getting warehouse Incharge by warehouseID
         Task<List<tblwarehouse>> getUserWarehousesByUserID(string userID); // Method signature for getting warehouses list by warehouse Incharge ID
         IQueryable<tblwarehouse> getWarehouses();
+        Task<List<tblLanguages>> getWarehouseLanguagesByWarehouseID(int warehouseID);
         Task<List<tblwarehouseTranslation>> getWarehouseTranslationsByWarehouseID(int warehouseID);
         void addWarehouse(tblwarehouse tblwarehouse);
         void addWarehouseTranslation(tblwarehouseTranslation translation);
