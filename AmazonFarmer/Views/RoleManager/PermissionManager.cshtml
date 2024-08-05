@@ -1,0 +1,126 @@
+﻿@{
+    ViewData["Title"] = "Permission Manager";
+}
+
+<form>
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-header border-0">
+                            <h3 class="card-title">@ViewData["Title"]</h3>
+                            <div class="card-tools">
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row permissions">
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn btn-primary updatePermissions">
+                                Update
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</form>
+@section scripts{
+    <script>
+        $(document).ready(function(){
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 4000
+            });
+
+            $.ajax({
+                "url": '@Url.Action("getPermissionsByRoleID", "RoleManager")',
+                cache: false,
+                type: "POST",
+                data: { "RoleID": GetParameterValues("RoleID") },
+                success: function(data){
+                    let printable = ``;
+                    $(data).each(function () {
+                        let nested = ``;
+                        $(this.moduleClaims).each(function(){
+                            nested += `<div class="row">
+                                <div class="col-lg-6">
+                                    <label for="${this.value}">${this.description}</label>
+                                </div>
+                                <div class="col-lg-6">
+                                                    <input type="checkbox" class=" fa-pull-right permissionCheckbox" data-permissionID="${this.value}" id="${this.value}" ${(this.selected ? "checked" : "")}/>
+                                </div>
+                            </div>`;
+                        });
+                        printable += `<div class="col-md-6">
+                                    <div class="card card-outline card-primary moduleCard">
+                                        <div class="card-header">
+                                            <h3 class="card-title moduleName" data-moduleID="${this.moduleID}">${this.moduleName}</h3>
+                                            <div class="card-tools">
+                                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                    <i class="fas fa-minus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            ${nested}
+                                        </div>
+                                    </div>
+                                </div>`;
+                    });
+                    $(".permissions").html(printable);
+                }
+            })
+
+            $(document).on('click', '.updatePermissions',function(e){
+                e.preventDefault();
+                let ModuleClaims = [];
+                $($(".moduleCard")).each(function(){
+                    let permission = [];
+                    let moduleID = $(this).find('.moduleName').attr('data-moduleID');
+                    let moduleName = $(this).find('.moduleName').html();
+                    $($(this).find('.permissionCheckbox')).each(function(){
+                        let _permission = {
+                            "Type": "Permission",
+                            "Value": $(this).attr('data-permissionID'),
+                            "Selected": $(this).is(':checked')
+                        };
+                        permission.push(_permission);
+                    });
+                    let _ModuleClaims = {
+                        "moduleID": moduleID,
+                        "ModuleName": moduleName,
+                        "RoleId": GetParameterValues("RoleID"),
+                        "ModuleClaims": permission
+                    };
+                    ModuleClaims.push(_ModuleClaims);
+                })
+                let modulePermission = {
+                    "RoleId": GetParameterValues("RoleID"),
+                    "Permissions": ModuleClaims
+                }
+
+                $.ajax({
+                    "url": '@Url.Action("updatePermissions", "RoleManager")',
+                    cache: false,
+                    type: "POST",
+                    data: { "req": modulePermission },
+                    success: function (data) {
+                        data = data.resp;
+                        if(!data.isError){
+                            Toast.fire({
+                                type: 'success',
+                                title: ` &nbsp;  ${data.message}`
+                            })
+                        }
+                    }
+                })
+            });
+        })
+    </script>
+}

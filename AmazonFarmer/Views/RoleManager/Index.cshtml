@@ -1,0 +1,67 @@
+﻿@{
+    ViewData["Title"] = "Role Manager";
+}
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header border-0">
+                        <h3 class="card-title">@ViewData["Title"]</h3>
+                        <div class="card-tools">
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <table class="roles table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Role</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+@section scripts{
+    <script>
+        $(document).ready(function () {
+            $(".roles").DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ordering": false,
+                "ajax":
+                {
+                    "url": '@Url.Action("getRoles", "RoleManager")',
+                    "type": "POST",
+                    "dataType": "JSON",
+                    "global": false
+                },
+                "columns": [
+                    {
+                        "data": "name"
+                    },
+                    {
+                        "data": "id", "render": function (data, type, full, meta) {
+                            let chk = `<div class="fa-pull-right ">
+                                                        <a href="/RoleManager/PermissionManager?RoleID=${data}" class="btn btn-info  btn-sm viewPermissions" data-userID="${data}" title="View Permissions">
+                                                    <span class="fa fa-eye"></span>
+                                                </a>
+                                            </div>`;
+                            return chk;
+                        }
+                    },
+                ]
+            });
+        });
+    </script>
+}
