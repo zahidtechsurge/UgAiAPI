@@ -1,5 +1,6 @@
 ﻿using AmazonFarmer.Core.Application.DTOs;
 using AmazonFarmer.Core.Application.Interfaces;
+using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,18 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             _context = context;
         }
 
+        public IQueryable<tblCrop> GetCrops()
+        {
+            return _context.Crops;
+        }
+        public async Task<List<tblCropTranslation>> GetCropTranslationByCropID(int CropID)
+        {
+            return await _context.CropTranslation
+                .Include(x => x.Crop)
+                .Include(x => x.Language)
+                .Where(x => x.CropID == CropID)
+                .ToListAsync();
+        }
         /// <summary>
         /// Retrieves a list of crops by season and district ID.
         /// </summary>

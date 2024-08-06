@@ -215,7 +215,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     throw new AmazonFarmerException(_exceptions.phoneAlreadyTaken);
                 if (employee.UserName == req.userName)
                     throw new AmazonFarmerException(_exceptions.usernameIsTaken);
-                if (employee.UserName == req.emailAddress)
+                if (employee.Email == req.emailAddress)
                     throw new AmazonFarmerException(_exceptions.emailIsTaken);
             }
             #endregion
@@ -334,8 +334,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 throw new AmazonFarmerException(_exceptions.emailRequired);
             else if (string.IsNullOrEmpty(req.phoneNumber))
                 throw new AmazonFarmerException(_exceptions.phoneRequired);
-            else if (req.designationID == 0)
-                throw new AmazonFarmerException(_exceptions.designationIDRequired);
+            //else if (req.designationID == 0)
+            //    throw new AmazonFarmerException(_exceptions.designationIDRequired);
             else if (!Regex.IsMatch(req.emailAddress, pattern))
                 throw new AmazonFarmerException(_exceptions.emailRegexExpressionFails);
         }
@@ -391,7 +391,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 lastName = user.LastName ?? string.Empty,
                 userName = user.UserName ?? string.Empty,
                 designationID = user.Designation == null ? 0 : (int)user.Designation,
-                designation = user.Designation != null ? ConfigExntension.GetEnumDescription(user.Designation) : ConfigExntension.GetEnumDescription(ERoles.Farmer),
+                designation = user.Designation != null && user.Designation != 0 ? ConfigExntension.GetEnumDescription(user.Designation) : ConfigExntension.GetEnumDescription(ERoles.Farmer),
                 role = user.FarmerRoles != null && user.FarmerRoles.Count() > 0 ? user.FarmerRoles.FirstOrDefault().Role.Name : string.Empty,
                 email = user.Email ?? string.Empty,
                 phoneNumber = user.PhoneNumber ?? string.Empty,

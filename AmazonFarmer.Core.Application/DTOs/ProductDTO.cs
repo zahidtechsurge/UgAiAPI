@@ -246,5 +246,13 @@
         public required string languageCode { get; set; }
         public required string text { get; set; }
     }
+    public class ProductCategoryTranslationResponse
+    {
+        public int translationID { get; set; }
+        public int categoryID { get; set; }
+        public string languageCode { get; set; } = string.Empty;
+        public string language { get; set; } = string.Empty;
+        public string text { get; set; } = string.Empty;
+    }
 
 }

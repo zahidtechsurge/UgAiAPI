@@ -16,12 +16,13 @@ namespace AmazonFarmer.Core.Domain.Entities
         public required string LanguageCode { get; set; }
         public string Text { get; set; } = string.Empty;
         public string Image { get; set; } = string.Empty;
+        public EActivityStatus Status { get; set; } = EActivityStatus.Active;
 
 
         [ForeignKey("IntroID")]
         public virtual tblIntro Intro { get; set; } = null!;
         [ForeignKey("LanguageCode")]
-        public virtual tblLanguages Languages { get; set; } = null!;
+        public virtual tblLanguages Language { get; set; } = null!;
     }
 
 }

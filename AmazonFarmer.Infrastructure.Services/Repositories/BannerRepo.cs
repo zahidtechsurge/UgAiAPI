@@ -59,5 +59,34 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Where(x => x.Status == EActivityStatus.Active)
                 .ToListAsync();
         }
+        public IQueryable<tblBanner> getBannerQueryable()
+        {
+            return _context.Banners.Include(x=>x.BannerLanguages).ThenInclude(x=>x.Languages);
+        }
+        public IQueryable<tblBannerLanguages> getBannerLanguagesQueryable()
+        {
+            return _context.BannerLanguages.Include(x => x.Banner).Include(x => x.Languages);
+        }
+        public Task<tblBanner?> getBannerByTypeID(EBannerType eBannerType)
+        {
+            return _context.Banners.Where(x => x.BannerType == eBannerType).FirstOrDefaultAsync();
+        }
+        public void addBannerLanguage(tblBannerLanguages bannerLanguage)
+        {
+            _context.BannerLanguages.Add(bannerLanguage);
+        }
+        public void updateBannerLanguage(tblBannerLanguages bannerLanguage)
+        {
+            _context.BannerLanguages.Update(bannerLanguage);
+        }
+        public void deleteBannerLanguage(tblBannerLanguages bannerLanguage)
+        {
+            _context.BannerLanguages.Remove(bannerLanguage);
+        }
+        public async Task<tblBannerLanguages?> getBannerLanguageByID(int Id)
+        {
+            return await _context.BannerLanguages.Include(x=>x.Banner).Where(x => x.ID == Id).FirstOrDefaultAsync();
+        }
+
     }
 }

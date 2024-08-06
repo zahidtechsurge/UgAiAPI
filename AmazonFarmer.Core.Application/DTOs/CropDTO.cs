@@ -46,5 +46,24 @@ namespace AmazonFarmer.Core.Application.DTOs
         public List<addCropPlan_Req> products { get; set; } = []; // Property for products list
         public List<Server_Req> services { get; set; } = []; // Property for services list
     }
-    
+    public class AddCropRequest
+    {
+        public string cropName { get; set; } = string.Empty;
+        public int status { get; set; }
+    }
+    public class UpdateCropRequest: AddCropRequest
+    {
+        public int cropID { get; set; }
+    }
+    public class GetCropTranslationsResponse
+    {
+        public int translationID { get; set;}
+        public int cropID { get; set;}
+        public string languageCode { get; set; } = string.Empty;
+        public string language { get; set; } = string.Empty;
+        public string filePath { get; set; } = string.Empty;
+        public string text { get; set; } = string.Empty;
+    }
+
+
 }

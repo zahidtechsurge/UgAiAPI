@@ -18,6 +18,8 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         IQueryable<TblProduct> getProducts();
         Task<List<tblUnitOfMeasure>> getUOMs();
         IQueryable<tblProductCategory> getCategories();
+        IQueryable<tblProductCategoryTranslation> getCategoriesTranslation();
+        Task<List<tblProductCategoryTranslation>> GetCategoryTranslationsByCatID(int CatID);
         void addCategory(tblProductCategory req);
         Task<tblProductCategory> GetCategoryByID(int id);
         void updateCategory(tblProductCategory req);

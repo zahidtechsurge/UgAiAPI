@@ -665,6 +665,12 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             _context.FarmerProfile.Update(userProfile);
         }
+        public async Task updateSelectedLanguage(tblFarmerProfile profile, string languageCode)
+        {
+            profile.SelectedLangCode = languageCode;
+            _context.FarmerProfile.Update(profile);
+            await _context.SaveChangesAsync();
+        }
         public async Task<TblUser> getFarmerByFarmApplicationID(int applicationID)
         {
             return await _context.Users.Include(x => x.FarmerProfile).Include(x => x.farms).Where(x => x.farms.Any(x => x.ApplicationID == applicationID)).FirstOrDefaultAsync();

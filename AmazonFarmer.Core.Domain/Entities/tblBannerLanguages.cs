@@ -15,6 +15,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         public int BannerID { get; set; }
         public string LanguageCode { get; set; }
         public string Image { get; set; }
+        public EActivityStatus Status { get; set; } = EActivityStatus.Active;
         [ForeignKey("BannerID")]
         public virtual tblBanner Banner { get; set; }
         [ForeignKey("LanguageCode")]

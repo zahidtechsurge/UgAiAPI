@@ -12,5 +12,13 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
     {
         Task<List<BannerDTO>> getBanners(LanguageReq req); // Method signature for getting banners based on language request
         Task<List<tblBanner>> getBanners(); // Method signature for getting active banners data from table directly
+        IQueryable<tblBanner> getBannerQueryable(); // Method signature for getting active banners data from table directly
+        IQueryable<tblBannerLanguages> getBannerLanguagesQueryable();
+        Task<tblBanner?> getBannerByTypeID(EBannerType eBannerType);
+        void addBannerLanguage(tblBannerLanguages bannerLanguage);
+        void updateBannerLanguage(tblBannerLanguages bannerLanguage);
+        void deleteBannerLanguage(tblBannerLanguages bannerLanguage);
+        Task<tblBannerLanguages?> getBannerLanguageByID(int Id);
+
     }
 }

@@ -158,6 +158,7 @@ namespace AmazonFarmer.Core.Application.Exceptions
         public const string seemsLikeFarmApproved = "Congratulations, your farm is approved !";
         public const string designationIDRequired = "An error occurred. Please try again.";
         public const string userAddedRoleNotAssigned = "An error occurred. Please try again.";
+        public const string notFound = "Not Found.";
 
         //SMS Request
         public const string smsResponseNot200 = "SMS in't success status code";

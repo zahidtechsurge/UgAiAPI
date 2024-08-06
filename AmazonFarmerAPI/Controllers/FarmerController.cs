@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Ocsp;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
@@ -658,13 +659,20 @@ namespace AmazonFarmerAPI.Controllers
 
                 tblFarmerProfile _req = new tblFarmerProfile();
 
-                if (User.IsInRole("Farmer"))
+                //if (User.IsInRole("Farmer"))
+                if (user.FarmerRoles.Any(x => x.Role.eRole == ERoles.Farmer))
                 {
                     _req = await _repoWrapper.UserRepo.getFarmerProfileByUserID(user.Id);
                     if (_req == null)
                     {
                         throw new AmazonFarmerException(_exceptions.userNotAuthorized);
                     }
+                    else
+                    {
+                        _req.SelectedLangCode = req.languageCode;
+                    }
+
+
                 }
 
 
@@ -687,9 +695,15 @@ namespace AmazonFarmerAPI.Controllers
                 {
                     throw new AmazonFarmerException(_exceptions.deactiveUser);
                 }
+
+
                 await _repoWrapper.UserRepo.emptyPasswordAttempts(user);
 
                 await _repoWrapper.UserRepo.updateDeviceToken(user, req.deviceToken);
+                if (_req != null)
+                {
+                    await updateSelectedLanguage(_req);
+                }
                 await _repoWrapper.SaveAsync();
 
                 // Get user information by username and password
@@ -767,6 +781,7 @@ namespace AmazonFarmerAPI.Controllers
                         _repoWrapper.UserRepo.RemoveActiveToken(existingToken);
                     }
                 }
+
                 await _repoWrapper.SaveAsync();
 
                 ActiveToken newToken = new()
@@ -784,6 +799,22 @@ namespace AmazonFarmerAPI.Controllers
             }
 
             return resp;
+        }
+        private async Task updateSelectedLanguage(tblFarmerProfile profile)
+        {
+            if (!string.IsNullOrEmpty(profile.UserID))
+            {
+                profile.FatherName = profile.FatherName ?? string.Empty;
+                profile.CNICNumber = profile.CNICNumber ?? string.Empty;
+                profile.NTNNumber = profile.NTNNumber ?? string.Empty;
+                profile.STRNNumber = profile.STRNNumber ?? string.Empty;
+                profile.CellNumber = profile.CellNumber ?? string.Empty;
+                profile.OwnedLand = profile.OwnedLand ?? string.Empty;
+                profile.LeasedLand = profile.LeasedLand ?? string.Empty;
+                profile.Address1 = profile.Address1 ?? string.Empty;
+                profile.DateOfBirth = profile.DateOfBirth ?? string.Empty;
+                await _repoWrapper.UserRepo.updateSelectedLanguage(profile, profile.SelectedLangCode);
+            }
         }
 
 
@@ -1431,7 +1462,7 @@ namespace AmazonFarmerAPI.Controllers
                 TblUser farmer = await _repoWrapper.UserRepo.getUserByUserID(userID);
                 if (farmer != null && farmer.FarmerProfile.Count() > 0)
                 {
-                    string Del = string.Concat("_Deleted_",DateTime.UtcNow.ToString("ddMMyyyyhhmmss"));
+                    string Del = string.Concat("_Deleted_", DateTime.UtcNow.ToString("ddMMyyyyhhmmss"));
                     farmer.UserName = string.Concat(farmer.UserName, Del);
                     farmer.NormalizedUserName = string.Concat(farmer.NormalizedUserName, Del);
                     farmer.CNICNumber = string.Concat(farmer.CNICNumber, Del);

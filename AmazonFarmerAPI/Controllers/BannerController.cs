@@ -61,12 +61,12 @@ namespace AmazonFarmerAPI.Controllers
                     resp.response = bannersList.Where(x => x.BannerType == EBannerType.loginScreen && x.Status == EActivityStatus.Active)
                         .FirstOrDefault()
                         .BannerLanguages
-                        .Where(x => x.LanguageCode == req.languageCode)
+                        .Where(x => x.LanguageCode == req.languageCode && x.Status == EActivityStatus.Active)
                         .Select(x => new BannerDTO
-                    {
-                        bannerName = string.Empty,
-                        filePath = string.Concat(ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL"),x.Image)
-                    }).ToList();
+                        {
+                            bannerName = string.Empty,
+                            filePath = string.Concat(ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL"),x.Image)
+                        }).ToList();
                     //resp.response = await _repoWrapper.BannerRepo.getBanners(req);
                 }
                 else

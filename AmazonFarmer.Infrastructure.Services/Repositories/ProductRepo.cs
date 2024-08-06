@@ -118,6 +118,14 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             return _context.ProductCategory
                 .Include(x => x.ProductCategoryTranslation);
         }
+        public IQueryable<tblProductCategoryTranslation> getCategoriesTranslation()
+        {
+            return _context.ProductCategoryTranslation.Include(x => x.ProductCategory);
+        }
+        public async Task<List<tblProductCategoryTranslation>> GetCategoryTranslationsByCatID(int CatID)
+        {
+            return await _context.ProductCategoryTranslation.Include(x => x.ProductCategory).Include(x=>x.Language).Where(x => x.ProductCategoryID == CatID).ToListAsync();
+        }
         public void addCategory(tblProductCategory req)
         {
             _context.ProductCategory.Add(req);

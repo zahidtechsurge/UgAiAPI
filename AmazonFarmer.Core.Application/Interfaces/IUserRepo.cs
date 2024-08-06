@@ -46,6 +46,7 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         Task<getFarmerInfoResp> getFarmerInfoByFarmerIDAndLanguageCode(string userID, string languageCode);
         Task updateUser(TblUser user); // Method signature for updating by user Entity
         Task updateFarmerProfile(tblFarmerProfile userProfile);
+        Task updateSelectedLanguage(tblFarmerProfile profile, string languageCode);
         Task<TblUser> getFarmerByFarmApplicationID(int applicationID);
 
         /// <summary>

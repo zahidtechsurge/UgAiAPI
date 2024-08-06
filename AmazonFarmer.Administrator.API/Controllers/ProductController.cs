@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Org.BouncyCastle.Ocsp;
 using SimulatePrice;
 
 namespace AmazonFarmer.Administrator.API.Controllers
@@ -130,7 +131,21 @@ namespace AmazonFarmer.Administrator.API.Controllers
             response.response = InResp;
             return response;
         }
-
+        [HttpGet("getProductCategoryTranslations/{categoryID}")]
+        public async Task<APIResponse> GetProductCategoryTranslations(int categoryID)
+        {
+            APIResponse response = new APIResponse();
+            List<tblProductCategoryTranslation> lang = await _repoWrapper.ProductRepo.GetCategoryTranslationsByCatID(categoryID);
+            response.response = lang.Select(x => new ProductCategoryTranslationResponse
+            {
+                categoryID = x.ProductCategoryID,
+                translationID = x.ID,
+                language = x.Language.LanguageName,
+                languageCode = x.LanguageCode,
+                text = x.Text
+            }).ToList();
+            return response;
+        }
 
         [HttpPut("updateProductCategory")]
         public async Task<JSONResponse> UpdateProductCategory(UpdateProductCategoryByAdminRequest req)

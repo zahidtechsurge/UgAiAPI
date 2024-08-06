@@ -147,6 +147,7 @@ namespace AmazonFarmer.Core.Application.DTOs
         public decimal appVersion { get; set; }
         public string deviceToken { get; set; }
         public string platform { get; set; }
+        public string languageCode { get; set; } = "EN";
     }
     public class approveFarmer_Req
     {

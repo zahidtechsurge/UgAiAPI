@@ -86,7 +86,9 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     throw new AmazonFarmerException(_exceptions.languageAlreadyExist);
                 else
                 {
-                    language = new tblLanguages { LanguageCode = req.languageCode, LanguageName = req.language, Status = EActivityStatus.Active };
+                    language.LanguageCode = req.languageCode;
+                    language.LanguageName = req.language;
+                    language.Status = req.status == 1 ? EActivityStatus.Active : EActivityStatus.DeActive;
                     _repoWrapper.LanguageRepo.updateLanguage(language);
                     await _repoWrapper.SaveAsync();
                     response.message = "language updated";
