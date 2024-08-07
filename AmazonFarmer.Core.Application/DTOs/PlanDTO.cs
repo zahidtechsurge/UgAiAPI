@@ -449,5 +449,15 @@ namespace AmazonFarmer.Core.Application.DTOs
         public int skip { get; set; } = 0;
         public int take { get; set; } = 10;
     }
+    public class GetSeasonProductResponse
+    {
+        public string season { get; set; }
+        public string product { get; set; }
+        public int planned { get; set; }
+        public int paid { get; set; }
+        public int shipped { get; set; }
+        public int toBeShipped { get; set; }
+        public int toBePaid { get; set; }
+    }
 
 }

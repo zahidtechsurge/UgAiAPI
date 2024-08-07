@@ -80,7 +80,8 @@ namespace AmazonFarmerAPI.Extensions
         }
         public async Task<Stream> GetFileAsync(string fileName)
         {
-            fileName = fileName.Replace("\\", "/");
+            fileName = fileName.Replace("\\", "/").Replace("%2F", "/").Replace("%20", " ");
+
             if (fileName.StartsWith("/"))
             {
                 fileName = fileName.TrimStart('/');

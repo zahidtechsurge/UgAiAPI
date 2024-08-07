@@ -197,6 +197,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
                     notifications.Add(farmerDevice);
 
                     replacementDTO.PKRAmount = "Rs" + transaction.Amount.ToString("N2");
+                    replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
                     replacementDTO.ConsumerNumber = transaction.ConsumerCode;
 
                     await _notificationService.SendNotifications(notifications, replacementDTO);
@@ -317,6 +318,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
             replacementDTO.NotificationBodyTypeID = ENotificationBody.OrderPaymentProcessCompleted;
             replacementDTO.ConsumerNumber = transaction.ConsumerCode;
             replacementDTO.OrderID = order.OrderID.ToString().PadLeft(10, '0');
+            replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
             replacementDTO.WarehouseId = order.WarehouseID.ToString();
             replacementDTO.WarehouseName = order.Warehouse.Name;
             replacementDTO.GoogleMapLinkWithCoordinated = string.Format(_googleApiConfig.ApiKey, order.Warehouse.latitude, order.Warehouse.longitude);

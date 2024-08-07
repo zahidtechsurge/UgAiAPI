@@ -78,6 +78,14 @@ namespace AmazonFarmerAPI.Controllers
         }
 
         [AllowAnonymous]
+        [HttpGet("getPublicAttachment/{filePath}")]
+        public async Task<dynamic> GetPublicAttachment(string filePath)
+        {
+            Stream? imageOutput = await _azureFileShareService.GetFileAsync(filePath);
+            return base.File(imageOutput, GetContentType(filePath), "");
+        }
+
+        [AllowAnonymous]
         [HttpGet("getPublicFile/{filePath}")]
         public dynamic GetPublicFile(string filePath)
         {
@@ -135,6 +143,21 @@ namespace AmazonFarmerAPI.Controllers
 
         }
 
+
+        private string GetContentType(string filename)
+        {
+            var contentTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "jpg", "image/jpeg" },
+                { "jpeg", "image/jpeg" },
+                { "png", "image/png" },
+                { "svg", "image/svg+xml" }
+            };
+
+            string extension = Path.GetExtension(filename).TrimStart('.');
+
+            return contentTypes.TryGetValue(extension, out string contentType) ? contentType : null;
+        }
         private async Task<dynamic> getSoilSampleFileByFileName(ShareDirectoryClient directoryClient, string filename)
         {
             ShareFileClient fileClient = directoryClient.GetFileClient(filename);

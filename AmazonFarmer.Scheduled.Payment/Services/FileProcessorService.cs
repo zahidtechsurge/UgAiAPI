@@ -1,4 +1,4 @@
-﻿using ClosedXML.Excel; 
+﻿using ClosedXML.Excel;
 
 namespace AmazonFarmer.Scheduled.Payment.Services
 {
@@ -60,7 +60,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
                     sftp.Connect();
                     // Download a file
                     var remoteFiles = sftp.ListDirectory(remoteDirectory)
-                                .Where(file => file.IsRegularFile && file.Name.EndsWith(".pdf"))
+                                .Where(file => file.IsRegularFile && file.Name.EndsWith(".zip"))
                                 .ToList();
 
                     foreach (var file in remoteFiles)
@@ -81,6 +81,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
                             sftp.RenameFile(remoteFilePath, remoteArchiveFilePath);
                             //Console.WriteLine($"Downloaded {file.Name} to {localFilePath}");
                         }
+                        System.IO.Compression.ZipFile.ExtractToDirectory(localFilePath, inputDirectory);
                     }
 
                 }

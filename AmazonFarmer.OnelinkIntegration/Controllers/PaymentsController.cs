@@ -652,6 +652,7 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
 
                         NotificationReplacementDTO replacementDTO = new NotificationReplacementDTO();
                         replacementDTO.ConsumerNumber = request.consumer_number;
+                        replacementDTO.PlanID = Order.PlanID.ToString().PadLeft(10,'0');
                         replacementDTO.NotificationBodyTypeID = ENotificationBody.PaymentProcessing;
 
                         if (notifications != null && notifications.Count() > 0)

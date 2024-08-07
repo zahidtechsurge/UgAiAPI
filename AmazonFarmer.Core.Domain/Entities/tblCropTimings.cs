@@ -17,6 +17,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         public int DistrictID { get; set; }
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
+        public EActivityStatus Status { get; set; }
 
         [ForeignKey("CropID")]
         public virtual tblCrop Crop { get; set; }

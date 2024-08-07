@@ -314,6 +314,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
                     replacementDTO.PKRAmount = "Rs" + transaction.Amount.ToString("N2");
                     replacementDTO.ConsumerNumber = transaction.ConsumerCode;
+                    replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10,'0');
 
                     await _notificationService.SendNotifications(notifications, replacementDTO);
                 }
@@ -432,6 +433,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             replacementDTO.NotificationBodyTypeID = ENotificationBody.OrderPaymentProcessCompleted;
             replacementDTO.ConsumerNumber = transaction.ConsumerCode;
             replacementDTO.OrderID = order.OrderID.ToString().PadLeft(10, '0');
+            replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
             replacementDTO.WarehouseId = order.WarehouseID.ToString();
             replacementDTO.WarehouseName = order.Warehouse.Name;
             replacementDTO.PickupDate = order.ExpectedDeliveryDate.Value.ToString("MM/dd/yyyy");

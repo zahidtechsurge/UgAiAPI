@@ -64,6 +64,25 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string filePath { get; set; } = string.Empty;
         public string text { get; set; } = string.Empty;
     }
+    public class GetCropTimingsResponse : UpdateCropTiming
+    {
+        public string cropName { get; set; } = string.Empty;
+        public string seasonName { get; set; } = string.Empty;
+        public string districtName { get; set; } = string.Empty;
+    }
+    public class AddCropTiming
+    {
+        public int cropID { get; set; }
+        public int seasonID { get; set; }
+        public int districtID { get; set; }
+        public int fromMonth { get; set; }
+        public int toMonth { get; set; }
+    }
+    public class UpdateCropTiming : AddCropTiming
+    {
+        public int recID { get; set; }
+        public int statusID { get; set; }
+    }
 
 
 }

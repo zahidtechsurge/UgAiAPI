@@ -3,6 +3,7 @@
 */
 using AmazonFarmer.Core.Application.DTOs;
 using AmazonFarmer.Core.Application.Interfaces;
+using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -37,6 +38,10 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                     seasonName = x.Translation,
                     filePath = x.Image
                 }).ToListAsync();
+        }
+        public async Task<List<tblSeason>> getSeasons()
+        {
+            return await _context.Season.Include(x => x.SeasonTranslations).ToListAsync();
         }
     }
 }

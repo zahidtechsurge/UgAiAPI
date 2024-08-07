@@ -12,6 +12,11 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
     {
         IQueryable<tblCrop> GetCrops();
         Task<List<tblCropTranslation>> GetCropTranslationByCropID(int CropID);
+        Task<List<tblCropTimings>> GetCropTimingsByCropID(int CropID);
+        Task<tblCropTimings?> GetCropTimingByID(int ID);
+        Task<tblCropTimings?> GetCropTimingByID(int CropID, int SeasonID, int DistrictID, int fromDate, int toDate);
+        void AddCropTiming(tblCropTimings ct);
+        void UpdateCropTiming(tblCropTimings ct);
         Task<List<Crops_Res>> getCropsBySeasonAndDistrictID(GetCropDTO_Internal_req req); // Method signature for getting crops by season and district ID
     }
 }

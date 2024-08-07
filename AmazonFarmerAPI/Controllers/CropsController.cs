@@ -44,7 +44,8 @@ namespace AmazonFarmerAPI.Controllers
                     farmID = req.farmID,
                     seasonID = req.seasonID,
                     languageCode = User.FindFirst("languageCode")?.Value,
-                    basePath = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL")
+                    basePath = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL")
+                    //basePath = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL")
                 };
                 resp.response = await _repoWrapper.CropRepo.getCropsBySeasonAndDistrictID(inReq);
             }

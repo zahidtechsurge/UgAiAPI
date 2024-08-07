@@ -1,4 +1,5 @@
 ﻿using AmazonFarmer.Core.Application.DTOs; // Importing necessary namespaces
+using AmazonFarmer.Core.Domain.Entities; // Importing necessary namespaces
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,5 +11,6 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
     public interface ISeasonRepo // Defining the interface for season repository
     {
         Task<List<SeasonDTO>> getSeasonsByLanguageCode(LanguageReq req); // Method signature for retrieving seasons by language code
+        Task<List<tblSeason>> getSeasons();
     }
 }

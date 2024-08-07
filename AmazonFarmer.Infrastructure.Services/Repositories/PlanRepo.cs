@@ -452,5 +452,10 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 ); // Execute the query asynchronously and return the result as a list
         }
 
+        public IQueryable<tblSeason> getSeasonProductReport()
+        {
+            //var s = _context.Products.Include(x => x.PlanProducts).ThenInclude(x => x.PlanCrop).ThenInclude(x => x.Plan).ThenInclude(x => x.Season);
+            return _context.Season.Include(x=>x.plans).ThenInclude(x=>x.Orders).ThenInclude(x=>x.Products);
+        }
     }
 }
