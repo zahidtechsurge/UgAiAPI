@@ -38,5 +38,6 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         Task<int> getPlanCropIDByPlanProductID(int? planProductID);
         Task<IQueryable<tblPlan>> getPlanOrderServices(string userID);
         IQueryable<tblSeason> getSeasonProductReport();
+        Task<List<PlanStatusResult>> GetPlanStatusPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder);
     }
 }

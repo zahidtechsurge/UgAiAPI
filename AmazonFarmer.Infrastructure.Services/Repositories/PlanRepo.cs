@@ -3,6 +3,7 @@ using AmazonFarmer.Core.Application.Exceptions;
 using AmazonFarmer.Core.Application.Interfaces;
 using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -165,7 +166,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Include(x => x.PlanCrops.Where(x => x.Status == EActivityStatus.Active))
                 //.ThenInclude(x => x.Crop)
                 .ThenInclude(x => x.CropGroup).ThenInclude(x => x.CropGroupCrops).ThenInclude(x => x.Crop)
-                .ThenInclude(x => x.CropTranslations.Where(pt => pt.LanguageCode == languageCode))
+                .ThenInclude(x => x.CropTranslations.Where(pt => pt.LanguageCode == languageCode && pt.Status == EActivityStatus.Active))
                 .Include(x => x.PlanCrops.Where(x => x.Status == EActivityStatus.Active))
                 //.ThenInclude(x => x.Crop)
                 .ThenInclude(x => x.CropGroup).ThenInclude(x => x.CropGroupCrops).ThenInclude(x => x.Crop)
@@ -175,7 +176,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Include(x => x.Farm).ThenInclude(x => x.District)
                 .Include(x => x.User).ThenInclude(x => x.FarmerProfile).Include(x => x.PlanCrops.Where(x => x.Status == EActivityStatus.Active))
                 //.ThenInclude(x => x.Crop)
-                .ThenInclude(x => x.CropGroup).ThenInclude(x => x.CropGroupCrops).ThenInclude(x => x.Crop).ThenInclude(x => x.CropTranslations)
+                .ThenInclude(x => x.CropGroup).ThenInclude(x => x.CropGroupCrops).ThenInclude(x => x.Crop).ThenInclude(x => x.CropTranslations.Where(ct => ct.Status == EActivityStatus.Active))
                 .Include(x => x.Warehouse).ThenInclude(x => x.WarehouseTranslation.Where(pt => pt.LanguageCode == languageCode))
                 .Where(x =>
                     x.ID == planID
@@ -216,7 +217,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Include(x => x.PlanCrops.Where(x => x.Status == EActivityStatus.Active))
                         //.ThenInclude(x => x.Crop)
                         .ThenInclude(x => x.CropGroup).ThenInclude(x => x.CropGroupCrops).ThenInclude(x => x.Crop)
-                        .ThenInclude(x => x.CropTranslations.Where(pt => pt.LanguageCode == languageCode))
+                        .ThenInclude(x => x.CropTranslations.Where(pt => pt.LanguageCode == languageCode && pt.Status == EActivityStatus.Active))
                 .Include(x => x.PlanCrops.Where(x => x.Status == EActivityStatus.Active))
                         //.ThenInclude(x => x.Crop)
                         .ThenInclude(x => x.CropGroup).ThenInclude(x => x.CropGroupCrops).ThenInclude(x => x.Crop)
@@ -364,7 +365,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
 
             var cropGroups = await _context.CropGroupCrops
                 .Include(x => x.Crop)
-                    .ThenInclude(x => x.CropTranslations)
+                    .ThenInclude(x => x.CropTranslations.Where(ct => ct.Status == EActivityStatus.Active))
                 .Include(x => x.Crop)
                     .ThenInclude(x => x.ProductConsumptionMetrics)
                  .Where(g => g.CropGroupID == cropGroupID)
@@ -456,6 +457,23 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             //var s = _context.Products.Include(x => x.PlanProducts).ThenInclude(x => x.PlanCrop).ThenInclude(x => x.Plan).ThenInclude(x => x.Season);
             return _context.Season.Include(x=>x.plans).ThenInclude(x=>x.Orders).ThenInclude(x=>x.Products);
+        }
+        public async Task<List<PlanStatusResult>> GetPlanStatusPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder)
+        {
+            var lst = new List<PlanStatusResult>();
+            var sortOrderParam = new SqlParameter("@SortOrder", sortOrder ?? "ASC");
+            var sortColumnParam = new SqlParameter("@SortColumn", sortColumn ?? "Season");
+            var pageNumberParam = new SqlParameter("@PageNumber", pageNumber);
+            var pageSizeParam = new SqlParameter("@PageSize", pageSize);
+
+            var sql = @"
+            EXEC GetPlanStatusPaged 
+                @PageNumber, 
+                @PageSize, 
+                @SortColumn, 
+                @SortOrder";
+            //return lst;
+            return await _context.PlanStatusResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam).ToListAsync();
         }
     }
 }

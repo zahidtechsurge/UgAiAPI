@@ -1,5 +1,7 @@
-﻿using AmazonFarmer.Core.Application;
+﻿using AmazonFarmer.Administrator.API.Extensions;
+using AmazonFarmer.Core.Application;
 using AmazonFarmer.Core.Application.DTOs;
+using AmazonFarmer.Core.Application.Exceptions;
 using AmazonFarmer.Core.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -61,6 +63,62 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }).ToList();
             return resp;
         }
+
+        [HttpPost("addCropTranslation")]
+        public async Task<JSONResponse> AddCropTranslation(AddCropTranslationRequest req)
+        {
+            JSONResponse resp = new JSONResponse();
+            tblCropTranslation? ct = await _repoWrapper.CropRepo.GetCropTranslationByCropID(req.cropID, req.languageCode);
+            if (ct != null)
+            {
+                ct.Image = req.filePath ?? getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty));
+                ct.Text = req.text;
+                ct.Status = EActivityStatus.Active;
+                _repoWrapper.CropRepo.UpdateCropTranslation(ct);
+                resp.message = "Translation updated";
+            }
+            else
+            {
+                ct = new tblCropTranslation()
+                {
+                    CropID = req.cropID,
+                    LanguageCode = req.languageCode,
+                    Image = req.filePath ?? getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty)),
+                    Text = req.text,
+                    Status = EActivityStatus.Active
+                };
+                _repoWrapper.CropRepo.AddCropTranslation(ct);
+                resp.message = "Translation added";
+            }
+            return resp;
+        }
+        [HttpPut("updateCropTranslation")]
+        public async Task<JSONResponse> UpdateCropTranslation(UpdateCropTranslationRequest req)
+        {
+            JSONResponse resp = new JSONResponse();
+            tblCropTranslation? ct = await _repoWrapper.CropRepo.GetCropTranslationByCropID(req.cropID, req.languageCode);
+            if (ct != null)
+            {
+                ct.Image = req.filePath ?? getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty));
+                ct.Text = req.text;
+                ct.Status = EActivityStatus.Active;
+                _repoWrapper.CropRepo.UpdateCropTranslation(ct);
+                resp.message = "Translation updated";
+            }
+
+            return resp;
+        }
+        private string getImagePathByContent(string name,string content)
+        {
+            if (string.IsNullOrEmpty(content))
+            {
+                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper);
+                AttachmentsDTO attachment = attachmentExt.UploadAttachment(name: name, content: content, requestTypeID: EAttachmentType.Crop);
+                return attachment.filePath;
+            }
+            throw new AmazonFarmerException("file path or content not found");
+        }
+
         [HttpGet("getCropTimings/{cropID}")]
         public async Task<APIResponse> GetCropTimings(int cropID)
         {
@@ -91,7 +149,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 ct.Status = EActivityStatus.Active;
                 _repoWrapper.CropRepo.UpdateCropTiming(ct);
                 await _repoWrapper.SaveAsync();
-                resp.message = "Crop timing updated";
+                resp.message = "Crop with the same configuration found and reactivated";
             }
             else
             {
@@ -119,9 +177,12 @@ namespace AmazonFarmer.Administrator.API.Controllers
             tblCropTimings? ct = await _repoWrapper.CropRepo.GetCropTimingByID(req.recID);
             if (ct != null)
             {
+                int currentYear = DateTime.UtcNow.Year;
                 ct.SeasonID = req.seasonID;
                 ct.DistrictID = req.districtID;
                 ct.CropID = req.cropID;
+                ct.FromDate = new DateTime(currentYear, req.fromMonth, 1);
+                ct.ToDate = new DateTime(currentYear, req.fromMonth, DateTime.DaysInMonth(currentYear, req.toMonth));
                 ct.Status = (EActivityStatus)req.statusID;
                 _repoWrapper.CropRepo.UpdateCropTiming(ct);
                 await _repoWrapper.SaveAsync();

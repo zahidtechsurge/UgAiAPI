@@ -1,4 +1,5 @@
-﻿using AmazonFarmer.Core.Domain.Entities;
+﻿using AmazonFarmer.Core.Application.DTOs;
+using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence.Seeding;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -125,12 +126,14 @@ namespace AmazonFarmer.Infrastructure.Persistence
         public DbSet<PaymentAcknowledgmentFile> PaymentAcknowledgmentFiles { get; set; }
         public DbSet<tblCropGroup> CropGroup { get; set; }
         public DbSet<tblCropGroupCrops> CropGroupCrops { get; set; }
+        public DbSet<PlanStatusResult> PlanStatusResult { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //SeedData(modelBuilder).GetAwaiter().GetResult();
             //modelBuilder.Seed();
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<PlanStatusResult>().ToView("View_PlanStatusResult");
 
             modelBuilder.Entity<TblUser>(b =>
             {

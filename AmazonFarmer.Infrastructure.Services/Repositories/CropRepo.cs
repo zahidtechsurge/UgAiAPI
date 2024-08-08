@@ -34,6 +34,14 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Where(x => x.CropID == CropID)
                 .ToListAsync();
         }
+        public async Task<tblCropTranslation?> GetCropTranslationByCropID(int CropID, string LanguageCode)
+        {
+            return await _context.CropTranslation
+                .Include(x => x.Crop)
+                .Include(x => x.Language)
+                .Where(x => x.CropID == CropID && x.LanguageCode == LanguageCode)
+                .FirstOrDefaultAsync();
+        }
 
         public async Task<List<tblCropTimings>> GetCropTimingsByCropID(int CropID)
         {
@@ -50,13 +58,21 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         }
         public async Task<tblCropTimings?> GetCropTimingByID(int CropID, int SeasonID, int DistrictID, int fromDate, int toDate)
         {
-            return await _context.CropTimings.Where(x => 
-                x.CropID == CropID && 
+            return await _context.CropTimings.Where(x =>
+                x.CropID == CropID &&
                 x.SeasonID == SeasonID &&
                 x.DistrictID == DistrictID &&
                 x.FromDate.Month == fromDate &&
                 x.ToDate.Month == toDate
             ).FirstOrDefaultAsync();
+        }
+        public void AddCropTranslation(tblCropTranslation ct)
+        {
+            _context.CropTranslation.Add(ct);
+        }
+        public void UpdateCropTranslation(tblCropTranslation ct)
+        {
+            _context.CropTranslation.Update(ct);
         }
         public void AddCropTiming(tblCropTimings ct)
         {
@@ -82,7 +98,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             // Query crops based on season, district, and language code
             List<Crops_Res> crops = await _context.CropTimings
                 .Include(x => x.Crop)
-                .ThenInclude(x => x.CropTranslations)
+                .ThenInclude(x => x.CropTranslations.Where(ct => ct.Status == EActivityStatus.Active))
                 .Include(x => x.Crop)
                 .ThenInclude(x => x.ProductConsumptionMetrics.Where(pc => pc.TerritoryID == districtID))
                 .ThenInclude(x => x.Product)
@@ -91,7 +107,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                     x.Crop.CropTranslations.Any(x => x.LanguageCode == req.languageCode) &&
                     x.DistrictID == districtID &&
                     x.SeasonID == req.seasonID &&
-                    (DateTime.UtcNow.Month >= x.FromDate.Month && DateTime.UtcNow.Month <= x.ToDate.Month ) &&
+                    (DateTime.UtcNow.Month >= x.FromDate.Month && DateTime.UtcNow.Month <= x.ToDate.Month) &&
                     x.Status == EActivityStatus.Active
                 )
                 .Select(x => new Crops_Res

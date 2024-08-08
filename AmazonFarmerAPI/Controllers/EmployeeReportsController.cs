@@ -20,34 +20,46 @@ namespace AmazonFarmerAPI.Controllers
         {
             _repoWrapper = repoWrapper;
         }
-        [HttpGet("GetSeasonProductReport")]
-        public async Task<APIResponse> GetSeasonProductReport()
+        [HttpPost("GetSeasonProductReport")]
+        public async Task<APIResponse> GetSeasonProductReport(ReportPagination_Req req)
         {
             APIResponse resp = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
-
-            //List<tblSeason> seasons = await _repoWrapper.SeasonRepo.getSeasons();
-            IQueryable<tblSeason> seasons = _repoWrapper.PlanRepo.getSeasonProductReport();
-
-            InResp.totalRecord = seasons.Count();
-            List<GetSeasonProductResponse> lst = new List<GetSeasonProductResponse>();
-            foreach (var season in seasons)
+            List<PlanStatusResult> report = await _repoWrapper.PlanRepo.GetPlanStatusPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder);
+            if (report != null && report.Count() > 0)
             {
-                //string sName = season.Name;
-                //foreach (var item in season.plans)
-                //{
-
-                //}
-                GetSeasonProductResponse se = new GetSeasonProductResponse()
+                InResp.totalRecord = report.First().TotalRows;
+                InResp.filteredRecord = report.Count();
+                InResp.list = report.Select(x => new PlanStatusResponse
                 {
-                    season = season.Name,
-                    product = string.Empty,
-                    paid = season.plans.Where(p => p.IsPlanPaid).Count()
-                };
-                lst.Add(se);
+                    season = x.Season,
+                    product = x.Product,
+                    plannedPlan = x.PlannedPlan,
+                    paidPlan = x.PaidPlan,
+                    shippedPlan = x.ShippedPlan,
+                    toBeShippedPlan = x.ToBeShippedPlan,
+                    toBePaidPlan = x.ToBePaidPlan
+                }).ToList();
             }
-            InResp.list = lst;
-            InResp.filteredRecord = lst.Count();
+            else
+            {
+                InResp.list = new List<PlanStatusResponse>();
+            }
+            resp.response = InResp;
+            return resp;
+        }
+
+        [HttpPost("getSeasonCropReport")]
+        public async Task<APIResponse> GetSeasonCropReport(ReportPagination_Req req)
+        {
+            APIResponse resp = new APIResponse();
+            pagination_Resp InResp = new pagination_Resp();
+            List<SeasonCropResponse> report = new List<SeasonCropResponse>();
+            if (report != null && report.Count() > 0)
+            {
+
+            }
+
 
             resp.response = InResp;
             return resp;

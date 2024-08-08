@@ -55,14 +55,22 @@ namespace AmazonFarmer.Core.Application.DTOs
     {
         public int cropID { get; set; }
     }
-    public class GetCropTranslationsResponse
+    public class GetCropTranslationsResponse : UpdateCropTranslationRequest
     {
-        public int translationID { get; set;}
-        public int cropID { get; set;}
-        public string languageCode { get; set; } = string.Empty;
         public string language { get; set; } = string.Empty;
+    }
+    public class AddCropTranslationRequest
+    {
+        public int cropID { get; set; }
+        public string languageCode { get; set; } = string.Empty;
         public string filePath { get; set; } = string.Empty;
+        public string? fileName { get; set; } = string.Empty;
+        public string? content { get; set; } = string.Empty;
         public string text { get; set; } = string.Empty;
+    }
+    public class UpdateCropTranslationRequest : AddCropTranslationRequest
+    {
+        public int translationID { get; set; }
     }
     public class GetCropTimingsResponse : UpdateCropTiming
     {

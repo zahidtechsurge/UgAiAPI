@@ -24,9 +24,15 @@ namespace AmazonFarmer.Core.Application.DTOs
 
     public class pagination_Resp
     {
-        public int totalRecord { get; set; }
-        public int filteredRecord { get; set; }
+        public int totalRecord { get; set; } = 0;
+        public int filteredRecord { get; set; } = 0;
         public dynamic list { get; set; }
+    }
+
+    public class ReportPagination_Req : pagination_Req
+    {
+        public string sortColumn { get; set; }
+        public string sortOrder { get; set; }
     }
 
     /// <summary>
