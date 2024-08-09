@@ -261,7 +261,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 isApprovalStatus = isApprovalStatus,
                 approvedByTSO = approvedByTSO,
                 approvedByRSM = approvedByRSM,
-                approvedByPatwari = approvedByPatwari
+                approvedByPatwari = approvedByPatwari,
             };
             var userprofile = await _context.FarmerProfile.Where(x => x.UserID == UserID).FirstOrDefaultAsync();
             if (userprofile != null)
@@ -270,6 +270,10 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 //resp.isApproved = (userprofile.isApproved == EFarmerProfileStatus.Approved ? true : false);
                 resp.languageCode = userprofile.SelectedLangCode;
                 resp.applicationMessage = "Changes required";
+            }
+            else
+            {
+                resp.languageCode = "EN";
             }
             return resp;
         }

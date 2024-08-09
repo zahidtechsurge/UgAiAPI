@@ -29,9 +29,9 @@ namespace AmazonFarmerAPI.Extensions
                 new Claim(ClaimTypes.NameIdentifier,user.userID),
                 new Claim(ClaimTypes.GivenName, user.firstName is null ? "" : user.firstName),
                 new Claim("userName", user.username is null ? "" : user.username),
-                new Claim("languageCode", user.languageCode is null ? "EN" : user.languageCode),
+                new Claim("languageCode", string.IsNullOrEmpty(user.languageCode) ? "EN" : user.languageCode),
                 new Claim( "isOTPVerified", user.isOTPVerified ? "true" : "false"),
-                new Claim( "designationID", user.designationID.ToString()), 
+                new Claim( "designationID", user.designationID.ToString()),
                 new Claim(ClaimTypes.Email, user.email is null ? "" : user.email),
                 new Claim("expOn", ((long)DateTime.UtcNow.AddDays(expirationInDays).ToUniversalTime().Subtract(new DateTime(1970, 1, 1)).TotalSeconds).ToString())
             };

@@ -166,7 +166,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Include(x => x.PlanCrops.Where(x => x.Status == EActivityStatus.Active))
                 //.ThenInclude(x => x.Crop)
                 .ThenInclude(x => x.CropGroup).ThenInclude(x => x.CropGroupCrops).ThenInclude(x => x.Crop)
-                .ThenInclude(x => x.CropTranslations.Where(pt => pt.LanguageCode == languageCode && pt.Status == EActivityStatus.Active))
+                .ThenInclude(x => x.CropTranslations.Where(pt => pt.LanguageCode == languageCode))
                 .Include(x => x.PlanCrops.Where(x => x.Status == EActivityStatus.Active))
                 //.ThenInclude(x => x.Crop)
                 .ThenInclude(x => x.CropGroup).ThenInclude(x => x.CropGroupCrops).ThenInclude(x => x.Crop)
@@ -176,11 +176,10 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Include(x => x.Farm).ThenInclude(x => x.District)
                 .Include(x => x.User).ThenInclude(x => x.FarmerProfile).Include(x => x.PlanCrops.Where(x => x.Status == EActivityStatus.Active))
                 //.ThenInclude(x => x.Crop)
-                .ThenInclude(x => x.CropGroup).ThenInclude(x => x.CropGroupCrops).ThenInclude(x => x.Crop).ThenInclude(x => x.CropTranslations.Where(ct => ct.Status == EActivityStatus.Active))
+                .ThenInclude(x => x.CropGroup).ThenInclude(x => x.CropGroupCrops).ThenInclude(x => x.Crop).ThenInclude(x => x.CropTranslations)
                 .Include(x => x.Warehouse).ThenInclude(x => x.WarehouseTranslation.Where(pt => pt.LanguageCode == languageCode))
                 .Where(x =>
                     x.ID == planID
-
                 ).FirstOrDefaultAsync();
         }
 
@@ -217,7 +216,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Include(x => x.PlanCrops.Where(x => x.Status == EActivityStatus.Active))
                         //.ThenInclude(x => x.Crop)
                         .ThenInclude(x => x.CropGroup).ThenInclude(x => x.CropGroupCrops).ThenInclude(x => x.Crop)
-                        .ThenInclude(x => x.CropTranslations.Where(pt => pt.LanguageCode == languageCode && pt.Status == EActivityStatus.Active))
+                        .ThenInclude(x => x.CropTranslations.Where(pt => pt.LanguageCode == languageCode))
                 .Include(x => x.PlanCrops.Where(x => x.Status == EActivityStatus.Active))
                         //.ThenInclude(x => x.Crop)
                         .ThenInclude(x => x.CropGroup).ThenInclude(x => x.CropGroupCrops).ThenInclude(x => x.Crop)
@@ -365,7 +364,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
 
             var cropGroups = await _context.CropGroupCrops
                 .Include(x => x.Crop)
-                    .ThenInclude(x => x.CropTranslations.Where(ct => ct.Status == EActivityStatus.Active))
+                    .ThenInclude(x => x.CropTranslations)
                 .Include(x => x.Crop)
                     .ThenInclude(x => x.ProductConsumptionMetrics)
                  .Where(g => g.CropGroupID == cropGroupID)
