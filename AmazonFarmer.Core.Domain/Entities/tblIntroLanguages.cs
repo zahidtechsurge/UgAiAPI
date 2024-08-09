@@ -16,7 +16,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         public required string LanguageCode { get; set; }
         public string Text { get; set; } = string.Empty;
         public string Image { get; set; } = string.Empty;
-        public EActivityStatus Status { get; set; } = EActivityStatus.Active;
+        //public EActivityStatus Status { get; set; } = EActivityStatus.Active;
 
 
         [ForeignKey("IntroID")]

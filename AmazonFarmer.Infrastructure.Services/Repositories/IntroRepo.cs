@@ -23,10 +23,10 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         public async Task<List<IntroDTO>> getIntros(getIntroDTO req)
         {
             return await _context.IntroLanguages
-                .Where(x => x.LanguageCode == req.languageCode && x.Status == EActivityStatus.Active)
+                .Where(x => x.LanguageCode == req.languageCode /*&& x.Status == EActivityStatus.Active*/)
                 .Select(x => new IntroDTO
                 {
-                    filePath = string.Concat(req.basePath, x.Image),
+                    filePath = string.Concat(req.basePath, x.Image.Replace("/", "%2F").Replace(" ", "%20")),
                     content = x.Text
                 })
                 .ToListAsync();

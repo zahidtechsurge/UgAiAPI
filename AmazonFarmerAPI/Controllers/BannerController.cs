@@ -61,11 +61,11 @@ namespace AmazonFarmerAPI.Controllers
                     resp.response = bannersList.Where(x => x.BannerType == EBannerType.loginScreen && x.Status == EActivityStatus.Active)
                         .FirstOrDefault()
                         .BannerLanguages
-                        .Where(x => x.LanguageCode == req.languageCode && x.Status == EActivityStatus.Active)
+                        .Where(x => x.LanguageCode == req.languageCode /*&& x.Status == EActivityStatus.Active*/)
                         .Select(x => new BannerDTO
                         {
                             bannerName = string.Empty,
-                            filePath = string.Concat(ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL"),x.Image)
+                            filePath = string.Concat(ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL"), x.Image.Replace("/", "%2F").Replace(" ", "%20"))
                         }).ToList();
                     //resp.response = await _repoWrapper.BannerRepo.getBanners(req);
                 }
@@ -118,14 +118,15 @@ namespace AmazonFarmerAPI.Controllers
         //}
 
         // Endpoint for retrieving banners. It allows anonymous access.
+        [Obsolete]
         [AllowAnonymous]
         [HttpGet("CallingCustomerCreateWsdlSample")]
         public async Task<APIResponse> CallingCustomerCreateWsdlSample()
-        { 
+        {
             var request = new ZSD_AMAZ_ORDER_INV_DETAILS
             {
-               I_AUBEL = "257750",
-               I_VBELN = ""
+                I_AUBEL = "257750",
+                I_VBELN = ""
             };
 
             WSDLFunctions wSDLFunctions = new WSDLFunctions(_repoWrapper, _wsdlConfig);
@@ -141,6 +142,7 @@ namespace AmazonFarmerAPI.Controllers
         }
 
         // Endpoint for retrieving banners. It allows anonymous access.
+        [Obsolete]
         [AllowAnonymous]
         [HttpGet("CallingChangeCustomerWsdlSample")]
         public async Task<APIResponse> CallingChangeCustomerWsdlSample()
@@ -203,9 +205,10 @@ namespace AmazonFarmerAPI.Controllers
 
         }
         // Endpoint for retrieving banners. It allows anonymous access.
+        [Obsolete]
         [AllowAnonymous]
         [HttpGet("CallingPriveSimulateWsdlSample")]
-        public async Task<APIResponse> CallingPriveSimulateWsdlSample() 
+        public async Task<APIResponse> CallingPriveSimulateWsdlSample()
         {
 
             SimulatePrice.RequestType request = new()

@@ -16,7 +16,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         public string LanguageCode { get; set; }
         public string Image { get; set; }
         public string Text { get; set; }
-        public EActivityStatus Status { get; set; } = EActivityStatus.Active;
+        //public EActivityStatus Status { get; set; } = EActivityStatus.Active;
 
         [ForeignKey("CropID")]
         public virtual tblCrop Crop { get; set; }

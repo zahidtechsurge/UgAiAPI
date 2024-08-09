@@ -1007,7 +1007,7 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                 else
                 {
 
-                    var imageBase = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL");
+                    var imageBase = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL");
 
                     resp.response = new getPlanDetail_Resp()
                     {
@@ -1110,7 +1110,7 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                     };
                     getDistance = await _googleLocationExtension.GetDistanceBetweenLocations(getDistance); // Getting distance between locations using Google location extension
 
-                    var imageBase = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL");
+                    var imageBase = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL");
 
                     resp.response = new getPlanDetail_Resp()
                     {

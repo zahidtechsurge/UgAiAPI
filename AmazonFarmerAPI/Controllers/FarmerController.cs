@@ -1288,7 +1288,7 @@ namespace AmazonFarmerAPI.Controllers
                         .Select(x => new BannerDTO
                         {
                             bannerName = string.Empty,
-                            filePath = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL") + x.Image
+                            filePath = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL") + x.Image.Replace("/", "%2F").Replace(" ", "%20")
                         }).ToList();
                 }
                 _inResp.nextPay = await _repoWrapper.OrderRepo.getNearestPayableOrdersByUserID(userID);
@@ -1304,9 +1304,9 @@ namespace AmazonFarmerAPI.Controllers
                     //getWeatherAPI_Req locationResp = await _accuWeatherService.getLocation(location);
                     //_inResp.weather = await _accuWeatherService.getWeather(locationResp);
 
-                    string baseUrl = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL"); //setting up base url
+                    string baseUrl = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL"); //setting up base url
 
-                    string weatherIconPath = baseUrl + ConfigExntension.GetConfigurationValue("AccuWeather:iconURL").Replace("[icon]", locationResp.weatherIconCode);
+                    string weatherIconPath = baseUrl + ConfigExntension.GetConfigurationValue("AccuWeather:iconURL").Replace("[icon]", locationResp.weatherIconCode).Replace("/", "%2F").Replace(" ", "%20");
 
                     _inResp.weather = new WeatherDTO()
                     {

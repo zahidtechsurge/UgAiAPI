@@ -21,6 +21,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
         }
 
         [AllowAnonymous]
+        [Obsolete]
         [HttpPost("getIntros")]
         public async Task<APIResponse> GetIntros(pagination_Req req)
         {
@@ -29,7 +30,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             IQueryable<tblIntroLanguages> intros = _repoWrapper.IntroRepo.getIntroLanguageQueryable();
             if (!string.IsNullOrEmpty(req.search))
                 intros = intros.Where(x => x.Text.ToLower().Contains(req.search.ToLower()));
-            intros = intros.Where(x => x.Status == EActivityStatus.Active);
+            //intros = intros.Where(x => x.Status == EActivityStatus.Active);
             InResp.totalRecord = intros.Count();
             intros = intros.Skip(req.pageNumber * req.pageSize)
                          .Take(req.pageSize);
@@ -45,6 +46,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
             resp.response = InResp;
             return resp;
         }
+
+        [Obsolete]
         [HttpPost("addIntro")]
         public async Task<JSONResponse> AddIntro(AddIntroAdminRequest req)
         {
@@ -64,7 +67,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                             LanguageCode = req.languageCode,
                             Image = string.Concat("/", attachment.filePath.Replace("\\", "/")),
                             Text = req.intro,
-                            Status = EActivityStatus.Active
+                            //Status = EActivityStatus.Active
                         }
                     }
                 };
@@ -98,6 +101,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             return resp;
         }
 
+        [Obsolete]
         [HttpDelete("deletetIntro/{translationID}")]
         public async Task<JSONResponse> DeleteIntro(int translationID)
         {
@@ -107,7 +111,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             {
                 throw new AmazonFarmerException(_exceptions.notFound);
             }
-            il.Status = EActivityStatus.DeActive;
+            //il.Status = EActivityStatus.DeActive;
             _repoWrapper.IntroRepo.updateIntroLanguage(il);
             await _repoWrapper.SaveAsync();
             return resp;

@@ -47,7 +47,7 @@ namespace AmazonFarmerAPI.Controllers
                 GetProductDTO_Internal_req req = new GetProductDTO_Internal_req()
                 {
                     languageCode = User.FindFirst("languageCode")?.Value,
-                    basePath = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL")
+                    basePath = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL")
                 };
 
                 // Call repository method to get products by language ID
@@ -181,7 +181,7 @@ namespace AmazonFarmerAPI.Controllers
                 {
                     productID = g.Key,
                     productCode = g.First().productCode,
-                    filePath = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL") + g.First().filePath,
+                    filePath = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL") + g.First().filePath.Replace("/", "%2F").Replace(" ", "%20"),
                     productName = g.First().productName,
                     productPrice = g.Sum(x => x.productPrice),
                     productUnitPrice = g.First().productUnitPrice,

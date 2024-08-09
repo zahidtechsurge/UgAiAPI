@@ -48,7 +48,7 @@ namespace AmazonFarmerAPI.Controllers
                 getServicesRequestDTO req = new getServicesRequestDTO()
                 {
                     languageCode = User.FindFirst("languageCode")?.Value,
-                    basePath = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL")
+                    basePath = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL")
                 };
 
                 // Call repository method to get services by language ID and specified configuration value
@@ -97,9 +97,9 @@ namespace AmazonFarmerAPI.Controllers
                         service = os.First().Service.ServiceTranslations
                             .Where(x => x.LanguageCode == languageCode)
                             .FirstOrDefault()?.Text,
-                        filePath = string.Concat(ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL"), os.First().Service.ServiceTranslations
+                        filePath = string.Concat(ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL"), os.First().Service.ServiceTranslations
                             .Where(x => x.LanguageCode == languageCode)
-                            .FirstOrDefault()?.Image),
+                            .FirstOrDefault()?.Image.Replace("/", "%2F").Replace(" ", "%20")),
                         completeDate = os.Max(g => g.CompletedDate),          // Service completion date
                         scheduleDate = os.Max(g => g.ScehduledDate),          // Service scheduled date
                         remarks = os.Max(g => g.Remarks) ?? string.Empty,     // Service remarks, defaulting to empty string if null

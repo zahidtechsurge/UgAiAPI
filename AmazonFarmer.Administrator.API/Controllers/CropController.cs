@@ -64,6 +64,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             return resp;
         }
 
+        [Obsolete]
         [HttpPost("addCropTranslation")]
         public async Task<JSONResponse> AddCropTranslation(AddCropTranslationRequest req)
         {
@@ -73,7 +74,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             {
                 ct.Image = req.filePath ?? getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty));
                 ct.Text = req.text;
-                ct.Status = EActivityStatus.Active;
+                //ct.Status = EActivityStatus.Active;
                 _repoWrapper.CropRepo.UpdateCropTranslation(ct);
                 resp.message = "Translation updated";
             }
@@ -85,13 +86,15 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     LanguageCode = req.languageCode,
                     Image = req.filePath ?? getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty)),
                     Text = req.text,
-                    Status = EActivityStatus.Active
+                    //Status = EActivityStatus.Active
                 };
                 _repoWrapper.CropRepo.AddCropTranslation(ct);
                 resp.message = "Translation added";
             }
             return resp;
         }
+
+        [Obsolete]
         [HttpPut("updateCropTranslation")]
         public async Task<JSONResponse> UpdateCropTranslation(UpdateCropTranslationRequest req)
         {
@@ -101,7 +104,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             {
                 ct.Image = req.filePath ?? getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty));
                 ct.Text = req.text;
-                ct.Status = EActivityStatus.Active;
+                //ct.Status = EActivityStatus.Active;
                 _repoWrapper.CropRepo.UpdateCropTranslation(ct);
                 resp.message = "Translation updated";
             }
@@ -135,10 +138,11 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 seasonName = ct.Season.Name,
                 fromMonth = ct.FromDate.Month,
                 toMonth = ct.ToDate.Month,
-                statusID = (int)ct.Status
+                //statusID = (int)ct.Status
             }).ToList();
             return resp;
         }
+        [Obsolete]
         [HttpPost("addCropTiming")]
         public async Task<JSONResponse> AddCropTiming(AddCropTiming req)
         {
@@ -146,7 +150,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             tblCropTimings? ct = await _repoWrapper.CropRepo.GetCropTimingByID(req.cropID, req.seasonID, req.districtID, req.fromMonth, req.toMonth);
             if (ct != null)
             {
-                ct.Status = EActivityStatus.Active;
+                //ct.Status = EActivityStatus.Active;
                 _repoWrapper.CropRepo.UpdateCropTiming(ct);
                 await _repoWrapper.SaveAsync();
                 resp.message = "Crop with the same configuration found and reactivated";
@@ -161,7 +165,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     SeasonID = req.seasonID,
                     FromDate = new DateTime(currentYear, req.fromMonth, 1),
                     ToDate = new DateTime(currentYear, req.fromMonth, DateTime.DaysInMonth(currentYear, req.toMonth)),
-                    Status = EActivityStatus.Active
+                    //Status = EActivityStatus.Active
                 };
                 _repoWrapper.CropRepo.AddCropTiming(ct);
                 await _repoWrapper.SaveAsync();
@@ -170,6 +174,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
             return resp;
         }
+        [Obsolete]
         [HttpPut("updateCropTiming")]
         public async Task<JSONResponse> UpdateCropTiming(UpdateCropTiming req)
         {
@@ -183,7 +188,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 ct.CropID = req.cropID;
                 ct.FromDate = new DateTime(currentYear, req.fromMonth, 1);
                 ct.ToDate = new DateTime(currentYear, req.fromMonth, DateTime.DaysInMonth(currentYear, req.toMonth));
-                ct.Status = (EActivityStatus)req.statusID;
+                //ct.Status = (EActivityStatus)req.statusID;
                 _repoWrapper.CropRepo.UpdateCropTiming(ct);
                 await _repoWrapper.SaveAsync();
                 resp.message = "Crop Timing Updated";
@@ -191,6 +196,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
             return resp;
         }
+        [Obsolete]
         [HttpDelete("deleteCropTiming/{recID}")]
         public async Task<JSONResponse> DeleteCropTiming(int recID)
         {
@@ -198,7 +204,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             tblCropTimings? ct = await _repoWrapper.CropRepo.GetCropTimingByID(recID);
             if (ct != null)
             {
-                ct.Status = EActivityStatus.DeActive;
+                //ct.Status = EActivityStatus.DeActive;
                 _repoWrapper.CropRepo.UpdateCropTiming(ct);
                 await _repoWrapper.SaveAsync();
                 resp.message = "Crop Timing Deleted";

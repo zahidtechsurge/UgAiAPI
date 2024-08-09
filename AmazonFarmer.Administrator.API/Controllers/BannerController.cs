@@ -25,6 +25,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             _repoWrapper = repoWrapper;
         }
 
+        [Obsolete]
         [HttpPost("getBanners")]
         public async Task<APIResponse> GetBanners(GetBannerAdminRequest req)
         {
@@ -35,7 +36,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
             if (!string.IsNullOrEmpty(req.search))
                 banners = banners.Where(x => x.Banner.Name.ToLower().Contains(req.search.ToLower()));
-            banners = banners.Where(x => x.Status == EActivityStatus.Active);
+            //banners = banners.Where(x => x.Status == EActivityStatus.Active);
             InResp.totalRecord = banners.Count();
             banners = banners.Skip(req.pageNumber * req.pageSize)
                          .Take(req.pageSize);
@@ -99,6 +100,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             return resp;
         }
 
+        [Obsolete]
         [HttpDelete("deleteBanner/{translationID}")]
         public async Task<JSONResponse> DeleteBanner(int translationID)
         {
@@ -108,7 +110,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             {
                 throw new AmazonFarmerException(_exceptions.notFound);
             }
-            bl.Status = EActivityStatus.DeActive;
+            //bl.Status = EActivityStatus.DeActive;
             _repoWrapper.BannerRepo.updateBannerLanguage(bl);
             await _repoWrapper.SaveAsync();
             return resp;

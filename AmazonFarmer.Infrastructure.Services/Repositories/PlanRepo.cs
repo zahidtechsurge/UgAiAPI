@@ -16,10 +16,11 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
     public class PlanRepo : IPlanRepo
     {
         private AmazonFarmerContext _context;
-        /*
-           This constructor initializes a new instance of the PlanRepo class with the provided AmazonFarmerContext.
-           It sets the private _context field to the provided context.
-        */
+        /// <summary>
+        /// This constructor initializes a new instance of the PlanRepo class with the provided AmazonFarmerContext.
+        ///It sets the private _context field to the provided context.
+        /// </summary>
+        /// <param name="context"></param>
         public PlanRepo(AmazonFarmerContext context)
         {
             _context = context;
@@ -216,7 +217,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Include(x => x.PlanCrops.Where(x => x.Status == EActivityStatus.Active))
                         //.ThenInclude(x => x.Crop)
                         .ThenInclude(x => x.CropGroup).ThenInclude(x => x.CropGroupCrops).ThenInclude(x => x.Crop)
-                        .ThenInclude(x => x.CropTranslations.Where(pt => pt.LanguageCode == languageCode))
+                        .ThenInclude(x => x.CropTranslations.Where(pt => pt.LanguageCode == languageCode /*&& pt.Status == EActivityStatus.Active*/))
                 .Include(x => x.PlanCrops.Where(x => x.Status == EActivityStatus.Active))
                         //.ThenInclude(x => x.Crop)
                         .ThenInclude(x => x.CropGroup).ThenInclude(x => x.CropGroupCrops).ThenInclude(x => x.Crop)
@@ -359,12 +360,12 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
 
             // Retrieve the district ID of the farm
- 
+
 
 
             var cropGroups = await _context.CropGroupCrops
                 .Include(x => x.Crop)
-                    .ThenInclude(x => x.CropTranslations)
+                    .ThenInclude(x => x.CropTranslations/*.Where(y => y.Status == EActivityStatus.Active)*/)
                 .Include(x => x.Crop)
                     .ThenInclude(x => x.ProductConsumptionMetrics)
                  .Where(g => g.CropGroupID == cropGroupID)
@@ -374,21 +375,24 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
 
             foreach (tblCropGroupCrops item in cropGroups)
             {
-                planCropGroup_get xyz = new planCropGroup_get()
+                if (item.Crop.CropTranslations.Where(x => x.LanguageCode == languageCode).Count() > 0)
                 {
-                    cropID = item.CropID,
-                    cropName = item.Crop.CropTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault().Text,
-                    filePath = string.Concat(baseFile, item.Crop.CropTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault().Image),
-                    suggestion = item.Crop.ProductConsumptionMetrics.Select(x => new ConsumptionMatrixDTO
+                    planCropGroup_get xyz = new planCropGroup_get()
                     {
-                        name = x.Product.ProductTranslations
-                                    .Where(x => x.LanguageCode == languageCode)
-                                    .FirstOrDefault().Text,
-                        qty = x.Usage,
-                        uom = x.UOM
-                    }).ToList()
-                };
-                cropInformation.Add(xyz);
+                        cropID = item.CropID,
+                        cropName = item.Crop.CropTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault().Text,
+                        filePath = string.Concat(baseFile, item.Crop.CropTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault().Image.Replace("/", "%2F").Replace(" ", "%20")),
+                        suggestion = item.Crop.ProductConsumptionMetrics.Select(x => new ConsumptionMatrixDTO
+                        {
+                            name = x.Product.ProductTranslations
+                                        .Where(x => x.LanguageCode == languageCode)
+                                        .FirstOrDefault().Text,
+                            qty = x.Usage,
+                            uom = x.UOM
+                        }).ToList()
+                    };
+                    cropInformation.Add(xyz);
+                }
             }
             return cropInformation;
         }
@@ -455,7 +459,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         public IQueryable<tblSeason> getSeasonProductReport()
         {
             //var s = _context.Products.Include(x => x.PlanProducts).ThenInclude(x => x.PlanCrop).ThenInclude(x => x.Plan).ThenInclude(x => x.Season);
-            return _context.Season.Include(x=>x.plans).ThenInclude(x=>x.Orders).ThenInclude(x=>x.Products);
+            return _context.Season.Include(x => x.plans).ThenInclude(x => x.Orders).ThenInclude(x => x.Products);
         }
         public async Task<List<PlanStatusResult>> GetPlanStatusPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder)
         {

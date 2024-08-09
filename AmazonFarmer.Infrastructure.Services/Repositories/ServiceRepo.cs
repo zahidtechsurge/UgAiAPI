@@ -29,7 +29,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 {
                     serviceID = x.ServiceID,
                     serviceName = x.Text,
-                    filePath = string.Concat(req.basePath, x.Image),
+                    filePath = string.Concat(req.basePath, x.Image.Replace("/", "%2F").Replace(" ", "%20")),
                     postDeliveryIn = postDeliveryIn
                 })
                 .ToListAsync();
