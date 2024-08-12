@@ -15,9 +15,11 @@ namespace AmazonFarmer.Administrator.API.Controllers
     public class IntroController : ControllerBase
     {
         private IRepositoryWrapper _repoWrapper; // Constructor injection of IRepositoryWrapper.
-        public IntroController(IRepositoryWrapper repoWrapper)
+        private readonly IAzureFileShareService _azureFileShareService;
+        public IntroController(IRepositoryWrapper repoWrapper, IAzureFileShareService azureFileShareService)
         {
             _repoWrapper = repoWrapper;
+            _azureFileShareService = azureFileShareService;
         }
 
         [AllowAnonymous]
@@ -54,8 +56,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
             JSONResponse resp = new JSONResponse();
             if (!string.IsNullOrEmpty(req.content))
             {
-                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper);
-                AttachmentsDTO attachment = attachmentExt.UploadAttachment(name: req.fileName, content: req.content, requestTypeID: EAttachmentType.IntroBanner);
+                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
+                AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: req.fileName, content: req.content, requestTypeID: EAttachmentType.IntroBanner);
                 tblIntro intro = new tblIntro()
                 {
                     Name = "Intro",
@@ -90,8 +92,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }
             if (!string.IsNullOrEmpty(req.content))
             {
-                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper);
-                AttachmentsDTO attachment = attachmentExt.UploadAttachment(name: req.fileName, content: req.content, requestTypeID: EAttachmentType.IntroBanner);
+                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
+                AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: req.fileName, content: req.content, requestTypeID: EAttachmentType.IntroBanner);
                 il.Image = string.Concat("/", attachment.filePath.Replace("\\", "/"));
                 il.LanguageCode = req.languageCode;
             }

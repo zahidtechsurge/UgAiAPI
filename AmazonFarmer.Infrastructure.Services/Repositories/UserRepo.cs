@@ -770,5 +770,21 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             return _context.Users;
         }
 
+        public async Task<TblUser> getUserDetailByUserID(string userID)
+        {
+            return await _context.Users
+                .Include(x => x.FarmerProfile)
+                    .ThenInclude(p => p.City)
+                .Include(x => x.UserAttachments.Where(x => x.Status == EActivityStatus.Active))
+                    .ThenInclude(ua => ua.Attachment)
+                        .ThenInclude(a => a.AttachmentTypes)
+                .Include(x=>x.EmployeeDistricts)
+                    .ThenInclude(x=>x.District)
+                .Include(x=>x.EmployeeRegions)
+                    .ThenInclude(x=>x.Region)
+                .Where(x => x.Id == userID).FirstOrDefaultAsync();
+        }
+
+
     }
 }

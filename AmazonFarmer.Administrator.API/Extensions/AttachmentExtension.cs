@@ -8,9 +8,11 @@ namespace AmazonFarmer.Administrator.API.Extensions
     public class AttachmentExtension
     {
         private IRepositoryWrapper _repoWrapper;
-        public AttachmentExtension(IRepositoryWrapper repositoryWrapper)
+        private readonly IAzureFileShareService _azureFileShareService;
+        public AttachmentExtension(IRepositoryWrapper repositoryWrapper, IAzureFileShareService azureFileShareService)
         {
             _repoWrapper = repositoryWrapper;
+            _azureFileShareService = azureFileShareService;
         }
         public async Task<uploadAttachmentResp> UploadAttachment(_uploadAttachmentReq attachmentReq)
         {
@@ -48,7 +50,7 @@ namespace AmazonFarmer.Administrator.API.Extensions
             return attachment;
         }
 
-        public AttachmentsDTO UploadAttachment(string name, string content, EAttachmentType requestTypeID)
+        public async Task<AttachmentsDTO> UploadAttachment(string name, string content, EAttachmentType requestTypeID)
         {
             string fileName = string.Concat(DateTime.UtcNow.ToString("ddMMyyyy_hhmmff"), name);
             byte[] imageBytes = Convert.FromBase64String(content);
@@ -56,8 +58,10 @@ namespace AmazonFarmer.Administrator.API.Extensions
                     getFilePathByRequestType(requestTypeID),
                     fileName
              ); // Adjust the path as needed
-            // Write the image bytes to the file
-            File.WriteAllBytes(filePath, imageBytes);
+                // Write the image bytes to the file
+                //File.WriteAllBytes(filePath, imageBytes);
+
+            await _azureFileShareService.UploadFileAsync(imageBytes, filePath);
             // Return the URL of the saved image
             string attachmentPath = $"{filePath}"; // Adjust the URL path as needed
             FileInfo fileInfo = new FileInfo(attachmentPath); // Full file Info.

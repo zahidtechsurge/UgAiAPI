@@ -74,10 +74,10 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             return await _context.Orders
                 .Include(x => x.Warehouse)
                 .Include(x => x.Transactions)
-                .Include(x => x.Products).ThenInclude(u => u.Product).ThenInclude(p=>p.UOM)
+                .Include(x => x.Products).ThenInclude(u => u.Product).ThenInclude(p => p.UOM)
                 .Include(x => x.User).ThenInclude(u => u.FarmerProfile)
                 .Include(x => x.Plan).ThenInclude(p => p.OrderServices).ThenInclude(os => os.Service)
-                .Include(p=>p.Products).ThenInclude(x=>x.PlanProduct)
+                .Include(p => p.Products).ThenInclude(x => x.PlanProduct)
                 .Where(x => x.OrderID == OrderID).FirstOrDefaultAsync();
         }
         public async Task<TblOrders?> getOrderByOrderID(Int64 OrderID, string UserId)
@@ -85,17 +85,17 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             return await _context.Orders
                 .Include(x => x.Warehouse)
                 .Include(x => x.Transactions)
-                .Include(x => x.Products).ThenInclude(u => u.Product).ThenInclude(p=>p.UOM)
+                .Include(x => x.Products).ThenInclude(u => u.Product).ThenInclude(p => p.UOM)
                 .Include(x => x.User).ThenInclude(u => u.FarmerProfile)
                 .Include(x => x.Plan).ThenInclude(p => p.OrderServices).ThenInclude(os => os.Service)
-                .Include(p=>p.Products).ThenInclude(x=>x.PlanProduct)
+                .Include(p => p.Products).ThenInclude(x => x.PlanProduct)
                 .Where(x => x.OrderID == OrderID && x.CreatedByID == UserId).FirstOrDefaultAsync();
         }
         public async Task<List<TblOrders>> getAllOrderByPlanID(int PlanID, string CreatedBy)
         {
             return await _context.Orders
                 .Include(x => x.Products).ThenInclude(op => op.Product).ThenInclude(p => p.UOM)
-                .Include(x => x.Products).ThenInclude(op=>op.PlanProduct).ThenInclude(pp=>pp.Product)
+                .Include(x => x.Products).ThenInclude(op => op.PlanProduct).ThenInclude(pp => pp.Product)
                 .Include(x => x.Warehouse)
                 .Include(x => x.User).ThenInclude(u => u.FarmerProfile)
                 .Include(x => x.Plan).ThenInclude(u => u.OrderServices).ThenInclude(os => os.Service)
@@ -116,12 +116,12 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 x.DeliveryStatus != EDeliveryStatus.ShipmentComplete &&
                 (x.OrderType != EOrderType.Advance && x.OrderType != EOrderType.AdvancePaymentReconcile)
                 )
-                .OrderBy(x => x.DuePaymentDate)
+                .OrderBy(x => x.ExpectedDeliveryDate)
                 .Take(3)
                 .Select(x => new getNearestPickupDates
                 {
                     pickupText = (x.OrderName + " Pickup"),
-                    pickupDate = x.DuePaymentDate//ToString("yyyy-MM-dd")
+                    pickupDate = x.ExpectedDeliveryDate//ToString("yyyy-MM-dd")
                 })
                 .ToListAsync();
         }
@@ -158,18 +158,18 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Include(x => x.Products)
                 .ThenInclude(x => x.Product)
                 .ThenInclude(x => x.ProductTranslations.Where(x => x.LanguageCode == languageCode))
-                .Include(x=>x.AuthorityLetters).ThenInclude(x=>x.AuthorityLetterDetails)
+                .Include(x => x.AuthorityLetters).ThenInclude(x => x.AuthorityLetterDetails)
                 .Where(x => x.OrderID == orderID && x.CreatedByID == userID && (x.OrderStatus != EOrderStatus.Blocked && x.OrderStatus != EOrderStatus.Deleted))
                 .FirstOrDefaultAsync();
         }
         public async Task<TblOrders> getOrderByID(Int64 orderID)
         {
             return await _context.Orders
-                .Include(x=>x.User).ThenInclude(x=>x.FarmerProfile)
+                .Include(x => x.User).ThenInclude(x => x.FarmerProfile)
                 .Include(x => x.Products)
                 .ThenInclude(x => x.Product)
                 .ThenInclude(x => x.ProductTranslations)
-                .Include(x=>x.Plan).ThenInclude(x=>x.Farm)
+                .Include(x => x.Plan).ThenInclude(x => x.Farm)
                 .Where(x => x.OrderID == orderID && (x.OrderStatus != EOrderStatus.Blocked && x.OrderStatus != EOrderStatus.Deleted))
                 .FirstOrDefaultAsync();
         }
@@ -188,12 +188,13 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             return _context.Orders
                 .Include(x => x.Products).ThenInclude(x => x.Product)
-                .Include(x=>x.Plan).ThenInclude(x=>x.Farm).Where(x=>x.isLocked != true && (x.OrderStatus != EOrderStatus.Blocked && x.OrderStatus != EOrderStatus.Deleted));
+                .Include(x => x.Plan).ThenInclude(x => x.Farm).Where(x => x.isLocked != true && (x.OrderStatus != EOrderStatus.Blocked && x.OrderStatus != EOrderStatus.Deleted));
         }
 
         public void AddOrderLog(TblOrders order, string updatedBy)
         {
-            TblOrderLog log = new() {
+            TblOrderLog log = new()
+            {
                 DeliveryStatus = order.DeliveryStatus,
                 OrderID = order.OrderID,
                 OrderStatus = order.OrderStatus,

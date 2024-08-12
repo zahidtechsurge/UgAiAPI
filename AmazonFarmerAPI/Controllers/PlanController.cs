@@ -154,6 +154,10 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
 
                 }
                 _resp.planID = planEntity.ID.ToString().PadLeft(10, '0');
+                if (planEntity.Status == EPlanStatus.TSOProcessing)
+                    resp.message = "Your plan has been sent for TSO approval";
+                else if (planEntity.Status == EPlanStatus.Draft)
+                    resp.message = "Your plan has been saved in draft";
                 resp.response = _resp; // Setting response
             }
             else
@@ -382,6 +386,10 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
 
                     }
                     _resp.planID = plan.ID.ToString();
+                    if (plan.Status == EPlanStatus.TSOProcessing)
+                        resp.message = "Your plan has been sent for TSO approval";
+                    else if (plan.Status == EPlanStatus.Draft)
+                        resp.message = "Your plan has been saved in draft";
                     resp.response = _resp;
                 }
                 else

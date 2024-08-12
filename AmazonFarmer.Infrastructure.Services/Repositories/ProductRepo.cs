@@ -46,8 +46,8 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                         postDeliveryIn = postDeliveryIn,
                         productID = x.ID,
                         filePath = string.Concat(req.basePath,
-                        x.ProductTranslations.FirstOrDefault().Image.Replace("/", "%2F").Replace(" ", "%20")), // Get product image icon from ProductTranslations
-                        productName = x.ProductTranslations.FirstOrDefault().Text, // Get product name from ProductTranslations
+                        x.ProductTranslations.Where(pt=> pt.LanguageCode == req.languageCode).FirstOrDefault().Image.Replace("/", "%2F").Replace(" ", "%20")), // Get product image icon from ProductTranslations
+                        productName = x.ProductTranslations.Where(pt => pt.LanguageCode == req.languageCode).FirstOrDefault().Text, // Get product name from ProductTranslations
                         uom = x.UOM.UnitOfMeasureTranslation.FirstOrDefault().Text, // Get product name from ProductTranslations
                     }).ToList()
 

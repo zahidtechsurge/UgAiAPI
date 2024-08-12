@@ -70,7 +70,40 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         }
         public async Task<List<tblDistrictLanguages>> GetDistrictLanguagesByID(int districtId)
         {
-            return await _context.DistrictLanguages.ToListAsync();
+            return await _context.DistrictLanguages.Include(x=>x.Languages).ToListAsync();
+        }
+        public async Task<tblDistrict?> GetDistrictByID(int districtId)
+        {
+            return await _context.District.Where(x => x.ID == districtId).FirstOrDefaultAsync();
+        }
+        public async Task<tblDistrict?> GetDistrictByID(string districtName, string districtCode)
+        {
+            return await _context.District.Where(x => x.Name == districtName && x.DistrictCode == districtCode).FirstOrDefaultAsync();
+        }
+        public void AddDistrict(tblDistrict district)
+        {
+            _context.District.Add(district);
+        }
+        public void UpdateDistrict(tblDistrict district)
+        {
+            _context.District.Update(district);
+        }
+        public async Task<tblDistrictLanguages?> GetDistrictLanguageByID(int Id)
+        {
+            return await _context.DistrictLanguages.Where(x=>x.ID == Id).FirstOrDefaultAsync();
+        }
+        public async Task<tblDistrictLanguages?> GetDistrictLanguageByID(int Id, string LanguageCode)
+        {
+            return await _context.DistrictLanguages.Where(x=>x.DistrictID == Id && x.LanguageCode == LanguageCode).FirstOrDefaultAsync();
+        }
+        //public async Task<tblDistrictLanguages?> GetDistrictLanguageByDistrict
+        public void AddDistrictLanguages(tblDistrictLanguages district)
+        {
+            _context.DistrictLanguages.Add(district);
+        }
+        public void UpdateDistrictLanguages(tblDistrictLanguages district)
+        {
+            _context.DistrictLanguages.Update(district);
         }
     }
 }

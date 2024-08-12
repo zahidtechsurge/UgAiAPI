@@ -104,5 +104,6 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         Task<TblUser> getUserByUsername(string username, string phoneNumber);
         Task<TblUser> getUserByUsername(string username, string phoneNumber, string emailAddress);
         IQueryable<TblUser> getUsers();
+        Task<TblUser> getUserDetailByUserID(string userID);
     }
 }

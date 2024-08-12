@@ -43,6 +43,7 @@ namespace AmazonFarmer.Infrastructure.Services
         public ICommonRepo _commonRepository;
         public IPaymentAcknowledgmentFileRepo _paymentAcknowledgmentFileRepo;
         public IPaymentAcknowledgmentRepo _paymentAcknowledgmentRepo;
+        public IRegionRepo _regionRepository;
         public RepositoryWrapper(
             AmazonFarmerContext repositoryContext,
             SignInManager<TblUser> signInManager,
@@ -364,7 +365,19 @@ namespace AmazonFarmer.Infrastructure.Services
                 }
                 return _paymentAcknowledgmentRepo;
             }
-        }  
+        }
+
+        public IRegionRepo RegionRepo
+        {
+            get
+            {
+                if (_regionRepository == null)
+                {
+                    _regionRepository = new RegionRepo(_repoContext);
+                }
+                return _regionRepository;
+            }
+        }
 
         public void Save()
         {

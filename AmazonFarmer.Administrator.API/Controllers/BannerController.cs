@@ -20,9 +20,11 @@ namespace AmazonFarmer.Administrator.API.Controllers
     public class BannerController : ControllerBase
     {
         private IRepositoryWrapper _repoWrapper; // Constructor injection of IRepositoryWrapper.
-        public BannerController(IRepositoryWrapper repoWrapper)
+        private readonly IAzureFileShareService _azureFileShareService;
+        public BannerController(IRepositoryWrapper repoWrapper, IAzureFileShareService azureFileShareService)
         {
             _repoWrapper = repoWrapper;
+            _azureFileShareService = azureFileShareService;
         }
 
         [Obsolete]
@@ -58,6 +60,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             APIResponse resp = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
             IQueryable<tblBanner> banners = _repoWrapper.BannerRepo.getBannerQueryable();
+            InResp.list = await banners.ToListAsync();
             resp.response = InResp;
             return resp;
         }
@@ -74,8 +77,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }
             if (!string.IsNullOrEmpty(req.content))
             {
-                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper);
-                AttachmentsDTO attachment = attachmentExt.UploadAttachment(name: req.fileName, content: req.content, requestTypeID: (req.bannerType == EBannerType.homeScreen ? EAttachmentType.HomeBanner : EAttachmentType.LoginBanner));
+                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
+                AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: req.fileName, content: req.content, requestTypeID: (req.bannerType == EBannerType.homeScreen ? EAttachmentType.HomeBanner : EAttachmentType.LoginBanner));
                 tblBannerLanguages bannerReq = new tblBannerLanguages()
                 {
                     BannerID = banner.ID,
@@ -100,8 +103,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }
             if (!string.IsNullOrEmpty(req.content))
             {
-                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper);
-                AttachmentsDTO attachment = attachmentExt.UploadAttachment(name: req.fileName, content: req.content, requestTypeID: (req.bannerType == EBannerType.homeScreen ? EAttachmentType.HomeBanner : EAttachmentType.LoginBanner));
+                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
+                AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: req.fileName, content: req.content, requestTypeID: (req.bannerType == EBannerType.homeScreen ? EAttachmentType.HomeBanner : EAttachmentType.LoginBanner));
                 bl.Image = string.Concat("/", attachment.filePath.Replace("\\", "/"));
                 _repoWrapper.BannerRepo.updateBannerLanguage(bl);
                 await _repoWrapper.SaveAsync();

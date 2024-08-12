@@ -235,7 +235,9 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     Active = req.status ? EActivityStatus.Active : EActivityStatus.DeActive,
                     OTP = randPassword,
                     Designation = (EDesignation)req.designationID,
-                    isAccountLocked = req.isLocked
+                    isAccountLocked = req.isLocked,
+                    EmployeeDistricts = (EDesignation)req.designationID != EDesignation.Territory_Sales_Officer ? new List<TblEmployeeDistrictAssignment>() : assignDistrict(req.districtIDs),
+                    EmployeeRegions = (EDesignation)req.designationID != EDesignation.Regional_Sales_Manager ? new List<TblEmployeeRegionAssignment>() : assignRegion(req.regionIDs)
                 };
                 randPassword = string.Concat("Engro-", randPassword);
 
@@ -302,7 +304,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 throw new AmazonFarmerException(_exceptions.userIDNotFound);
             else
             {
-                TblUser user = await _repoWrapper.UserRepo.getUserByUserID(req.userID);
+                TblUser user = await _repoWrapper.UserRepo.getUserDetailByUserID(req.userID);
                 if (user == null)
                     throw new AmazonFarmerException(_exceptions.userNotFound);
                 else
@@ -317,6 +319,18 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     user.Active = req.status ? EActivityStatus.Active : EActivityStatus.DeActive;
                     user.Designation = (EDesignation)req.designationID;
                     user.isAccountLocked = req.isLocked;
+
+                    if (user.Designation == EDesignation.Territory_Sales_Officer)
+                    {
+                        user.EmployeeDistricts.ForEach(x => x.Status = EActivityStatus.DeActive);
+                        user.EmployeeDistricts.AddRange(assignDistrict(req.districtIDs));
+                    }
+                    else if (user.Designation == EDesignation.Regional_Sales_Manager)
+                    {
+                        user.EmployeeRegions.ForEach(x => x.Status = EActivityStatus.DeActive);
+                        user.EmployeeRegions.AddRange(assignRegion(req.regionIDs));
+                    }
+
                     await _repoWrapper.UserRepo.updateUser(user);
                     await _repoWrapper.SaveAsync();
                 }
@@ -379,7 +393,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
         public async Task<APIResponse> GetUserDetails(string userID)
         {
             APIResponse response = new APIResponse();
-            TblUser user = await _repoWrapper.UserRepo.getUserByUserID(userID);
+            TblUser user = await _repoWrapper.UserRepo.getUserDetailByUserID(userID);
             if (user == null)
             {
                 throw new AmazonFarmerException(_exceptions.userNotFound);
@@ -408,7 +422,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     name = y.Attachment.Name,
                     guid = y.Attachment.Guid.ToString()
                 }).ToList() : new List<uploadAttachmentResp>(),
-                ntnNumber = user.FarmerProfile != null && user.FarmerProfile.Count() > 0? user.FarmerProfile.FirstOrDefault().NTNNumber : string.Empty,
+                ntnNumber = user.FarmerProfile != null && user.FarmerProfile.Count() > 0 ? user.FarmerProfile.FirstOrDefault().NTNNumber : string.Empty,
                 ntnAttachment = user.UserAttachments != null ? user.UserAttachments
                 .Where(y => y.Attachment.AttachmentTypes.AttachmentType == EAttachmentType.User_NTN_Document)
                 .Select(y => new uploadAttachmentResp
@@ -419,7 +433,17 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     guid = y.Attachment.Guid.ToString()
                 }).ToList() : new List<uploadAttachmentResp>(),
                 status = (int)user.Active,
-                lockedOutEnabled = user.isAccountLocked
+                lockedOutEnabled = user.isAccountLocked,
+                regions = user.EmployeeRegions == null || user.EmployeeRegions.Count() <= 0 ? [] : user.EmployeeRegions.Where(er => er.Status == EActivityStatus.Active).Select(er => new
+                {
+                    regionID = er.RegionID,
+                    region = er.Region?.Name,
+                }).ToList(),
+                districts = user.EmployeeDistricts == null || user.EmployeeDistricts.Count() <= 0 ? [] : user.EmployeeDistricts.Where(er => er.Status == EActivityStatus.Active).Select(er => new
+                {
+                    districtID = er.DitrictID,
+                    district = er.District?.Name
+                }).ToList()
             };
 
             return response;
@@ -439,5 +463,41 @@ namespace AmazonFarmer.Administrator.API.Controllers
                          .ToList();
             return resp;
         }
+
+        private List<TblEmployeeDistrictAssignment> assignDistrict(int[]? districtID)
+        {
+            List<TblEmployeeDistrictAssignment> list = new List<TblEmployeeDistrictAssignment>();
+            if (districtID != null)
+            {
+                foreach (var item in districtID)
+                {
+                    TblEmployeeDistrictAssignment row = new TblEmployeeDistrictAssignment()
+                    {
+                        DitrictID = item,
+                        Status = EActivityStatus.Active
+                    };
+                    list.Add(row);
+                }
+            }
+            return list;
+        }
+        private List<TblEmployeeRegionAssignment> assignRegion(int[]? regionID)
+        {
+            List<TblEmployeeRegionAssignment> list = new List<TblEmployeeRegionAssignment>();
+            if (regionID != null)
+            {
+                foreach (var item in regionID)
+                {
+                    TblEmployeeRegionAssignment row = new TblEmployeeRegionAssignment()
+                    {
+                        RegionID = item,
+                        Status = EActivityStatus.Active
+                    };
+                    list.Add(row);
+                }
+            }
+            return list;
+        }
+
     }
 }

@@ -37,6 +37,8 @@ namespace AmazonFarmer.Core.Application.DTOs
     {
         public int districtID { get; set; }
         public required string districtName { get; set; } // Property for district name
+        public int regionID { get; set; } // Property for region name
+        public required string regionName { get; set; } // Property for region name
     }
     public class GetPaginatedDIstrict_AdminResponse : GetDIstrict_AdminResponse
     {
@@ -51,6 +53,31 @@ namespace AmazonFarmer.Core.Application.DTOs
         public required string languageCode { get; set; }
         public required string language { get; set; }
         public required string text { get; set; }
+    }
+    public class AddDistrictRequest
+    {
+        public required string districtName { get; set; }
+        public required string districtCode { get; set; }
+        public int regionID { get; set; }
+    }
+    public class UpdateDistrictRequest : AddDistrictRequest
+    {
+        public int districtID { get; set; }
+        /// <summary>
+        /// DeActive = 0,
+        /// Active = 1,
+        /// </summary>
+        public int status { get; set; }
+    }
+    public class AddDistrictTranslationRequest
+    {
+        public int districtID { get; set; }
+        public required string languageCode { get; set; }
+        public required string text { get; set; }
+    }
+    public class UpdateDistrictTranslationRequest : AddDistrictTranslationRequest
+    {
+        public int translationID { get; set; }
 
     }
 }

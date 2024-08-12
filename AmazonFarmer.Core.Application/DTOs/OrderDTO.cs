@@ -57,7 +57,7 @@ namespace AmazonFarmer.Core.Application.DTOs
     public class getNearestPickupDates
     {
         public string pickupText { get; set; } = string.Empty;
-        public DateTime pickupDate { get; set; }
+        public DateTime? pickupDate { get; set; }
     }
 
 

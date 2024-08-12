@@ -17,9 +17,11 @@ namespace AmazonFarmer.Administrator.API.Controllers
     public class CropController : ControllerBase
     {
         private IRepositoryWrapper _repoWrapper; // Constructor injection of IRepositoryWrapper.
-        public CropController(IRepositoryWrapper repoWrapper)
+        private readonly IAzureFileShareService _azureFileShareService;
+        public CropController(IRepositoryWrapper repoWrapper, IAzureFileShareService azureFileShareService)
         {
             _repoWrapper = repoWrapper;
+            _azureFileShareService = azureFileShareService;
         }
 
         [HttpPost("getCrops")]
@@ -72,7 +74,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             tblCropTranslation? ct = await _repoWrapper.CropRepo.GetCropTranslationByCropID(req.cropID, req.languageCode);
             if (ct != null)
             {
-                ct.Image = req.filePath ?? getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty));
+                ct.Image = req.filePath ?? await getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty));
                 ct.Text = req.text;
                 //ct.Status = EActivityStatus.Active;
                 _repoWrapper.CropRepo.UpdateCropTranslation(ct);
@@ -84,7 +86,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 {
                     CropID = req.cropID,
                     LanguageCode = req.languageCode,
-                    Image = req.filePath ?? getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty)),
+                    Image = req.filePath ?? await getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty)),
                     Text = req.text,
                     //Status = EActivityStatus.Active
                 };
@@ -102,7 +104,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             tblCropTranslation? ct = await _repoWrapper.CropRepo.GetCropTranslationByCropID(req.cropID, req.languageCode);
             if (ct != null)
             {
-                ct.Image = req.filePath ?? getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty));
+                ct.Image = req.filePath ?? await getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty));
                 ct.Text = req.text;
                 //ct.Status = EActivityStatus.Active;
                 _repoWrapper.CropRepo.UpdateCropTranslation(ct);
@@ -111,12 +113,12 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
             return resp;
         }
-        private string getImagePathByContent(string name,string content)
+        private async Task<string> getImagePathByContent(string name,string content)
         {
             if (string.IsNullOrEmpty(content))
             {
-                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper);
-                AttachmentsDTO attachment = attachmentExt.UploadAttachment(name: name, content: content, requestTypeID: EAttachmentType.Crop);
+                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
+                AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: name, content: content, requestTypeID: EAttachmentType.Crop);
                 return attachment.filePath;
             }
             throw new AmazonFarmerException("file path or content not found");

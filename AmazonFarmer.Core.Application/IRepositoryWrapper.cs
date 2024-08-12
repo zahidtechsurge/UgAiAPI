@@ -32,6 +32,7 @@ namespace AmazonFarmer.Core.Application
         public ICommonRepo CommonRepo { get; } // Property for Common repository
         IPaymentAcknowledgmentFileRepo PaymentAcknowledgmentFileRepo { get; }
         IPaymentAcknowledgmentRepo PaymentAcknowledgmentRepo { get; }
+        public IRegionRepo RegionRepo { get; } // Property for Region repository
         public void Save(); // Method signature for saving changes synchronously
         public Task SaveAsync(); // Method signature for saving changes asynchronously
         public Task SaveLogEntries();

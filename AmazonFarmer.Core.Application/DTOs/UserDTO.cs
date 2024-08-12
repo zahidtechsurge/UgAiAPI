@@ -219,6 +219,8 @@ namespace AmazonFarmer.Core.Application.DTOs
         public required string emailAddress { get; set; }
         public required string phoneNumber { get; set; }
         public required int designationID { get; set; }
+        public int[]? districtIDs { get; set; } = [];
+        public int[]? regionIDs { get; set; } = [];
         public bool status { get; set; }
         public bool isLocked { get; set; }
     }
