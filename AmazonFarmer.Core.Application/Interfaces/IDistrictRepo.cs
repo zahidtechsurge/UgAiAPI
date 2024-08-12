@@ -13,5 +13,6 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         Task<List<DistrictDTO>> getDistricts(getDistrict_Req req); // Method signature for getting districts
         Task<DistictCityTehsilDTO?> GetDistricCityTehsilAsync(int districtId, int cityId, int tehsilId); // Method signature for getting district, city, and tehsil
         IQueryable<tblDistrict> getDistricts();
+        Task<List<tblDistrictLanguages>> GetDistrictLanguagesByID(int districtId);
     }
 }

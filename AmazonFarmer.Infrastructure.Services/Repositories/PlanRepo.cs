@@ -476,7 +476,23 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 @SortColumn, 
                 @SortOrder";
             //return lst;
-            return await _context.PlanStatusResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam).ToListAsync();
+            return await _context.SP_PlanStatusResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam).ToListAsync();
+        }
+        public async Task<List<PlanSeasonCropResult>> GetPlanSeasonCropPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder)
+        {
+            var lst = new List<PlanSeasonCropResult>();
+            var sortOrderParam = new SqlParameter("@SortOrder", sortOrder ?? "ASC");
+            var sortColumnParam = new SqlParameter("@SortColumn", sortColumn ?? "Season");
+            var pageNumberParam = new SqlParameter("@PageNumber", pageNumber);
+            var pageSizeParam = new SqlParameter("@PageSize", pageSize);
+            var sql = @"
+            EXEC GetPlanCropPaged 
+                @PageNumber, 
+                @PageSize, 
+                @SortColumn, 
+                @SortOrder";
+            //return lst;
+            return await _context.SP_PlanSeasonCropResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam).ToListAsync();
         }
     }
 }

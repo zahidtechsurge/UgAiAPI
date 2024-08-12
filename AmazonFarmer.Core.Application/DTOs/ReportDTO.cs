@@ -29,16 +29,28 @@ namespace AmazonFarmer.Core.Application.DTOs
         public int toBeShippedPlan { get; set; }
         public int toBePaidPlan { get; set; }
     }
+    [Keyless]
+    public class PlanSeasonCropResult
+    {
+        public int TotalRows { get; set; }
+        public string SeasonName { get; set; }
+        public string FarmName { get; set; }
+        public string ProductName { get; set; }
+        public string CropName { get; set; }
+        public int Acre { get; set; }
+        public int DeliveryMonth { get; set; }
+        public int Bags { get; set; }
+        public decimal Value { get; set; }
+    }
     public class SeasonCropResponse
     {
         public string season { get; set; } = string.Empty;
         public string farm { get; set; } = string.Empty;
         public int acreage { get; set; }
-        public string month { get; set; } = string.Empty;
+        public int month { get; set; } //= string.Empty;
         public string crop { get; set; } = string.Empty;
         public string product { get; set; } = string.Empty;
         public int bag { get; set; }
-        public string price { get; set; }
-
+        public decimal price { get; set; }
     }
 }

@@ -68,5 +68,9 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             return _context.District.Include(x=>x.DistrictLanguages).Include(x=>x.Region);
         }
+        public async Task<List<tblDistrictLanguages>> GetDistrictLanguagesByID(int districtId)
+        {
+            return await _context.DistrictLanguages.ToListAsync();
+        }
     }
 }

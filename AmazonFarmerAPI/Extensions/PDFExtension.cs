@@ -118,7 +118,7 @@ namespace AmazonFarmerAPI.Extensions
             else if (summaryType == EPlanSummaryType.product)
             {
 
-                foreach (var item in summary.products)
+                foreach (var item in summary.products) 
                 {
                     body += @"<tr>
                                 <td>" + item.product + @"</td>

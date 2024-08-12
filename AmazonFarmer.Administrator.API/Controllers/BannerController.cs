@@ -27,7 +27,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
         [Obsolete]
         [HttpPost("getBanners")]
-        public async Task<APIResponse> GetBanners(GetBannerAdminRequest req)
+        public async Task<APIResponse> _GetBanners(GetBannerAdminRequest req)
         {
             APIResponse resp = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
@@ -52,6 +52,16 @@ namespace AmazonFarmer.Administrator.API.Controllers
             resp.response = InResp;
             return resp;
         }
+        [HttpPost("_getBanners")]
+        public async Task<APIResponse> GetBanners(GetBannerAdminRequest req)
+        {
+            APIResponse resp = new APIResponse();
+            pagination_Resp InResp = new pagination_Resp();
+            IQueryable<tblBanner> banners = _repoWrapper.BannerRepo.getBannerQueryable();
+            resp.response = InResp;
+            return resp;
+        }
+
 
         [HttpPost("addBanner")]
         public async Task<JSONResponse> AddBanner(AddBanner req)

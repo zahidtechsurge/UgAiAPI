@@ -54,13 +54,27 @@ namespace AmazonFarmerAPI.Controllers
         {
             APIResponse resp = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
-            List<SeasonCropResponse> report = new List<SeasonCropResponse>();
+            List<PlanSeasonCropResult> report = await _repoWrapper.PlanRepo.GetPlanSeasonCropPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder);
             if (report != null && report.Count() > 0)
             {
-
+                InResp.totalRecord = report.First().TotalRows;
+                InResp.filteredRecord = report.Count();
+                InResp.list = report.Select(x => new SeasonCropResponse
+                {
+                    season = x.SeasonName,
+                    farm = x.FarmName,
+                    acreage = x.Acre,
+                    month = x.DeliveryMonth,
+                    crop = x.CropName,
+                    product = x.ProductName,
+                    bag = x.Bags,
+                    price = x.Value
+                }).ToList();
             }
-
-
+            else
+            {
+                InResp.list = new List<SeasonCropResponse>();
+            }
             resp.response = InResp;
             return resp;
         }

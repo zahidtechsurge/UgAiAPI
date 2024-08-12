@@ -49,6 +49,7 @@ namespace AmazonFarmer.Core.Application.DTOs
         public int translationID { get; set; }
         public int districtID { get; set; }
         public required string languageCode { get; set; }
+        public required string language { get; set; }
         public required string text { get; set; }
 
     }

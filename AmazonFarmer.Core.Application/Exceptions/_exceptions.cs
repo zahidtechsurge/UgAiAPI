@@ -32,6 +32,7 @@ namespace AmazonFarmer.Core.Application.Exceptions
         public const string invalidEmail = "Username or Password isn't valid";
         public const string onlyAdmin = "An error occurred. Please try again.";
         public const string invalidPassword = "Invalid Username or Password";
+        public const string verifyPasswordInvalid = "Invalid Password";
         public const string deactiveUser = "An error occurred. Please try again.";
         public const string nullUsernameOrPassword = "Username or Password can not be empty.";
         public const string firstnameRequired = "First Name is Required";

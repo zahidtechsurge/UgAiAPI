@@ -126,7 +126,8 @@ namespace AmazonFarmer.Infrastructure.Persistence
         public DbSet<PaymentAcknowledgmentFile> PaymentAcknowledgmentFiles { get; set; }
         public DbSet<tblCropGroup> CropGroup { get; set; }
         public DbSet<tblCropGroupCrops> CropGroupCrops { get; set; }
-        public DbSet<PlanStatusResult> PlanStatusResult { get; set; }
+        public DbSet<PlanStatusResult> SP_PlanStatusResult { get; set; }
+        public DbSet<PlanSeasonCropResult> SP_PlanSeasonCropResult { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -134,6 +135,7 @@ namespace AmazonFarmer.Infrastructure.Persistence
             //modelBuilder.Seed();
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<PlanStatusResult>().ToView("View_PlanStatusResult");
+            modelBuilder.Entity<PlanSeasonCropResult>().ToView("View_PlanSeasonCropResult");
 
             modelBuilder.Entity<TblUser>(b =>
             {

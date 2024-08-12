@@ -67,7 +67,7 @@ namespace AmazonFarmerAPI.Controllers
 
 
             if (!string.IsNullOrEmpty(req.search))
-                letters = letters.Where(x => x.AuthorityLetterNo.Contains(req.search));
+                letters = letters.Where(x => x.AuthorityLetterNo.Contains(req.search) || x.BearerNIC.Contains(req.search));
             letters = letters.OrderByDescending(x => x.AuthorityLetterID).Skip(req.skip).Take(req.take);
 
             var letterList = letters.ToList();

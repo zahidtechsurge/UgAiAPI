@@ -97,7 +97,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             tblwarehouse x = await _repoWrapper.WarehouseRepo.getWarehouseByID(warehouseID);
             if (x == null)
                 throw new AmazonFarmerException(_exceptions.warehouseNotFound);
-            WarehouseDTO  inResp = new WarehouseDTO()
+            WarehouseDTO inResp = new WarehouseDTO()
             {
                 warehouseID = x.ID,
                 warehouse = x.Name,
@@ -162,18 +162,15 @@ namespace AmazonFarmer.Administrator.API.Controllers
             if (warehouse == null)
                 throw new AmazonFarmerException(_exceptions.warehouseNotFound);
 
-            warehouse = new tblwarehouse()
-            {
-                Name = req.warehouseName,
-                WHCode = req.warehouseCode,
-                Address = req.warehouseAddress,
-                latitude = req.warehouseLat,
-                longitude = req.warehouseLong,
-                InchargeID = req.warehouseIncharge,
-                DistrictID = req.warehousedistrictID,
-                SalePoint = req.warehouseSalePoint,
-                Status = req.status ? EActivityStatus.Active : EActivityStatus.DeActive
-            };
+            warehouse.Name = req.warehouseName;
+            warehouse.WHCode = req.warehouseCode;
+            warehouse.Address = req.warehouseAddress;
+            warehouse.latitude = req.warehouseLat;
+            warehouse.longitude = req.warehouseLong;
+            warehouse.InchargeID = req.warehouseIncharge;
+            warehouse.DistrictID = req.warehousedistrictID;
+            warehouse.SalePoint = req.warehouseSalePoint;
+            warehouse.Status = req.status ? EActivityStatus.Active : EActivityStatus.DeActive;
 
             _repoWrapper.WarehouseRepo.updateWarehouse(warehouse);
             await _repoWrapper.SaveAsync();

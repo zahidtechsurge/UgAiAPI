@@ -1436,7 +1436,8 @@ namespace AmazonFarmerAPI.Controllers
             APIResponse resp = new APIResponse();
             configurePassword_Resp inResp = new configurePassword_Resp() { username = string.Empty };
             var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Extracting user ID from claims
-            if (matchPasswordCriteria(req.password))
+            //if (matchPasswordCriteria(req.password))
+            if (true)
             {
                 TblUser user = await _repoWrapper.UserRepo.getUserByUserID(userID);
                 var signinResult = await _signInManager.PasswordSignInAsync(user, req.password, isPersistent: false, lockoutOnFailure: false);
@@ -1445,7 +1446,7 @@ namespace AmazonFarmerAPI.Controllers
                     inResp.username = user.UserName ?? string.Empty;
                 }
                 else
-                    throw new AmazonFarmerException(_exceptions.invalidPassword);
+                    throw new AmazonFarmerException(_exceptions.verifyPasswordInvalid);
 
                 resp.response = inResp;
             }
