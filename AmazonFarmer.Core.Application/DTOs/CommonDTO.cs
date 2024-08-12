@@ -49,6 +49,7 @@ namespace AmazonFarmer.Core.Application.DTOs
 
     public class pagination_Req
     {
+        public int? rootID { get; set; } = 0;
         public string? search { get; set; } = string.Empty;
         public int pageNumber { get; set; }
         public int pageSize { get; set; }

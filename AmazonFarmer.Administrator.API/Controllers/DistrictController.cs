@@ -9,9 +9,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AmazonFarmer.Administrator.API.Controllers
 {
-    /// <summary>
-    /// Controller for managing language-related operations.
-    /// </summary>
     [EnableCors("corsPolicy")]
     [ApiController]
     [Authorize(AuthenticationSchemes = "Bearer")]
@@ -72,6 +69,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             pagination_Resp InResp = new pagination_Resp();
             IQueryable<tblDistrict> districts = _repoWrapper.DistrictRepo.getDistricts();
             resp.message = "Fetched paginated Districts";
+            districts = districts.Where(x => x.RegionId == req.rootID);
             if (!string.IsNullOrEmpty(req.search))
                 districts = districts.Where(x => x.Name.ToLower().Contains(req.search.ToLower()) || x.DistrictCode.ToLower().Contains(req.search.ToLower()) || x.Region.Name.ToLower().Contains(req.search.ToLower()));
             InResp.totalRecord = districts.Count();

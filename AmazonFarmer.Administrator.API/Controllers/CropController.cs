@@ -78,6 +78,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 ct.Text = req.text;
                 //ct.Status = EActivityStatus.Active;
                 _repoWrapper.CropRepo.UpdateCropTranslation(ct);
+                await _repoWrapper.SaveAsync();
                 resp.message = "Translation updated";
             }
             else
@@ -91,6 +92,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     //Status = EActivityStatus.Active
                 };
                 _repoWrapper.CropRepo.AddCropTranslation(ct);
+                await _repoWrapper.SaveAsync();
                 resp.message = "Translation added";
             }
             return resp;
@@ -108,6 +110,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 ct.Text = req.text;
                 //ct.Status = EActivityStatus.Active;
                 _repoWrapper.CropRepo.UpdateCropTranslation(ct);
+                await _repoWrapper.SaveAsync();
                 resp.message = "Translation updated";
             }
 
