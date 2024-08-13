@@ -31,3 +31,6 @@
 /AmazonFarmer.Scheduled.Payment/appsettings.json
 /Amazon-Farmer/wwwroot/lib
 /AmazonFarmer/wwwroot/lib
+/AmazonFarmerAPI/appsettings.json
+/AmazonFarmer.Administrator.API/appsettings.json
+/AmazonFarmerAPI/visioncredentials.json
