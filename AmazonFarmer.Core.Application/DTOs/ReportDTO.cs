@@ -37,7 +37,7 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string FarmName { get; set; }
         public string ProductName { get; set; }
         public string CropName { get; set; }
-        public int Acre { get; set; }
+        public double Acre { get; set; }
         public int DeliveryMonth { get; set; }
         public int Bags { get; set; }
         public decimal Value { get; set; }

@@ -572,7 +572,7 @@ namespace AmazonFarmerAPI.Controllers
             if (isExist)
             {
                 // If OTP is verified, set the response message
-                resp.message = "OTP Verified";
+                resp.message = "Your OTP has been successfully verified";
             }
             return resp;
         }

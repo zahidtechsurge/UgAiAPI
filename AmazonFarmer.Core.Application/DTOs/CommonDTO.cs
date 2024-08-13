@@ -26,13 +26,13 @@ namespace AmazonFarmer.Core.Application.DTOs
     {
         public int totalRecord { get; set; } = 0;
         public int filteredRecord { get; set; } = 0;
-        public dynamic list { get; set; }
+        public dynamic? list { get; set; }
     }
 
     public class ReportPagination_Req : pagination_Req
     {
-        public string sortColumn { get; set; }
-        public string sortOrder { get; set; }
+        public string sortColumn { get; set; } = string.Empty;
+        public string sortOrder { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ namespace AmazonFarmer.Core.Application.DTOs
     public class DropDownValues
     {
         //public string languageCode { get; set; } = string.Empty; // Property for language code, default is an empty string
-        public dynamic labelFor { get; set; } // Property for dropdown label
+        public dynamic? labelFor { get; set; } // Property for dropdown label
         public int value { get; set; } // Property for dropdown value
         public string label { get; set; } = string.Empty;// Property for dropdown key
     }

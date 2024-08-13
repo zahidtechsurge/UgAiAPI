@@ -100,7 +100,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
         public async Task<JSONResponse> UpdateDistrict(UpdateDistrictRequest req)
         {
             JSONResponse resp = new JSONResponse();
-            tblDistrict? district = await _repoWrapper.DistrictRepo.GetDistrictByID(req.districtName, req.districtCode);
+            tblDistrict? district = await _repoWrapper.DistrictRepo.GetDistrictByID(req.districtID);
             if (district != null)
             {
                 district.Name = req.districtName;
@@ -161,7 +161,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
         public async Task<JSONResponse> UpdateDistrictTranslation(UpdateDistrictTranslationRequest req)
         {
             JSONResponse resp = new JSONResponse();
-            tblDistrictLanguages? districtLanguage = await _repoWrapper.DistrictRepo.GetDistrictLanguageByID(req.districtID, req.languageCode);
+            tblDistrictLanguages? districtLanguage = await _repoWrapper.DistrictRepo.GetDistrictLanguageByID(req.translationID);
             if (districtLanguage != null)
             {
                 districtLanguage.Translation = req.text;

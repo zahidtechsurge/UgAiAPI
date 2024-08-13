@@ -49,6 +49,7 @@ namespace AmazonFarmerAPI.Controllers
             return resp;
         }
 
+        [AllowAnonymous]
         [HttpPost("getSeasonCropReport")]
         public async Task<APIResponse> GetSeasonCropReport(ReportPagination_Req req)
         {
@@ -63,11 +64,11 @@ namespace AmazonFarmerAPI.Controllers
                 {
                     season = x.SeasonName,
                     farm = x.FarmName,
-                    acreage = x.Acre,
+                    acreage = (int)x.Acre,
                     month = x.DeliveryMonth,
                     crop = x.CropName,
                     product = x.ProductName,
-                    bag = x.Bags,
+                    bag = (int)x.Bags,
                     price = x.Value
                 }).ToList();
             }

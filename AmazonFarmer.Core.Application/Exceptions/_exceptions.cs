@@ -25,11 +25,15 @@ namespace AmazonFarmer.Core.Application.Exceptions
         }
 
         public const string regionNotFound = "Region Not found.";
-        public const string regionAlreadyExist = "Region with the same Name or Code already exist.";
+        public const string regionAlreadyExist = "Region with the same Name or code already exist.";
 
         public const string districtNotFound = "District Not found.";
-        public const string districtAlreadyExist = "District with the same Name or Code already exist.";
+        public const string districtAlreadyExist = "District with the same Name or code already exist.";
         public const string districtLanguageAlreadyExist = "District with the same language code already exist.";
+
+        public const string cityNotFound = "City not found.";
+        public const string cityAlreadyExist = "City with the same name or code already exist..";
+        public const string cityLanguageAlreadyExist = "City with the same language code already exist.";
 
         public const string emailRegexExpressionFails = "Invalid email format. Please try again.";
         public const string errorOccuredWhileAddingUser = "Error adding user details. Please retry.";
