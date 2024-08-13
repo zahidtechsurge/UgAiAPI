@@ -35,6 +35,14 @@ namespace AmazonFarmer.Core.Application.Exceptions
         public const string cityAlreadyExist = "City with the same name or code already exist..";
         public const string cityLanguageAlreadyExist = "City with the same language code already exist.";
 
+        public const string cropAlreadyExist = "Crop with the same name already exist.";
+        public const string cropNotFound = "Crop not found.";
+
+        public const string serviceAlreadyExist = "Service with the same name or code already exist.";
+        public const string serviceTranslationAlreadyExist = "Service Translation with the name already exist.";
+        public const string serviceNotFound = "Service not found.";
+        public const string serviceTranslationNotFound = "Service Translation not found.";
+
         public const string emailRegexExpressionFails = "Invalid email format. Please try again.";
         public const string errorOccuredWhileAddingUser = "Error adding user details. Please retry.";
         public const string userAlreadyExist = "User already exists. Please login.";

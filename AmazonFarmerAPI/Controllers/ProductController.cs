@@ -146,7 +146,8 @@ namespace AmazonFarmerAPI.Controllers
                             productName = product.ProductTranslations.FirstOrDefault().Text,
                             productPrice = sapResp.TotalAmount,
                             productUnitPrice = sapResp.UnitTotalAmount,
-                            serviceIDs = req.serviceIDs
+                            serviceIDs = req.serviceIDs,
+                            //productQTY = sapReq.productQTY
                         });
                     }
                     else
@@ -162,7 +163,8 @@ namespace AmazonFarmerAPI.Controllers
                             productName = product.ProductTranslations.FirstOrDefault().Text,
                             productPrice = planProductPrice.productUnitPrice * item.qty,
                             productUnitPrice = planProductPrice.productUnitPrice,
-                            serviceIDs = req.serviceIDs
+                            serviceIDs = req.serviceIDs,
+                            //productQTY = planProductPrice.productQTY + item.qty
                         });
                     }
                 }
@@ -185,7 +187,8 @@ namespace AmazonFarmerAPI.Controllers
                     productName = g.First().productName,
                     productPrice = g.Sum(x => x.productPrice),
                     productUnitPrice = g.First().productUnitPrice,
-                    serviceIDs = g.First().serviceIDs
+                    serviceIDs = g.First().serviceIDs,
+                    //productQTY = g.Sum(x=>x.productQTY)
                 }).ToList();
 
                 APIresp.productPricings = mergedProducts;

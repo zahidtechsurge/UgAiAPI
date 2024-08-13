@@ -104,6 +104,7 @@
     /// </summary>
     public class ProductPrices_Resp
     {
+        //public int productQTY { get; set; }
         // The ID of the product
         public int productID { get; set; }
 

@@ -81,6 +81,8 @@ namespace AmazonFarmerAPI.Controllers
                         throw new AmazonFarmerException(_exceptions.sapFarmerCodeNotFound);
                     if ((order.Products.FirstOrDefault().ClosingQTY + req.qty) > order.Products.FirstOrDefault().QTY)
                         throw new AmazonFarmerException(_exceptions.authorityLetterQtyReached);
+                    if(order.AuthorityLetters != null && (order.AuthorityLetters.Sum(a => a.AuthorityLetterDetails.Sum(d => d.BagQuantity)) + req.qty) > order.Products.FirstOrDefault().ClosingQTY)
+                        throw new AmazonFarmerException(_exceptions.authorityLetterQtyReached);
                     else
                     {
                         TblAuthorityLetterDetails letterDetails = new TblAuthorityLetterDetails()
@@ -374,14 +376,14 @@ namespace AmazonFarmerAPI.Controllers
             {
                 orderID = order.OrderID,
                 orderDate = order.ExpectedDeliveryDate.Value,//.ToString("yyyy-MM-dd"),
-                products = order.Products.Select(x => new authorityLetter_GetOrderDetail_Product
+                products = order.Products != null ? order.Products.Select(x => new authorityLetter_GetOrderDetail_Product
                 {
                     productID = x.ProductID,
                     productImage = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL") + x.Product.ProductTranslations.First().Image,
                     productCode = x.Product.ProductCode,
                     productName = x.Product.ProductTranslations.First().Text,
                     qty = x.QTY
-                }).ToList()
+                }).ToList() : new List<authorityLetter_GetOrderDetail_Product>()
             };
 
             return resp;

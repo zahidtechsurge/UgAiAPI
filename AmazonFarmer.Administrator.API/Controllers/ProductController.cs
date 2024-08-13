@@ -88,6 +88,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             return response;
         }
 
+        #region Product Category
         [HttpPost("addProductCategory")]
         public async Task<JSONResponse> AddProductCategory(AddProductCategoryByAdminRequest req)
         {
@@ -171,6 +172,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
             return response;
         }
+        #endregion
+
         [HttpPost("getUnitOfMeasures")]
         public async Task<APIResponse> GeUnitOfMeasures()
         {
@@ -201,7 +204,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             pagination_Resp InResp = new pagination_Resp();
 
             IQueryable<TblProduct> lst = _repoWrapper.ProductRepo.getProducts();
-
+            lst = lst.Where(x => x.CategoryID == req.rootID);
             if (!string.IsNullOrEmpty(req.search))
             {
                 lst = lst.Where(x =>

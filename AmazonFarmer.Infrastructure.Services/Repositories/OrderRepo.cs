@@ -78,6 +78,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Include(x => x.User).ThenInclude(u => u.FarmerProfile)
                 .Include(x => x.Plan).ThenInclude(p => p.OrderServices).ThenInclude(os => os.Service)
                 .Include(p => p.Products).ThenInclude(x => x.PlanProduct)
+                .Include(a=>a.AuthorityLetters).ThenInclude(d=>d.AuthorityLetterDetails)
                 .Where(x => x.OrderID == OrderID).FirstOrDefaultAsync();
         }
         public async Task<TblOrders?> getOrderByOrderID(Int64 OrderID, string UserId)

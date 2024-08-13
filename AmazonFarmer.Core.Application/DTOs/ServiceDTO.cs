@@ -151,4 +151,32 @@ namespace AmazonFarmer.Core.Application.DTOs
     {
         public string basePath { get; set; } = string.Empty;
     }
+
+    public class AddServiceRequest
+    {
+        public string serviceName { get; set; } = string.Empty;
+        public string serviceCode { get; set; } = string.Empty;
+    }
+    public class UpdateServiceRequest : AddServiceRequest
+    {
+        public int serviceID { get; set; }
+        public int status { get; set; }
+    }
+    public class AddServiceTranslationRequest
+    {
+        public int serviceID { get; set; }
+        public string? content { get; set; }
+        public string? fileName { get; set; }
+        public string languageCode { get; set; } = string.Empty;
+        public string text { get; set; } = string.Empty;
+    }
+    public class UpdateServiceTranslationRequest : AddServiceTranslationRequest
+    {
+        public int translationID { get; set; }
+        public string? filePath { get; set; }
+    }
+    public class GetServiceTranslationResponse : UpdateServiceTranslationRequest
+    {
+        public string language { get; set; } = string.Empty;
+    }
 }

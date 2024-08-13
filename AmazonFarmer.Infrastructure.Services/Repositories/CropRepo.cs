@@ -134,5 +134,21 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
 
             return crops;
         }
+        public async Task<tblCrop?> GetCropByID(int ID)
+        {
+            return await _context.Crops.Where(x => x.ID == ID).FirstOrDefaultAsync();
+        }
+        public async Task<tblCrop?> GetCropByName(string Name)
+        {
+            return await _context.Crops.Where(x => x.Name == Name).FirstOrDefaultAsync();
+        }
+        public void AddCrop(tblCrop crop)
+        {
+            _context.Crops.Add(crop);
+        }
+        public void UpdateCrop(tblCrop crop)
+        {
+            _context.Crops.Update(crop);
+        }
     }
 }

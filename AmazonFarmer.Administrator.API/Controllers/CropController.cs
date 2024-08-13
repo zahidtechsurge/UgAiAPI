@@ -24,6 +24,29 @@ namespace AmazonFarmer.Administrator.API.Controllers
             _azureFileShareService = azureFileShareService;
         }
 
+        #region Crop
+        [HttpPost("addCrop")]
+        public async Task<JSONResponse> AddCrop(AddCropRequest req)
+        {
+            tblCrop? crop = await _repoWrapper.CropRepo.GetCropByName(req.cropName);
+            if (crop == null)
+            {
+                JSONResponse resp = new JSONResponse();
+                crop = new tblCrop()
+                {
+                    Name = req.cropName,
+                    Status = EActivityStatus.Active
+                };
+                _repoWrapper.CropRepo.AddCrop(crop);
+                await _repoWrapper.SaveAsync();
+                resp.message = "Crop added";
+                return resp;
+            }
+            else
+            {
+                throw new AmazonFarmerException(_exceptions.cropAlreadyExist);
+            }
+        }
         [HttpPost("getCrops")]
         public async Task<APIResponse> GetCrops(pagination_Req req)
         {
@@ -49,6 +72,28 @@ namespace AmazonFarmer.Administrator.API.Controllers
             resp.response = InResp;
             return resp;
         }
+        [HttpPut("updateCrop")]
+        public async Task<JSONResponse> UpdateCrop(UpdateCropRequest req)
+        {
+            JSONResponse resp = new JSONResponse();
+            tblCrop? crop = await _repoWrapper.CropRepo.GetCropByID(req.cropID);
+            if (crop != null)
+            {
+                crop.Name = req.cropName;
+                crop.Status = (EActivityStatus)req.status;
+                _repoWrapper.CropRepo.UpdateCrop(crop);
+                await _repoWrapper.SaveAsync();
+                resp.message = "crop updated";
+            }
+            else
+            {
+                throw new AmazonFarmerException(_exceptions.cropNotFound);
+            }
+            return resp;
+        }
+        #endregion
+
+        #region Crop Translation
         [HttpGet("getTranslations/{cropID}")]
         public async Task<APIResponse> GetTranslations(int cropID)
         {
@@ -65,7 +110,6 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }).ToList();
             return resp;
         }
-
         [Obsolete]
         [HttpPost("addCropTranslation")]
         public async Task<JSONResponse> AddCropTranslation(AddCropTranslationRequest req)
@@ -116,17 +160,9 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
             return resp;
         }
-        private async Task<string> getImagePathByContent(string name,string content)
-        {
-            if (string.IsNullOrEmpty(content))
-            {
-                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
-                AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: name, content: content, requestTypeID: EAttachmentType.Crop);
-                return attachment.filePath;
-            }
-            throw new AmazonFarmerException("file path or content not found");
-        }
+        #endregion
 
+        #region Crop Timings
         [HttpGet("getCropTimings/{cropID}")]
         public async Task<APIResponse> GetCropTimings(int cropID)
         {
@@ -216,6 +252,21 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }
             return resp;
         }
+        #endregion
 
+        #region Crop 
+        #endregion
+        
+        
+        private async Task<string> getImagePathByContent(string name, string content)
+        {
+            if (string.IsNullOrEmpty(content))
+            {
+                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
+                AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: name, content: content, requestTypeID: EAttachmentType.Crop);
+                return attachment.filePath;
+            }
+            throw new AmazonFarmerException("file path or content not found");
+        }
     }
 }

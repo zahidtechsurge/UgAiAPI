@@ -21,5 +21,9 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         void AddCropTiming(tblCropTimings ct);
         void UpdateCropTiming(tblCropTimings ct);
         Task<List<Crops_Res>> getCropsBySeasonAndDistrictID(GetCropDTO_Internal_req req); // Method signature for getting crops by season and district ID
+        Task<tblCrop?> GetCropByID(int ID);
+        Task<tblCrop?> GetCropByName(string Name);
+        void AddCrop(tblCrop crop);
+        void UpdateCrop(tblCrop crop);
     }
 }

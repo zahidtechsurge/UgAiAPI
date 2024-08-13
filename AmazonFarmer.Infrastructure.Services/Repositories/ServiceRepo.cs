@@ -42,5 +42,45 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Where(x => serviceIDs.Contains(x.ID))
                 .ToListAsync();
         }
+        public IQueryable<tblService> GetService()
+        {
+            return _context.Service;
+        }
+        public async Task<tblService?> GetServiceByID(int id)
+        {
+            return await _context.Service.Where(x => x.ID == id).FirstOrDefaultAsync();
+        }
+        public async Task<tblService?> GetServiceByID(string name, string code)
+        {
+            return await _context.Service.Where(x => x.Name == name || x.Code == code).FirstOrDefaultAsync();
+        }
+        public void AddService(tblService service)
+        {
+            _context.Service.Add(service);
+        }
+        public void UpdateService(tblService service)
+        {
+            _context.Service.Update(service);
+        }
+        public async Task<List<tblServiceTranslation>> GetServiceTranslationByServiceID(int ID)
+        {
+            return await _context.ServiceTranslation.Where(x=>x.ServiceID == ID).ToListAsync();
+        }
+        public async Task<tblServiceTranslation?> GetServiceTranslationByID(int ID)
+        {
+            return await _context.ServiceTranslation.Include(x=>x.Language).Where(x => x.ID == ID).FirstOrDefaultAsync();
+        }
+        public async Task<tblServiceTranslation?> GetServiceTranslationByID(string name, string code)
+        {
+            return await _context.ServiceTranslation.Where(x => x.Text == name || x.LanguageCode == code).FirstOrDefaultAsync();
+        }
+        public void AddServiceTranslation(tblServiceTranslation serviceTranslation)
+        {
+            _context.ServiceTranslation.Add(serviceTranslation);
+        }
+        public void UpdateServiceTranslation(tblServiceTranslation serviceTranslation)
+        {
+            _context.ServiceTranslation.Update(serviceTranslation);
+        }
     }
 }
