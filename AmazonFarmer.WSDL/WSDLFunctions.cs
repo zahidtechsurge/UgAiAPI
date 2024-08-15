@@ -44,7 +44,9 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "CreateCustomerWSDLAsync").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
@@ -96,7 +98,9 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "ChangeCustomerWSDLAsync").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
@@ -143,10 +147,11 @@ namespace AmazonFarmer.WSDL
 
             PriceSimulateClient OutClient = new PriceSimulateClient(PriceSimulateClient.EndpointConfiguration.PriceSimulateSOAP);
 
-
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "PriceSimluate").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl+ WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
@@ -205,7 +210,9 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "CustomerBalance").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
@@ -272,7 +279,9 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "CustomerPayment").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
@@ -323,7 +332,9 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "CreateOrder").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
@@ -371,7 +382,9 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "ChangeCustomerPaymentRequest").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
@@ -425,7 +438,9 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "ChangeSaleOrderRequest").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
@@ -470,7 +485,9 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "InvoiceDetailsRequest").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 

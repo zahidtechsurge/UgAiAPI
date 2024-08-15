@@ -43,6 +43,12 @@ namespace AmazonFarmer.Core.Application.Exceptions
         public const string serviceNotFound = "Service not found.";
         public const string serviceTranslationNotFound = "Service Translation not found.";
 
+        public const string productNotFound = "Product not found.";
+        public const string productAlreadyExist = "Product with the same name or code already exist.";
+
+        public const string tehsilNotFound = "Tehsil not found.";
+        public const string tehsilAlreadyExist = "Tehsil with the same name or code already exist.";
+
         public const string emailRegexExpressionFails = "Invalid email format. Please try again.";
         public const string errorOccuredWhileAddingUser = "Error adding user details. Please retry.";
         public const string userAlreadyExist = "User already exists. Please login.";

@@ -1,4 +1,5 @@
-﻿using AmazonFarmer.Core.Application;
+﻿using AmazonFarmer.Administrator.API.Extensions;
+using AmazonFarmer.Core.Application;
 using AmazonFarmer.Core.Application.DTOs;
 using AmazonFarmer.Core.Application.Exceptions;
 using AmazonFarmer.Core.Domain.Entities;
@@ -21,12 +22,14 @@ namespace AmazonFarmer.Administrator.API.Controllers
     public class ProductController : ControllerBase
     {
         private IRepositoryWrapper _repoWrapper;
-
         private WsdlConfig _wsdlConfig;
-        public ProductController(IRepositoryWrapper repoWrapper, IOptions<WsdlConfig> wsdlConfig)
+        private readonly IAzureFileShareService _azureFileShareService;
+
+        public ProductController(IRepositoryWrapper repoWrapper, IOptions<WsdlConfig> wsdlConfig, IAzureFileShareService azureFileShareService)
         {
             _repoWrapper = repoWrapper;
             _wsdlConfig = wsdlConfig.Value;
+            _azureFileShareService = azureFileShareService;
         }
 
         [HttpGet("GetAllProductsListing")]
@@ -152,7 +155,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
         public async Task<JSONResponse> UpdateProductCategory(UpdateProductCategoryByAdminRequest req)
         {
             JSONResponse response = new JSONResponse();
-            tblProductCategory prodCat = await _repoWrapper.ProductRepo.GetCategoryByID(req.categoryID);
+            tblProductCategory? prodCat = await _repoWrapper.ProductRepo.GetCategoryByID(req.categoryID);
             if (prodCat == null)
             {
                 throw new AmazonFarmerException(_exceptions.productCategoryNotFound);
@@ -168,7 +171,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
         public async Task<JSONResponse> AddProductCategoryTranslation(SyncProductCategoryTranslationDTO req)
         {
             JSONResponse response = new JSONResponse();
-            tblProductCategoryTranslation productCategoryTranslation = await _repoWrapper.ProductRepo.getProductCategoryTranslationByCatID(req.categoryID, req.languageCode);
+            tblProductCategoryTranslation? productCategoryTranslation = await _repoWrapper.ProductRepo.getProductCategoryTranslationByCatID(req.categoryID, req.languageCode);
 
             return response;
         }
@@ -242,6 +245,81 @@ namespace AmazonFarmer.Administrator.API.Controllers
             response.response = InResp;
             return response;
         }
+        
+        #region Product Translation
+        [HttpGet("getTranslation/{productID}")]
+        public async Task<APIResponse> GetTranslation(int productID)
+        {
+            APIResponse response = new APIResponse();
+            List<tblProductTranslation> productTranslations = await _repoWrapper.ProductRepo.GetProductTranslationsByProductID(productID);
+            response.response = productTranslations
+                .Select(pt => new GetProductTranslationResponse
+                {
+                    translationID = pt.ID,
+                    productID = pt.ProductID,
+                    languageCode = pt.LanguageCode,
+                    text = pt.Text,
+                    filePath = pt.Image,
+                    language = pt.Language.LanguageName
+                })
+                .ToList();
+            return response;
+        }
+
+        [HttpPost("addProductTranslation")]
+        public async Task<JSONResponse> AddProductTranslation(AddProductTranslationRequest req)
+        {
+            tblProductTranslation? productTranslation = await _repoWrapper.ProductRepo.GetProductTranslationById(req.productID, req.languageCode);
+            if (productTranslation == null)
+            {
+                JSONResponse resp = new JSONResponse();
+                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
+                AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: (req.fileName ?? "untitledProduct.svg"), content: (req.content ?? string.Empty), requestTypeID: EAttachmentType.Product);
+                productTranslation = new tblProductTranslation()
+                {
+                    ProductID = req.productID,
+                    LanguageCode = req.languageCode,
+                    Text = req.text,
+                    Image = req.filePath ?? attachment.filePath
+                };
+                _repoWrapper.ProductRepo.AddProductTranslation(productTranslation);
+                await _repoWrapper.SaveAsync();
+                resp.message = "Product translation added";
+                return resp;
+            }
+            else
+                throw new AmazonFarmerException(_exceptions.productAlreadyExist);
+        }
+        [HttpPut("updateProductTranslation")]
+        public async Task<JSONResponse> UpdateProductTranslation(UpdateProductTranslationRequest req)
+        {
+            tblProductTranslation? productTranslation = await _repoWrapper.ProductRepo.GetProductTranslationById(req.translationID);
+            if (productTranslation != null)
+            {
+                JSONResponse resp = new JSONResponse();
+                if (string.IsNullOrEmpty(req.filePath))
+                {
+                    AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
+                    AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: (req.fileName ?? "untitledProduct.svg"), content: (req.content ?? string.Empty), requestTypeID: EAttachmentType.Product);
+                    productTranslation.Image = attachment.filePath;
+                }
+                else
+                    productTranslation.Image = req.filePath;
+
+                productTranslation.ProductID = req.productID;
+                productTranslation.LanguageCode = req.languageCode;
+                productTranslation.Text = req.text;
+                _repoWrapper.ProductRepo.UpdateProductTranslation(productTranslation);
+                await _repoWrapper.SaveAsync();
+                resp.message = "Product translation updated";
+                return resp;
+            }
+            else
+                throw new AmazonFarmerException(_exceptions.productNotFound);
+        }
+
+
+        #endregion
 
         private async Task<decimal> GetOrderPriceWSDL(TblOrders planOrder, tblPlan plan, string SAPFarmerCode)
         {

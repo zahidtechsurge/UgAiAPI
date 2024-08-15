@@ -156,6 +156,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         public async Task<TblOrders> getOrderByID(Int64 orderID, string userID, string languageCode)
         {
             return await _context.Orders
+                .Include(x=>x.Warehouse).ThenInclude(x=>x.WarehouseIncharge)
                 .Include(x => x.Products)
                 .ThenInclude(x => x.Product)
                 .ThenInclude(x => x.ProductTranslations.Where(x => x.LanguageCode == languageCode))

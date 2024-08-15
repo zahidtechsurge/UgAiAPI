@@ -60,14 +60,15 @@ namespace AmazonFarmer.Core.Application.DTOs
     {
         public Int64 orderID { get; set; }
         public DateTime orderDate { get; set; }
+        public string warehouseInchargeName { get; set; } = string.Empty;
         public List<authorityLetter_GetOrderDetail_Product> products { get; set; } = new();
     }
     public class authorityLetter_GetOrderDetail_Product
     {
         public int productID { get; set; }
-        public string productCode { get; set; }
-        public string productImage { get; set; }
-        public string productName { get; set; }
+        public string productCode { get; set; } = string.Empty;
+        public string productImage { get; set; } = string.Empty;
+        public string productName { get; set; } = string.Empty;
         public int qty { get; set; }
     }
     public class authorityLetter_GetDetails_Resp

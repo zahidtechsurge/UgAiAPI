@@ -255,5 +255,22 @@
         public string language { get; set; } = string.Empty;
         public string text { get; set; } = string.Empty;
     }
+    public class AddProductTranslationRequest
+    {
+        public int productID { get; set; }
+        public string languageCode { get; set; } = string.Empty;
+        public string text { get; set; } = string.Empty;
+        public string? filePath { get; set; } = string.Empty;
+        public string? fileName { get; set; } = string.Empty;
+        public string? content { get; set; } = string.Empty;
+    }
+    public class UpdateProductTranslationRequest : AddProductTranslationRequest
+    {
+        public int translationID { get; set; }
+    }
+    public class GetProductTranslationResponse : UpdateProductTranslationRequest
+    {
+        public string language { get; set; } = string.Empty;
+    }
 
 }
