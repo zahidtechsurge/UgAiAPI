@@ -461,38 +461,42 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             //var s = _context.Products.Include(x => x.PlanProducts).ThenInclude(x => x.PlanCrop).ThenInclude(x => x.Plan).ThenInclude(x => x.Season);
             return _context.Season.Include(x => x.plans).ThenInclude(x => x.Orders).ThenInclude(x => x.Products);
         }
-        public async Task<List<PlanStatusResult>> GetPlanStatusPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder)
+        public async Task<List<PlanStatusResult>> GetPlanStatusPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm)
         {
             var lst = new List<PlanStatusResult>();
             var sortOrderParam = new SqlParameter("@SortOrder", sortOrder ?? "ASC");
             var sortColumnParam = new SqlParameter("@SortColumn", sortColumn ?? "Season");
             var pageNumberParam = new SqlParameter("@PageNumber", pageNumber);
             var pageSizeParam = new SqlParameter("@PageSize", pageSize);
+            var SearchTerm = new SqlParameter("@SearchTerm", searchTerm);
 
             var sql = @"
             EXEC GetPlanStatusPaged 
                 @PageNumber, 
                 @PageSize, 
                 @SortColumn, 
-                @SortOrder";
+                @SortOrder,
+                @SearchTerm";
             //return lst;
-            return await _context.SP_PlanStatusResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam).ToListAsync();
+            return await _context.SP_PlanStatusResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam, SearchTerm).ToListAsync();
         }
-        public async Task<List<PlanSeasonCropResult>> GetPlanSeasonCropPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder)
+        public async Task<List<PlanSeasonCropResult>> GetPlanSeasonCropPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm)
         {
             var lst = new List<PlanSeasonCropResult>();
             var sortOrderParam = new SqlParameter("@SortOrder", sortOrder ?? "ASC");
             var sortColumnParam = new SqlParameter("@SortColumn", sortColumn ?? "Season");
             var pageNumberParam = new SqlParameter("@PageNumber", pageNumber);
             var pageSizeParam = new SqlParameter("@PageSize", pageSize);
+            var SearchTerm = new SqlParameter("@SearchTerm", searchTerm);
             var sql = @"
             EXEC GetPlanCropPaged 
                 @PageNumber, 
                 @PageSize, 
                 @SortColumn, 
-                @SortOrder";
+                @SortOrder,
+                @SearchTerm";
             //return lst;
-            return await _context.SP_PlanSeasonCropResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam).ToListAsync();
+            return await _context.SP_PlanSeasonCropResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam, SearchTerm).ToListAsync();
         }
     }
 }

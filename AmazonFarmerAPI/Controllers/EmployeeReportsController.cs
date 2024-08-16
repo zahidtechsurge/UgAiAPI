@@ -20,12 +20,13 @@ namespace AmazonFarmerAPI.Controllers
         {
             _repoWrapper = repoWrapper;
         }
+
         [HttpPost("GetSeasonProductReport")]
         public async Task<APIResponse> GetSeasonProductReport(ReportPagination_Req req)
         {
             APIResponse resp = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
-            List<PlanStatusResult> report = await _repoWrapper.PlanRepo.GetPlanStatusPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder);
+            List<PlanStatusResult> report = await _repoWrapper.PlanRepo.GetPlanStatusPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search);
             if (report != null && report.Count() > 0)
             {
                 InResp.totalRecord = report.First().TotalRows;
@@ -49,35 +50,43 @@ namespace AmazonFarmerAPI.Controllers
             return resp;
         }
 
-        [AllowAnonymous]
         [HttpPost("getSeasonCropReport")]
         public async Task<APIResponse> GetSeasonCropReport(ReportPagination_Req req)
         {
             APIResponse resp = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
-            List<PlanSeasonCropResult> report = await _repoWrapper.PlanRepo.GetPlanSeasonCropPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder);
-            if (report != null && report.Count() > 0)
+            try
             {
-                InResp.totalRecord = report.First().TotalRows;
-                InResp.filteredRecord = report.Count();
-                InResp.list = report.Select(x => new SeasonCropResponse
+
+                List<PlanSeasonCropResult> report = await _repoWrapper.PlanRepo.GetPlanSeasonCropPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search);
+                if (report != null && report.Count() > 0)
                 {
-                    season = x.SeasonName,
-                    farm = x.FarmName,
-                    acreage = (int)x.Acre,
-                    month = x.DeliveryMonth,
-                    crop = x.CropName,
-                    product = x.ProductName,
-                    bag = (int)x.Bags,
-                    price = x.Value
-                }).ToList();
+                    InResp.totalRecord = report.First().TotalRows;
+                    InResp.filteredRecord = report.Count();
+                    InResp.list = report.Select(x => new SeasonCropResponse
+                    {
+                        season = x.SeasonName,
+                        farm = x.FarmName,
+                        acreage = (int)x.Acre,
+                        month = x.DeliveryMonth,
+                        crop = x.CropName,
+                        product = x.ProductName,
+                        bag = (int)x.Bags,
+                        price = x.Value
+                    }).ToList();
+                }
+                else
+                {
+                    InResp.list = new List<SeasonCropResponse>();
+                }
+                resp.response = InResp;
+                return resp;
             }
-            else
+            catch (Exception ex)
             {
-                InResp.list = new List<SeasonCropResponse>();
+
+                throw;
             }
-            resp.response = InResp;
-            return resp;
         }
 
     }
