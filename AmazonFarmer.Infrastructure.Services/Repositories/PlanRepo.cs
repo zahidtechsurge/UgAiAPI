@@ -468,7 +468,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             var sortColumnParam = new SqlParameter("@SortColumn", sortColumn ?? "Season");
             var pageNumberParam = new SqlParameter("@PageNumber", pageNumber);
             var pageSizeParam = new SqlParameter("@PageSize", pageSize);
-            var SearchTerm = new SqlParameter("@SearchTerm", searchTerm);
+            var SearchTerm = new SqlParameter("@SearchTerm", string.IsNullOrEmpty(searchTerm) ? "" : searchTerm);
 
             var sql = @"
             EXEC GetPlanStatusPaged 
@@ -487,7 +487,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             var sortColumnParam = new SqlParameter("@SortColumn", sortColumn ?? "Season");
             var pageNumberParam = new SqlParameter("@PageNumber", pageNumber);
             var pageSizeParam = new SqlParameter("@PageSize", pageSize);
-            var SearchTerm = new SqlParameter("@SearchTerm", searchTerm);
+            var SearchTerm = new SqlParameter("@SearchTerm", string.IsNullOrEmpty(searchTerm) ? "" : searchTerm);
             var sql = @"
             EXEC GetPlanCropPaged 
                 @PageNumber, 
