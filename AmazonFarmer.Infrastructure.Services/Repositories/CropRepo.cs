@@ -106,7 +106,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Where(x =>
                     x.Crop.CropTranslations.Any(x => x.LanguageCode == req.languageCode) &&
                     x.DistrictID == districtID &&
-                    //x.SeasonID == req.seasonID &&
+                    x.SeasonID == req.seasonID &&
                     (DateTime.UtcNow.Month >= x.FromDate.Month && DateTime.UtcNow.Month <= x.ToDate.Month) //&&
                     //x.Status == EActivityStatus.Active
                 )

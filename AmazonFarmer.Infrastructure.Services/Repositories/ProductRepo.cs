@@ -169,5 +169,21 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Where(x => x.ProductID == productID && x.LanguageCode == languageCode)
                 .FirstOrDefaultAsync();
         }
+        public async Task<TblProduct?> GetProductByID(int productID)
+        {
+            return await _context.Products.Where(x=>x.ID == productID).FirstOrDefaultAsync();
+        }
+        public async Task<TblProduct?> GetProductByNameOrCode(string productName, string productCode)
+        {
+            return await _context.Products.Where(x => x.Name == productName || x.ProductCode == productCode).FirstOrDefaultAsync();
+        }
+        public void AddProduct(TblProduct product)
+        {
+            _context.Products.Add(product);
+        }
+        public void UpdateProduct(TblProduct product)
+        {
+            _context.Products.Update(product);
+        }
     }
 }

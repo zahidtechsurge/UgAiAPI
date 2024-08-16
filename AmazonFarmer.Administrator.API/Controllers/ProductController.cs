@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Org.BouncyCastle.Ocsp;
 using SimulatePrice;
+using System.IdentityModel.Claims;
 
 namespace AmazonFarmer.Administrator.API.Controllers
 {
@@ -200,52 +201,6 @@ namespace AmazonFarmer.Administrator.API.Controllers
             return response;
         }
 
-        [HttpPost("getProducts")]
-        public async Task<APIResponse> GetProducts(pagination_Req req)
-        {
-            APIResponse response = new APIResponse();
-            pagination_Resp InResp = new pagination_Resp();
-
-            IQueryable<TblProduct> lst = _repoWrapper.ProductRepo.getProducts();
-            lst = lst.Where(x => x.CategoryID == req.rootID);
-            if (!string.IsNullOrEmpty(req.search))
-            {
-                lst = lst.Where(x =>
-                    (x.Name != null && x.Name.ToLower().Contains(req.search.ToLower())) ||
-                    (x.ProductCode != null && x.ProductCode.ToLower().Contains(req.search.ToLower())) ||
-                    (x.SalesOrg != null && x.SalesOrg.ToLower().Contains(req.search.ToLower())) ||
-                    (x.Category != null && x.Category.Name.ToLower().Contains(req.search.ToLower())) ||
-                    (x.UOM != null && x.UOM.UOM.ToLower().Contains(req.search.ToLower())) ||
-                    (x.Division != null && x.Division.ToLower().Contains(req.search.ToLower()))
-                );
-            }
-            InResp.totalRecord = lst.Count();
-            lst = lst.Skip(req.pageNumber * req.pageSize)
-                         .Take(req.pageSize);
-            InResp.filteredRecord = lst.Count();
-            InResp.list = await lst.Select(x => new GetProductsByAdminResponse
-            {
-                productID = x.ID,
-                name = x.Name ?? string.Empty,
-                code = x.ProductCode ?? string.Empty,
-                category = x.Category != null ? x.Category.Name : string.Empty,
-                salesOrg = x.SalesOrg ?? string.Empty,
-                division = x.Division ?? string.Empty,
-                uom = x.UOM != null ? x.UOM.UOM : string.Empty,
-                status = (int)x.Active,
-                translations = x.ProductTranslations.Select(t => new ProductTranslationDTO
-                {
-                    translationID = t.ID,
-                    productID = t.ProductID,
-                    languageCode = t.LanguageCode,
-                    text = t.Text,
-                    filePath = t.Image
-                }).ToList()
-            }).ToListAsync();
-            response.response = InResp;
-            return response;
-        }
-        
         #region Product Translation
         [HttpGet("getTranslation/{productID}")]
         public async Task<APIResponse> GetTranslation(int productID)
@@ -317,9 +272,109 @@ namespace AmazonFarmer.Administrator.API.Controllers
             else
                 throw new AmazonFarmerException(_exceptions.productNotFound);
         }
-
-
         #endregion
+
+        #region Product Module
+
+        [HttpPost("getProducts")]
+        public async Task<APIResponse> GetProducts(pagination_Req req)
+        {
+            APIResponse response = new APIResponse();
+            pagination_Resp InResp = new pagination_Resp();
+
+            IQueryable<TblProduct> lst = _repoWrapper.ProductRepo.getProducts();
+            lst = lst.Where(x => x.CategoryID == req.rootID);
+            if (!string.IsNullOrEmpty(req.search))
+            {
+                lst = lst.Where(x =>
+                    (x.Name != null && x.Name.ToLower().Contains(req.search.ToLower())) ||
+                    (x.ProductCode != null && x.ProductCode.ToLower().Contains(req.search.ToLower())) ||
+                    (x.SalesOrg != null && x.SalesOrg.ToLower().Contains(req.search.ToLower())) ||
+                    (x.Category != null && x.Category.Name.ToLower().Contains(req.search.ToLower())) ||
+                    (x.UOM != null && x.UOM.UOM.ToLower().Contains(req.search.ToLower())) ||
+                    (x.Division != null && x.Division.ToLower().Contains(req.search.ToLower()))
+                );
+            }
+            InResp.totalRecord = lst.Count();
+            lst = lst.Skip(req.pageNumber * req.pageSize)
+                         .Take(req.pageSize);
+            InResp.filteredRecord = lst.Count();
+            InResp.list = await lst.Select(x => new GetProductRequest
+            {
+                productID = x.ID,
+                productName = x.Name ?? string.Empty,
+                productCode = x.ProductCode ?? string.Empty,
+                categoryID = x.CategoryID,
+                category = x.Category != null ? x.Category.Name : string.Empty,
+                saleOrg = x.SalesOrg ?? string.Empty,
+                division = x.Division ?? string.Empty,
+                uomID = x.UOMID,
+                uom = x.UOM != null ? x.UOM.UOM : string.Empty,
+                status = (int)x.Active,
+                translations = x.ProductTranslations.Select(t => new ProductTranslationDTO
+                {
+                    translationID = t.ID,
+                    productID = t.ProductID,
+                    languageCode = t.LanguageCode,
+                    text = t.Text,
+                    filePath = t.Image
+                }).ToList()
+            }).ToListAsync();
+            response.response = InResp;
+            return response;
+        }
+        [HttpPost("addProduct")]
+        public async Task<JSONResponse> AddProduct(AddProductRequest req)
+        {
+            TblProduct? product = await _repoWrapper.ProductRepo.GetProductByNameOrCode(req.productName, req.productCode);
+            if (product == null)
+            {
+                // Get the user ID from the token
+                var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                JSONResponse resp = new JSONResponse();
+                product = new TblProduct()
+                {
+                    CategoryID = req.categoryID,
+                    Name = req.productName,
+                    ProductCode = req.productCode,
+                    UOMID = req.uomID,
+                    CreatedByID = userID,
+                    CreatedDate = DateTime.UtcNow,
+                    Active = EActivityStatus.Active,
+                    Division = req.division
+                };
+                _repoWrapper.ProductRepo.AddProduct(product);
+                await _repoWrapper.SaveAsync();
+                resp.message = "Product Added";
+                return resp;
+            }
+            else
+                throw new AmazonFarmerException(_exceptions.productAlreadyExist);
+        }
+        [HttpPut("updateProduct")]
+        public async Task<JSONResponse> UpdateProduct(UpdateProductRequest req)
+        {
+            TblProduct? product = await _repoWrapper.ProductRepo.GetProductByID(req.productID);
+            if (product != null)
+            {
+                JSONResponse resp = new JSONResponse();
+                product.CategoryID = req.categoryID;
+                product.Name = req.productName;
+                product.ProductCode = req.productCode;
+                product.SalesOrg = req.saleOrg;
+                product.UOMID = req.uomID;
+                product.Active = (EActivityStatus)req.status;
+                product.Division = req.division;
+                _repoWrapper.ProductRepo.UpdateProduct(product);
+                await _repoWrapper.SaveAsync();
+                resp.message = "Product Updated";
+                return resp;
+            }
+            else
+                throw new AmazonFarmerException(_exceptions.productNotFound);
+        }
+        #endregion
+
 
         private async Task<decimal> GetOrderPriceWSDL(TblOrders planOrder, tblPlan plan, string SAPFarmerCode)
         {
