@@ -33,5 +33,7 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         Task<TblProduct?> GetProductByNameOrCode(string productName, string productCode);
         void AddProduct(TblProduct product);
         void UpdateProduct(TblProduct product);
+        void AddProductCategoryTranslation(tblProductCategoryTranslation translation);
+        void UpdateProductCategoryTranslation(tblProductCategoryTranslation translation);
     }
 }

@@ -110,8 +110,37 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }).ToList();
             return resp;
         }
-        [HttpPost("addTranslation")]
-        public async Task<JSONResponse> AddTranslation(AddTehsilTranslationRequest req)
+        [HttpPatch("syncTehsilTranslation")]
+        public async Task<JSONResponse> SyncTehsilTranslation(UpdateTehsilTranslationRequest req)
+        {
+            JSONResponse resp = new JSONResponse();
+            tblTehsilLanguages? tehsilLanguage = await _repoWrapper.TehsilRepo.GetTehsilLanguageByID(req.tehsilID, req.languageCode);
+            if (tehsilLanguage == null)
+            {
+                tehsilLanguage = new tblTehsilLanguages()
+                {
+                    TehsilID = req.tehsilID,
+                    LanguageCode = req.languageCode,
+                    Translation = req.text
+                };
+                _repoWrapper.TehsilRepo.AddTehsilTrasnaltion(tehsilLanguage);
+                await _repoWrapper.SaveAsync();
+                resp.message = "Tehsil translation added";
+            }
+            else
+            {
+                tehsilLanguage.TehsilID = req.tehsilID;
+                tehsilLanguage.LanguageCode = req.languageCode;
+                tehsilLanguage.Translation = req.text;
+                _repoWrapper.TehsilRepo.UpdateTehsilTranslation(tehsilLanguage);
+                await _repoWrapper.SaveAsync();
+                resp.message = "Tehsil translation Updated";
+            }
+            return resp;
+
+        }
+        //[HttpPost("addTranslation")]
+        private async Task<JSONResponse> AddTranslation(AddTehsilTranslationRequest req)
         {
             tblTehsilLanguages? tehsilLanguage = await _repoWrapper.TehsilRepo.GetTehsilLanguageByID(req.tehsilID, req.languageCode);
             if (tehsilLanguage == null)
@@ -131,8 +160,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
             else
                 throw new AmazonFarmerException(_exceptions.tehsilAlreadyExist);
         }
-        [HttpPut("updateTranslation")]
-        public async Task<JSONResponse> UpdateTranslation(UpdateTehsilTranslationRequest req)
+        //[HttpPut("updateTranslation")]
+        private async Task<JSONResponse> UpdateTranslation(UpdateTehsilTranslationRequest req)
         {
             tblTehsilLanguages? tehsilLanguage = await _repoWrapper.TehsilRepo.GetTehsilLanguageByID(req.translationID);
             if (tehsilLanguage != null)

@@ -14,6 +14,7 @@ using Microsoft.Extensions.Options;
 using Org.BouncyCastle.Ocsp;
 using SimulatePrice;
 using System.IdentityModel.Claims;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace AmazonFarmer.Administrator.API.Controllers
 {
@@ -136,21 +137,6 @@ namespace AmazonFarmer.Administrator.API.Controllers
             response.response = InResp;
             return response;
         }
-        [HttpGet("getProductCategoryTranslations/{categoryID}")]
-        public async Task<APIResponse> GetProductCategoryTranslations(int categoryID)
-        {
-            APIResponse response = new APIResponse();
-            List<tblProductCategoryTranslation> lang = await _repoWrapper.ProductRepo.GetCategoryTranslationsByCatID(categoryID);
-            response.response = lang.Select(x => new ProductCategoryTranslationResponse
-            {
-                categoryID = x.ProductCategoryID,
-                translationID = x.ID,
-                language = x.Language.LanguageName,
-                languageCode = x.LanguageCode,
-                text = x.Text
-            }).ToList();
-            return response;
-        }
 
         [HttpPut("updateProductCategory")]
         public async Task<JSONResponse> UpdateProductCategory(UpdateProductCategoryByAdminRequest req)
@@ -168,12 +154,48 @@ namespace AmazonFarmer.Administrator.API.Controllers
             response.message = "Product category added";
             return response;
         }
+        [HttpGet("getProductCategoryTranslations/{categoryID}")]
+        public async Task<APIResponse> GetProductCategoryTranslations(int categoryID)
+        {
+            APIResponse response = new APIResponse();
+            List<tblProductCategoryTranslation> lang = await _repoWrapper.ProductRepo.GetCategoryTranslationsByCatID(categoryID);
+            response.response = lang.Select(x => new ProductCategoryTranslationResponse
+            {
+                categoryID = x.ProductCategoryID,
+                translationID = x.ID,
+                language = x.Language.LanguageName,
+                languageCode = x.LanguageCode,
+                text = x.Text
+            }).ToList();
+            return response;
+        }
         [HttpPatch("syncProductCategoryTranslation")]
         public async Task<JSONResponse> AddProductCategoryTranslation(SyncProductCategoryTranslationDTO req)
         {
             JSONResponse response = new JSONResponse();
             tblProductCategoryTranslation? productCategoryTranslation = await _repoWrapper.ProductRepo.getProductCategoryTranslationByCatID(req.categoryID, req.languageCode);
-
+            if (productCategoryTranslation == null)
+            {
+                productCategoryTranslation = new tblProductCategoryTranslation()
+                {
+                    ProductCategoryID = req.categoryID,
+                    LanguageCode = req.languageCode,
+                    Text = req.text,
+                    Image = string.Empty
+                };
+                _repoWrapper.ProductRepo.AddProductCategoryTranslation(productCategoryTranslation);
+                response.message = "product category added";
+            }
+            else
+            {
+                productCategoryTranslation.ProductCategoryID = req.categoryID;
+                productCategoryTranslation.LanguageCode = req.languageCode;
+                productCategoryTranslation.Text = req.text;
+                productCategoryTranslation.Image = string.Empty;
+                _repoWrapper.ProductRepo.UpdateProductCategoryTranslation(productCategoryTranslation);
+                response.message = "product category updated";
+            }
+                await _repoWrapper.SaveAsync();
             return response;
         }
         #endregion
@@ -272,6 +294,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             else
                 throw new AmazonFarmerException(_exceptions.productNotFound);
         }
+        
         #endregion
 
         #region Product Module

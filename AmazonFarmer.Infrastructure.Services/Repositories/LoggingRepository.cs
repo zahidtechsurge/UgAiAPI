@@ -4,6 +4,7 @@
 using AmazonFarmer.Core.Application.Interfaces; 
 using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace AmazonFarmer.Infrastructure.Services.Repositories
 {
@@ -70,6 +71,14 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         public void UpdateNoticationLog(NotificationLog logEntry)
         {
             _context.NotificationLog.Update(logEntry);
+        }
+        public IQueryable<RequestLog> GetLogs()
+        {
+            return _context.RequestLogs.Include(x=>x.Responses);
+        }
+        public IQueryable<WSDLLog> GetWSDLLogs()
+        {
+            return _context.WSDLLogs;
         }
     }
 }

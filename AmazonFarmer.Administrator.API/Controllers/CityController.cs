@@ -90,9 +90,37 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }
             return resp;
         }
+        [HttpPatch("syncCityTranslation")]
+        public async Task<JSONResponse> SyncCityTranslation(UpdateCityTranslationRequest req)
+        {
+            JSONResponse resp = new JSONResponse();
+            tblCityLanguages? cityLanguages = await _repoWrapper.CityRepo.GetCityLanguageByID(req.cityID, req.languageCode);
+            if (cityLanguages == null)
+            {
+                cityLanguages = new tblCityLanguages()
+                {
+                    Translation = req.text,
+                    LanguageCode = req.languageCode,
+                    CityID = req.cityID
+                };
+                _repoWrapper.CityRepo.AddCityLanguage(cityLanguages);
+                await _repoWrapper.SaveAsync();
+                resp.message = string.Concat("City translation has been added");
+            }
+            else
+            {
+                cityLanguages.LanguageCode = req.languageCode;
+                cityLanguages.CityID = req.cityID;
+                cityLanguages.Translation = req.text;
+                _repoWrapper.CityRepo.UpdateCityLanguage(cityLanguages);
+                await _repoWrapper.SaveAsync();
+                resp.message = string.Concat("City translation has been updated");
+            }
 
-        [HttpPost("addCityTranslation")]
-        public async Task<JSONResponse> AddCityTranslation(AddCityTranslationRequest req)
+            return resp;
+        }
+        //[HttpPost("addCityTranslation")]
+        private async Task<JSONResponse> AddCityTranslation(AddCityTranslationRequest req)
         {
             JSONResponse resp = new JSONResponse();
             tblCityLanguages? cityLanguages = await _repoWrapper.CityRepo.GetCityLanguageByID(req.cityID, req.languageCode);
@@ -130,8 +158,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }).ToList();
             return resp;
         }
-        [HttpPut("updateCityTranslation")]
-        public async Task<JSONResponse> UpdateCityTranslation(UpdateCityTranslationRequest req)
+        //[HttpPut("updateCityTranslation")]
+        private async Task<JSONResponse> UpdateCityTranslation(UpdateCityTranslationRequest req)
         {
             JSONResponse resp = new JSONResponse();
             tblCityLanguages? cityLanguages = await _repoWrapper.CityRepo.GetCityLanguageByID(req.translationID);

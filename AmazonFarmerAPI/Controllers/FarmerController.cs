@@ -602,7 +602,10 @@ namespace AmazonFarmerAPI.Controllers
             // Check if the new password matches the confirm password
             else if (req.password != req.confirmPassword)
                 throw new AmazonFarmerException(_exceptions.confirmPasswordNotMatch);
+            if (!matchPasswordCriteria(req.password))
+            {
 
+            }
             else
             {
                 // Change the user password

@@ -15,5 +15,7 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
 
         NotificationLog AddNoticationLog(NotificationLog logEntry);
         void UpdateNoticationLog(NotificationLog logEntry);
+        IQueryable<RequestLog> GetLogs();
+        IQueryable<WSDLLog> GetWSDLLogs();
     }
 }

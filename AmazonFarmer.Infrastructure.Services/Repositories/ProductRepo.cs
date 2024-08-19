@@ -185,5 +185,13 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             _context.Products.Update(product);
         }
+        public void AddProductCategoryTranslation(tblProductCategoryTranslation translation)
+        {
+            _context.ProductCategoryTranslation.Add(translation);
+        }
+        public void UpdateProductCategoryTranslation(tblProductCategoryTranslation translation)
+        {
+            _context.ProductCategoryTranslation.Update(translation);
+        }
     }
 }

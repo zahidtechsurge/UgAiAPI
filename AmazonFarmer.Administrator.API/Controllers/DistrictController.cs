@@ -107,7 +107,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 district.DistrictCode = req.districtCode;
                 district.RegionId = req.regionID;
                 district.Status = (EActivityStatus)req.status;
-                _repoWrapper.DistrictRepo.AddDistrict(district);
+                _repoWrapper.DistrictRepo.UpdateDistrict(district);
                 await _repoWrapper.SaveAsync();
                 resp.message = string.Concat("District: ", district.Name, " has been updated");
             }
@@ -118,9 +118,38 @@ namespace AmazonFarmer.Administrator.API.Controllers
             return resp;
         }
 
+        [HttpPatch("syncDistrictTranslation")]
+        public async Task<JSONResponse> SyncDistrictTranslation(UpdateDistrictTranslationRequest req)
+        {
+            JSONResponse resp = new JSONResponse();
+            tblDistrictLanguages? districtLanguage = await _repoWrapper.DistrictRepo.GetDistrictLanguageByID(req.districtID, req.languageCode);
+            if (districtLanguage == null)
+            {
+                districtLanguage = new tblDistrictLanguages()
+                {
+                    DistrictID = req.districtID,
+                    LanguageCode = req.languageCode,
+                    Translation = req.text
+                };
+                _repoWrapper.DistrictRepo.AddDistrictLanguages(districtLanguage);
+                //await _repoWrapper.SaveAsync();
+                resp.message = string.Concat("District translation has been added");
+            }
+            else
+            {
+                districtLanguage.LanguageCode = req.languageCode;
+                districtLanguage.DistrictID = req.districtID;
+                districtLanguage.Translation = req.text;
+                _repoWrapper.DistrictRepo.UpdateDistrictLanguages(districtLanguage);
+                resp.message = string.Concat("District translation has been updated");
+            }
+            await _repoWrapper.SaveAsync();
 
-        [HttpPost("addDistrictTranslation")]
-        public async Task<JSONResponse> AddDistrictTranslation(AddDistrictTranslationRequest req)
+            return resp;
+        }
+
+        //[HttpPost("addDistrictTranslation")]
+        private async Task<JSONResponse> AddDistrictTranslation(AddDistrictTranslationRequest req)
         {
             JSONResponse resp = new JSONResponse();
             tblDistrictLanguages? districtLanguage = await _repoWrapper.DistrictRepo.GetDistrictLanguageByID(req.districtID, req.languageCode);
@@ -157,8 +186,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }).ToList();
             return resp;
         }
-        [HttpPut("updateDistrictTranslation")]
-        public async Task<JSONResponse> UpdateDistrictTranslation(UpdateDistrictTranslationRequest req)
+        //[HttpPut("updateDistrictTranslation")]
+        private async Task<JSONResponse> UpdateDistrictTranslation(UpdateDistrictTranslationRequest req)
         {
             JSONResponse resp = new JSONResponse();
             tblDistrictLanguages? districtLanguage = await _repoWrapper.DistrictRepo.GetDistrictLanguageByID(req.translationID);
