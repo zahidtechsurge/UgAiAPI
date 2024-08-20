@@ -559,7 +559,7 @@ namespace AmazonFarmerAPI.Controllers
                     throw new AmazonFarmerException(_exceptions.expiredOTP);
                 }
                 //user.User.OTP = "";
-                user.OTPExpiredOn = DateTime.UtcNow.AddMinutes(15);
+                user.OTPExpiredOn = DateTime.UtcNow.AddMinutes(3);
                 await _repoWrapper.UserRepo.emptyPasswordAttempts(user);
                 await _repoWrapper.SaveAsync();
                 isExist = true;

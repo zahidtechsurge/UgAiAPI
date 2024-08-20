@@ -128,6 +128,8 @@ namespace AmazonFarmer.Infrastructure.Persistence
         public DbSet<tblCropGroupCrops> CropGroupCrops { get; set; }
         public DbSet<PlanStatusResult> SP_PlanStatusResult { get; set; }
         public DbSet<PlanSeasonCropResult> SP_PlanSeasonCropResult { get; set; }
+        public DbSet<SP_FarmerDetailsResult> SP_FarmerDetailsResult { get; set; }
+        public DbSet<SP_LogEntryResult> SP_LogEntryResult { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -136,6 +138,8 @@ namespace AmazonFarmer.Infrastructure.Persistence
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<PlanStatusResult>().ToView("View_PlanStatusResult");
             modelBuilder.Entity<PlanSeasonCropResult>().ToView("View_PlanSeasonCropResult");
+            modelBuilder.Entity<SP_FarmerDetailsResult>().ToView("View_FarmerDetailsResult");
+            modelBuilder.Entity<SP_LogEntryResult>().ToView("View_LogEntryResult");
 
             modelBuilder.Entity<TblUser>(b =>
             {

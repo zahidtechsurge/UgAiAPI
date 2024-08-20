@@ -464,7 +464,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         public async Task<List<PlanStatusResult>> GetPlanStatusPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm)
         {
             var lst = new List<PlanStatusResult>();
-            var sortOrderParam = new SqlParameter("@SortOrder", sortOrder ?? "ASC");
+            var sortOrderParam = new SqlParameter("@SortOrder", sortOrder ?? "DESC");
             var sortColumnParam = new SqlParameter("@SortColumn", sortColumn ?? "Season");
             var pageNumberParam = new SqlParameter("@PageNumber", pageNumber);
             var pageSizeParam = new SqlParameter("@PageSize", pageSize);
@@ -483,7 +483,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         public async Task<List<PlanSeasonCropResult>> GetPlanSeasonCropPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm)
         {
             var lst = new List<PlanSeasonCropResult>();
-            var sortOrderParam = new SqlParameter("@SortOrder", sortOrder ?? "ASC");
+            var sortOrderParam = new SqlParameter("@SortOrder", sortOrder ?? "DESC");
             var sortColumnParam = new SqlParameter("@SortColumn", sortColumn ?? "Season");
             var pageNumberParam = new SqlParameter("@PageNumber", pageNumber);
             var pageSizeParam = new SqlParameter("@PageSize", pageSize);
@@ -497,6 +497,23 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 @SearchTerm";
             //return lst;
             return await _context.SP_PlanSeasonCropResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam, SearchTerm).ToListAsync();
+        }
+        public async Task<List<SP_FarmerDetailsResult>> GetSP_FarmerDetailsResult(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm)
+        {
+            var sortOrderParam = new SqlParameter("@SortOrder", sortOrder ?? "DESC");
+            var sortColumnParam = new SqlParameter("@SortColumn", sortColumn ?? "FarmerName");
+            var pageNumberParam = new SqlParameter("@PageNumber", pageNumber);
+            var pageSizeParam = new SqlParameter("@PageSize", pageSize);
+            var SearchTerm = new SqlParameter("@SearchTerm", string.IsNullOrEmpty(searchTerm) ? "" : searchTerm);
+            var sql = @"
+            EXEC sp_GetFarmerDetails 
+                @PageNumber, 
+                @PageSize, 
+                @SortColumn, 
+                @SortOrder,
+                @SearchTerm";
+            //return lst;
+            return await _context.SP_FarmerDetailsResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam, SearchTerm).ToListAsync();
         }
     }
 }

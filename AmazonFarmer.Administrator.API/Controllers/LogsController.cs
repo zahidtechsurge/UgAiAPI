@@ -1,6 +1,7 @@
 ﻿using AmazonFarmer.Core.Application;
 using AmazonFarmer.Core.Application.DTOs;
 using AmazonFarmer.Core.Domain.Entities;
+using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,30 +20,34 @@ namespace AmazonFarmer.Administrator.API.Controllers
         {
             _repoWrapper = repoWrapper;
         }
+        [AllowAnonymous]
         [HttpPost("getEventLogs")]
-        public async Task<APIResponse> Get_Event_Logs(pagination_Req req)
+        public async Task<APIResponse> Get_Event_Logs(ReportPagination_Req req)
         {
             APIResponse resp = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
-            IQueryable<RequestLog> logs = _repoWrapper.LoggingRepository.GetLogs();
+            List<SP_LogEntryResult> report = await _repoWrapper.LoggingRepository.GetLogs(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search);
             resp.message = "Fetched paginated event logs";
-            logs = logs.OrderByDescending(x => x.RequestId);
-            if (!string.IsNullOrEmpty(req.search))
-                logs = logs.Where(x => x.RequestId.ToString().Contains(req.search) || x.HttpMethod.Contains(req.search) || x.Url.Contains(req.search) || x.Body.Contains(req.search));
-            InResp.totalRecord = logs.Count();
-            logs = logs.Skip(req.pageNumber * req.pageSize)
-                         .Take(req.pageSize);
-            InResp.filteredRecord = logs.Count();
-            InResp.list = await logs.Select(l => new LogDTO
+            if (report != null && report.Count() > 0)
             {
-                recID = l.RequestId,
-                method = l.HttpMethod,
-                request = l.Body,
-                requestDatetime = l.Timestamp,
-                statusCode = l.Responses != null ? l.Responses.First().StatusCode : 0,
-                response = l.Responses != null ? l.Responses.First().Body : string.Empty,
-                responseDatetime = l.Responses != null ? l.Responses.First().Timestamp : null,
-            }).ToListAsync();
+                InResp.totalRecord = report.Count > 0 ? report.First().totalRows : 0;
+                InResp.filteredRecord = report.Count();
+                InResp.list = report.Select(x => new LogDTO
+                {
+                    recID = x.requestId,
+                    method = x.requestHttpMethod ?? string.Empty,
+                    url = x.requestURL ?? string.Empty,
+                    request = x.requestBody ?? string.Empty,
+                    requestDatetime = x.requestTimestamp,
+                    statusCode = x.responseStatusCode ?? 0,
+                    response = x.responseBody ?? string.Empty,
+                    responseDatetime = x.responseTimestamp,
+                }).ToList();
+            }
+            else
+            {
+                InResp.list = new List<LogDTO>();
+            }
             resp.response = InResp;
             return resp;
         }

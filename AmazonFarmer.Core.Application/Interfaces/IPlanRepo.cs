@@ -40,5 +40,6 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         IQueryable<tblSeason> getSeasonProductReport();
         Task<List<PlanStatusResult>> GetPlanStatusPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm);
         Task<List<PlanSeasonCropResult>> GetPlanSeasonCropPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm);
+        Task<List<SP_FarmerDetailsResult>> GetSP_FarmerDetailsResult(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm);
     }
 }

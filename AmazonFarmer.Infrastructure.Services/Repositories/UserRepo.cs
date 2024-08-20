@@ -165,7 +165,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             if (user != null)
             {
                 user.OTP = OTPCode;
-                user.OTPExpiredOn = DateTime.UtcNow.AddSeconds(30);
+                user.OTPExpiredOn = DateTime.UtcNow.AddMinutes(3);
                 _context.Users.Update(user);
             }
         }

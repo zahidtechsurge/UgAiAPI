@@ -12,7 +12,7 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string method { get; set; } = string.Empty;
         public string url { get; set; } = string.Empty;
         public string request { get; set; } = string.Empty;
-        public DateTime requestDatetime { get; set; }
+        public DateTime? requestDatetime { get; set; }
         public int statusCode { get; set; }
         public string status { get; set; } = string.Empty;
         public string response { get; set; } = string.Empty;

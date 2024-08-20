@@ -183,9 +183,11 @@ using (var scope = app.Services.CreateScope())
         var dbContext = scope.ServiceProvider
             .GetRequiredService<AmazonFarmerContext>();
 
-
-        // Here is the migration executed
-        dbContext.Database.Migrate();
+        if (true)
+        {
+            // Here is the migration executed
+            dbContext.Database.Migrate();
+        }
 
         var userManager = services.GetRequiredService<UserManager<TblUser>>();
         var roleManager = services.GetRequiredService<RoleManager<TblRole>>();

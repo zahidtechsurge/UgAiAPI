@@ -464,6 +464,53 @@ namespace AmazonFarmer.Administrator.API.Controllers
             return resp;
         }
 
+
+        [AllowAnonymous]
+        [HttpPost("getFarmerProfiles")]
+        public async Task<APIResponse> GetFarmerProfiles(ReportPagination_Req req)
+        {
+
+            APIResponse resp = new APIResponse();
+            pagination_Resp InResp = new pagination_Resp();
+
+            List<SP_FarmerDetailsResult> report = await _repoWrapper.PlanRepo.GetSP_FarmerDetailsResult(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search);
+            if (report != null && report.Count() > 0)
+            {
+                InResp.totalRecord = report.Count > 0 ? report.First().TotalRows : 0;
+                InResp.filteredRecord = report.Count();
+                InResp.list = report.Select(x => new FarmerDetailsResponse
+                {
+                    applicationStatus = x.ApplicationStatus,
+                    applicationSubmitDateTime = x.ApplicationSubmitDateTime,
+                    farmAcres = x.FarmAcres,
+                    farmCity = x.FarmCity,
+                    farmerCity = x.FarmerCity,
+                    farmerCNIC = x.FarmerCNIC,
+                    farmerName = x.FarmerName,
+                    farmerRegion = x.FarmerRegion,
+                    farmerTehsil = x.FarmerTehsil,
+                    farmerTerritory = x.FarmerTerritory,
+                    farmName = x.FarmName,
+                    farmRegion = x.FarmRegion,
+                    farmTehsil = x.FarmTehsil,
+                    farmTerritory = x.FarmTerritory,
+                    leasedLand = x.LeasedLand,
+                    noofFarmsAdded = x.NoofFarmsAdded,
+                    ownedLand = x.OwnedLand,
+                    rsm = x.RSM,
+                    rsmApprovalDateTime = x.RSMApprovalDateTime,
+                    totalLand = x.TotalLand,
+                    tso = x.TSO,
+                    tsoApprovalDateTime = x.TSOApprovalDateTime
+                }).ToList();
+            }
+            else
+            {
+                InResp.list = new List<SP_FarmerDetailsResult>();
+            }
+            resp.response = InResp;
+            return resp;
+        }
         private List<TblEmployeeDistrictAssignment> assignDistrict(int[]? districtID)
         {
             List<TblEmployeeDistrictAssignment> list = new List<TblEmployeeDistrictAssignment>();

@@ -1,4 +1,5 @@
-﻿using AmazonFarmer.Core.Domain.Entities; // Importing necessary namespaces
+﻿using AmazonFarmer.Core.Application.DTOs;
+using AmazonFarmer.Core.Domain.Entities; // Importing necessary namespaces
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         NotificationLog AddNoticationLog(NotificationLog logEntry);
         void UpdateNoticationLog(NotificationLog logEntry);
         IQueryable<RequestLog> GetLogs();
+        Task<List<SP_LogEntryResult>> GetLogs(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm);
         IQueryable<WSDLLog> GetWSDLLogs();
     }
 }
