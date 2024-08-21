@@ -81,7 +81,7 @@ namespace AmazonFarmerAPI.Controllers
                         throw new AmazonFarmerException(_exceptions.sapFarmerCodeNotFound);
                     if ((order.Products.FirstOrDefault().ClosingQTY + req.qty) > order.Products.FirstOrDefault().QTY)
                         throw new AmazonFarmerException(_exceptions.authorityLetterQtyReached);
-                    if (order.AuthorityLetters != null && (order.AuthorityLetters.Sum(a => a.AuthorityLetterDetails.Sum(d => d.BagQuantity)) + req.qty) > order.Products.FirstOrDefault().ClosingQTY)
+                    if (order.AuthorityLetters != null && (order.AuthorityLetters.Sum(a => a.AuthorityLetterDetails.Sum(d => d.BagQuantity)) + req.qty) > order.Products.FirstOrDefault().QTY)
                         throw new AmazonFarmerException(_exceptions.authorityLetterQtyReached);
                     else
                     {

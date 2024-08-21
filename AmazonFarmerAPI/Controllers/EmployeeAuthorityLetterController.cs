@@ -472,8 +472,6 @@ namespace AmazonFarmerAPI.Controllers
         {
             string credentialsFilePath = Path.Combine(_hostEnvironment.ContentRootPath, "visioncredentials.json");
             string VideorespText = "";
-            try
-            {
                 // Authenticate with Google Cloud using service account credentials
                 var builder = new ImageAnnotatorClientBuilder
                 {
@@ -493,11 +491,6 @@ namespace AmazonFarmerAPI.Controllers
                 {
                     throw new AmazonFarmerException(_exceptions.textNotFoundInImage);
                 }
-            }
-            catch (Exception ex)
-            {
-                return ex.Message;
-            }
         }
         private async Task<string> GetMaskedPatternMatch(string inputString, string maskedPattern)
         {

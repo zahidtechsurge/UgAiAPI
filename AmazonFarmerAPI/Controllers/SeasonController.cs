@@ -26,8 +26,6 @@ namespace AmazonFarmerAPI.Controllers
         public async Task<APIResponse> getSeasons()
         {
             APIResponse resp = new APIResponse();
-            try
-            {
                 // Create LanguageReq object and set language code from user claims
                 LanguageReq req = new LanguageReq();
                 req.languageCode = User.FindFirst("languageCode")?.Value;
@@ -39,13 +37,6 @@ namespace AmazonFarmerAPI.Controllers
                     season.months = await _repoWrapper.MonthRepo.getMonthsByLanguageCodeAndSeasonID(req.languageCode, season.seasonID);
                 }
                 resp.response = seasons;
-            }
-            catch (Exception ex)
-            {
-                // Handle exception
-                resp.isError = true;
-                resp.message = ex.Message;
-            }
             return resp;
         }
     }

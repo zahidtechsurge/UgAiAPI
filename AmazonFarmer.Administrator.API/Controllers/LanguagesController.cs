@@ -27,8 +27,6 @@ namespace AmazonFarmer.Administrator.API.Controllers
         public async Task<APIResponse> GetLanguages(pagination_Req req)
         {
             APIResponse response = new APIResponse();
-            try
-            {
                 pagination_Resp InResp = new pagination_Resp();
                 IQueryable<tblLanguages> lang = _repoWrapper.LanguageRepo.getLangauges();
                 if (!string.IsNullOrEmpty(req.search))
@@ -44,13 +42,6 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     status = (int)x.Status
                 }).ToListAsync();
                 response.response = InResp;
-
-            }
-            catch (Exception ex)
-            {
-                response.isError = true;
-                response.message = ex.Message;
-            }
 
             return response;
         }
@@ -77,8 +68,6 @@ namespace AmazonFarmer.Administrator.API.Controllers
         public async Task<JSONResponse> AddLanguage(UpdateLanguageRequest_Admin req)
         {
             JSONResponse response = new JSONResponse();
-            try
-            {
                 if (string.IsNullOrEmpty(req.languageCode) || string.IsNullOrEmpty(req.language))
                     throw new AmazonFarmerException(_exceptions.languageNotFound);
                 tblLanguages language = await _repoWrapper.LanguageRepo.getLanguageByCodeOrName(req.languageCode, string.Empty);
@@ -93,12 +82,6 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     await _repoWrapper.SaveAsync();
                     response.message = "language updated";
                 }
-            }
-            catch (Exception ex)
-            {
-                response.isError = true;
-                response.message = ex.Message;
-            }
 
             return response;
         }

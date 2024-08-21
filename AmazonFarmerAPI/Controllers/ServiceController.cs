@@ -41,8 +41,6 @@ namespace AmazonFarmerAPI.Controllers
         public async Task<APIResponse> getServices()
         {
             APIResponse resp = new APIResponse();
-            try
-            {
                 // Create LanguageReq object with language code obtained from User's claims
                 //LanguageReq req = new LanguageReq() { languageCode = User.FindFirst("languageCode")?.Value };
                 getServicesRequestDTO req = new getServicesRequestDTO()
@@ -53,13 +51,6 @@ namespace AmazonFarmerAPI.Controllers
 
                 // Call repository method to get services by language ID and specified configuration value
                 resp.response = await _repoWrapper.ServiceRepo.getServicesByLanguageID(req, Convert.ToInt32(ConfigExntension.GetConfigurationValue("productSettings:ServicePostDeliveryIn")));
-            }
-            catch (Exception ex)
-            {
-                // Handle exception
-                resp.isError = true;
-                resp.message = ex.Message;
-            }
             return resp;
         }
 

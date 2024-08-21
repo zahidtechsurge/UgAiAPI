@@ -40,8 +40,6 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
         public async Task<APIResponse> getFarms(farms_Request request)
         {
             APIResponse resp = new APIResponse(); // Initializing API response object
-            try
-            {
                 var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Extracting user ID from claims
                 if (!string.IsNullOrEmpty(userID)) // Checking if user ID is not null or empty
                 {
@@ -100,12 +98,6 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                     }
                     resp.response = farmsResponse; // Retrieving farms by user ID
                 }
-            }
-            catch (Exception ex) // Catching exceptions
-            {
-                resp.isError = true; // Setting error flag in response
-                resp.message = $"{ex.Message}"; // Setting error message in response
-            }
             return resp; // Returning the API response
         }
 
@@ -644,8 +636,6 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
         {
             APIResponse resp = new APIResponse(); // Initializing API response object
             pagination_Resp inResp = new();
-            try
-            {
                 var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Extracting user ID from claims
                 var languageCode = User.FindFirst("languageCode")?.Value; // Extracting language code from claims
                 if (!string.IsNullOrEmpty(userID) && !string.IsNullOrEmpty(languageCode)) // Checking if both user ID and language code are provided
@@ -723,12 +713,6 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                 {
                     throw new AmazonFarmerException(_exceptions.userIDorLanguageCodeNotFound); // Throws exception if either user ID or language code is not found
                 }
-            }
-            catch (Exception ex) // Handling exceptions
-            {
-                resp.isError = true; // Setting error flag in response
-                resp.message = ex.Message; // Setting error message in response
-            }
             return resp; // Returning the API response
         }
 

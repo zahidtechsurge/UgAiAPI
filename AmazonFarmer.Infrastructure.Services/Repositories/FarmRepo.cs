@@ -106,8 +106,6 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         /// <returns>The ID of the newly added farm change request.</returns>
         public async Task<int> addFarmRequest(FarmDTO farm, string UserID)
         {
-            try
-            {
                 // Check if the farm DTO contains a non-null application ID
                 if (farm.applicationID.HasValue)
                 {
@@ -142,16 +140,9 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 {
                     throw new AmazonFarmerException("Application ID cannot be null.");
                 }
-            }
-            catch (Exception ex)
-            {
-                throw new AmazonFarmerException("Error occurred while adding farm change request.");
-            }
         }
         public async Task<int> updateFarmRequest(FarmDTO farm, string UserID)
         {
-            try
-            {
                 // Check if the farm DTO contains a non-null application ID
                 if (farm.applicationID.HasValue)
                 {
@@ -187,11 +178,6 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 {
                     throw new AmazonFarmerException("Application ID cannot be null.");
                 }
-            }
-            catch (Exception ex)
-            {
-                throw new AmazonFarmerException("Error occurred while adding farm change request.");
-            }
         }
         public async Task<int?> getApplicationIDByFarmerID(string userID)
         {

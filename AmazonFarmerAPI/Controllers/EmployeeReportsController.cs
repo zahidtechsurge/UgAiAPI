@@ -4,6 +4,7 @@ using AmazonFarmer.Core.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Claims;
 
 namespace AmazonFarmerAPI.Controllers
 {
@@ -27,7 +28,9 @@ namespace AmazonFarmerAPI.Controllers
         {
             APIResponse resp = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
-            List<PlanStatusResult> report = await _repoWrapper.PlanRepo.GetPlanStatusPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search);
+            //var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Retrieving UserID from user claims
+            //List<PlanStatusResult> report = await _repoWrapper.PlanRepo.GetPlanStatusPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search, userID);
+            List<PlanStatusResult> report = await _repoWrapper.PlanRepo.GetPlanStatusPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search, string.Empty);
             if (report != null && report.Count() > 0)
             {
                 InResp.totalRecord = report.First().TotalRows;
@@ -58,7 +61,9 @@ namespace AmazonFarmerAPI.Controllers
             APIResponse resp = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
 
-            List<PlanSeasonCropResult> report = await _repoWrapper.PlanRepo.GetPlanSeasonCropPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search);
+            //var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Retrieving UserID from user claims
+            //List<PlanSeasonCropResult> report = await _repoWrapper.PlanRepo.GetPlanSeasonCropPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search, userID);
+            List<PlanSeasonCropResult> report = await _repoWrapper.PlanRepo.GetPlanSeasonCropPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search, string.Empty);
             if (report != null && report.Count() > 0)
             {
                 InResp.totalRecord = report.Count > 0 ? report.First().TotalRows : 0;

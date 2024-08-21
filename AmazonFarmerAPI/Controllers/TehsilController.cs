@@ -26,21 +26,12 @@ namespace AmazonFarmerAPI.Controllers
         public async Task<APIResponse> getTehsils(getTehsil_Req req)
         {
             APIResponse resp = new APIResponse();
-            try
-            {
                 // Check if language code is null or empty
                 if (string.IsNullOrEmpty(req.languageCode))
                    throw new AmazonFarmerException(_exceptions.languageCodeRequired);
 
                 // Call repository method to get tehsils
                 resp.response = await _repoWrapper.TehsilRepo.getTehsils(req);
-            }
-            catch (Exception ex)
-            {
-                // Handle exception
-                resp.isError = true;
-                resp.message = ex.Message;
-            }
             return resp;
         }
     }

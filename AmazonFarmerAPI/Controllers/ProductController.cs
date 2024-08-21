@@ -41,8 +41,6 @@ namespace AmazonFarmerAPI.Controllers
         public async Task<APIResponse> getProducts()
         {
             APIResponse resp = new APIResponse();
-            try
-            {
                 // Get the language code from the user claims
                 GetProductDTO_Internal_req req = new GetProductDTO_Internal_req()
                 {
@@ -52,13 +50,6 @@ namespace AmazonFarmerAPI.Controllers
 
                 // Call repository method to get products by language ID
                 resp.response = await _repoWrapper.ProductRepo.getProductsByLangugageID(req, Convert.ToInt32(ConfigExntension.GetConfigurationValue("productSettings:PostDeliveryIn")));
-            }
-            catch (Exception ex)
-            {
-                // Handle exception
-                resp.isError = true;
-                resp.message = ex.Message;
-            }
             return resp;
         }
 

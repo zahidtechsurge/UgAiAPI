@@ -22,16 +22,8 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
         public async Task<APIResponse> getLanguages() // Method to handle GET requests for getting languages
         {
             APIResponse resp = new APIResponse(); // Initializing API response object
-            try
-            {
                 // Fetching available languages using repository
                 resp.response = await _repoWrapper.LanguageRepo.GetLanguages();
-            }
-            catch (Exception ex) // Handling exceptions
-            {
-                resp.isError = true; // Setting error flag in response
-                resp.message = ex.Message; // Setting error message in response
-            }
             return resp; // Returning the API response
         }
     }

@@ -21,45 +21,37 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
             _repoWrapper = repoWrapper; // Initializing the repository wrapper
             _googleLocationExtension = googleLocationExtension; // Initializing the Google location extension
         }
-
+        [AllowAnonymous]
         [HttpPost("getPickup")]
         public async Task<APIResponse> getPickup(currentLocation req) // Method to handle POST requests for getting pickup locations
         {
             APIResponse resp = new APIResponse(); // Initializing API response object
-            try
+            List<LocationDTO> warehouseLocationDBs = await _repoWrapper.LocationRepo.getWarehouseLocationsByLanguageCode(User.FindFirst("languageCode")?.Value); // Retrieving warehouse locations by language code
+            if (warehouseLocationDBs == null || warehouseLocationDBs.Count() <= 0) // Checking if warehouse locations are found
+                throw new AmazonFarmerException(_exceptions.warehouseNotFound); // Throws exception if warehouse locations are not found
+
+            getFarmLocation getfarmLocation = await _repoWrapper.FarmRepo.getFarmLocationByFarmID(req.farmID); // Retrieving farm location by farm ID
+            if (getfarmLocation == null) // Checking if farm location is found
+                throw new AmazonFarmerException(_exceptions.farmNotFound); // Throws exception if farm location is not found
+
+            getDistance getDistance = new getDistance // Creating getDistance object for distance calculation
             {
-                List<LocationDTO> warehouseLocationDBs = await _repoWrapper.LocationRepo.getWarehouseLocationsByLanguageCode(User.FindFirst("languageCode")?.Value); // Retrieving warehouse locations by language code
-                if (warehouseLocationDBs == null || warehouseLocationDBs.Count() <= 0) // Checking if warehouse locations are found
-                   throw new AmazonFarmerException(_exceptions.warehouseNotFound); // Throws exception if warehouse locations are not found
+                farmLatitude = getfarmLocation.latitude, // Setting farm latitude
+                farmLongitude = getfarmLocation.longitude, // Setting farm longitude
+                WarehouseLocations = warehouseLocationDBs // Initializing warehouse locations list
+            };
 
-                getFarmLocation getfarmLocation = await _repoWrapper.FarmRepo.getFarmLocationByFarmID(req.farmID); // Retrieving farm location by farm ID
-                if (getfarmLocation == null) // Checking if farm location is found
-                   throw new AmazonFarmerException(_exceptions.farmNotFound); // Throws exception if farm location is not found
+            getDistance = await _googleLocationExtension.GetDistanceBetweenLocations(getDistance); // Getting distance between locations using Google location extension
 
-                getDistance getDistance = new getDistance // Creating getDistance object for distance calculation
-                {
-                    farmLatitude = getfarmLocation.latitude, // Setting farm latitude
-                    farmLongitude = getfarmLocation.longitude, // Setting farm longitude
-                    WarehouseLocations = warehouseLocationDBs // Initializing warehouse locations list
-                };
+            getDistance.WarehouseLocations = getDistance.WarehouseLocations.OrderBy(x => x.distance).ToList();
 
-                getDistance = await _googleLocationExtension.GetDistanceBetweenLocations(getDistance); // Getting distance between locations using Google location extension
-
-                getDistance.WarehouseLocations = getDistance.WarehouseLocations.OrderBy(x => x.distance).ToList();
-
-                resp.response = new getPickupLocation_Resp() // Creating response object
-                {
-                    pickupLocation = getDistance.WarehouseLocations, // Setting pickup locations in response
-                    latitude = getfarmLocation.latitude, // Setting farm latitude in response
-                    longitude = getfarmLocation.longitude // Setting farm longitude in response
-                };
-
-            }
-            catch (Exception ex) // Handling exceptions
+            resp.response = new getPickupLocation_Resp() // Creating response object
             {
-                resp.isError = true; // Setting error flag in response
-                resp.message = ex.Message; // Setting error message in response
-            }
+                pickupLocation = getDistance.WarehouseLocations, // Setting pickup locations in response
+                latitude = getfarmLocation.latitude, // Setting farm latitude in response
+                longitude = getfarmLocation.longitude // Setting farm longitude in response
+            };
+
             return resp; // Returning the API response
         }
     }

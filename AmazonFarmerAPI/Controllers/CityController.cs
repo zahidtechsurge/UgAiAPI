@@ -36,21 +36,12 @@ namespace AmazonFarmerAPI.Controllers
         public async Task<APIResponse> getCities(getCity_Req req)
         {
             APIResponse resp = new APIResponse();
-            try
-            {
                 // Check if language code is provided, throw exception if it's missing.
                 if (string.IsNullOrEmpty(req.languageCode))
                    throw new AmazonFarmerException(_exceptions.languageCodeRequired);
 
                 // Fetch cities asynchronously using repository.
                 resp.response = await _repoWrapper.CityRepo.getCities(req);
-            }
-            catch (Exception ex)
-            {
-                // If an exception occurs, set response properties accordingly.
-                resp.isError = true;
-                resp.message = ex.Message;
-            }
             return resp;
         }
     }

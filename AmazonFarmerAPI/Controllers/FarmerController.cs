@@ -1301,8 +1301,6 @@ namespace AmazonFarmerAPI.Controllers
 
 
                 #region get weather Information
-                try
-                {
                     EngroWeatherAPI_Response locationResp = await _accuWeatherService.getWeather(location.city);
                     //getWeatherAPI_Req locationResp = await _accuWeatherService.getLocation(location);
                     //_inResp.weather = await _accuWeatherService.getWeather(locationResp);
@@ -1320,18 +1318,6 @@ namespace AmazonFarmerAPI.Controllers
                         weatherIconID = locationResp.weatherIconCode,
                         weatherIconPath = weatherIconPath
                     };
-                }
-                catch (Exception ex)
-                {
-                    _inResp.weather = new WeatherDTO()
-                    {
-                        weatherIconID = "01n",
-                        //weatherText = apiResp[0].WeatherText,
-                        weatherArea = "N/A",
-                        weatherUnit = "C",
-                        weatherValue = "N/A"
-                    };
-                }
                 //tblWeatherIcon tblWeather = await _repoWrapper.WeatherRepo.getWeatherByWeatherType(_inResp.weather.weatherIconID);
                 //var weatherTranslation = tblWeather == null ? null : tblWeather.WeatherIconTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault();
                 //_inResp.weather.weatherText = weatherTranslation == null ? "" : weatherTranslation.Text;

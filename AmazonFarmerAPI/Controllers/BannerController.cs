@@ -51,8 +51,6 @@ namespace AmazonFarmerAPI.Controllers
             //await AmazonFarmer.WSDL.Class1.CreateCustomerWSDLAsync();
 
             APIResponse resp = new APIResponse();
-            try
-            {
                 // Fetch banners asynchronously using repository.
                 List<tblBanner> bannersList = await _repoWrapper.BannerRepo.getBanners();
                 if (bannersList != null && bannersList.Count() > 0)
@@ -73,14 +71,6 @@ namespace AmazonFarmerAPI.Controllers
                 {
                     resp.response = new List<tblBanner>();
                 }
-
-            }
-            catch (Exception ex)
-            {
-                // If an exception occurs, set response properties accordingly.
-                resp.isError = true;
-                resp.message = ex.Message;
-            }
             return resp;
         }
 

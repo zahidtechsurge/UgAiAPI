@@ -36,8 +36,6 @@ namespace AmazonFarmerAPI.Controllers
         public async Task<APIResponse> getCrops(CropDTO_req req)
         {
             APIResponse resp = new APIResponse();
-            try
-            {
                 // Fetch crops asynchronously using repository.
                 GetCropDTO_Internal_req inReq = new GetCropDTO_Internal_req()
                 {
@@ -48,13 +46,6 @@ namespace AmazonFarmerAPI.Controllers
                     //basePath = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL")
                 };
                 resp.response = await _repoWrapper.CropRepo.getCropsBySeasonAndDistrictID(inReq);
-            }
-            catch (Exception ex)
-            {
-                // If an exception occurs, set response properties accordingly.
-                resp.isError = true;
-                resp.message = ex.Message;
-            }
             return resp;
         }
     }

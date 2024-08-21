@@ -55,8 +55,6 @@ namespace AmazonFarmerAPI.Controllers
 
             APIResponse resp = new APIResponse();
             pagination_Resp pagResp = new pagination_Resp();
-            try
-            {
                 var farms = await _repoWrapper.FarmRepo.getFarmApplications();
 
                 List<int> territoryIds = new List<int>();
@@ -157,12 +155,6 @@ namespace AmazonFarmerAPI.Controllers
                     list = lst
                 };
                 resp.response = pagResp;
-            }
-            catch (Exception ex)
-            {
-                resp.isError = true;
-                resp.message = ex.Message;
-            }
             return resp;
         }
         //Endpoint for getFarmRegistrationRequest
