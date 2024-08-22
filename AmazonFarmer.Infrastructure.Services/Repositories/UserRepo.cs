@@ -597,6 +597,8 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                         acreage = farm.Acreage,
                         address1 = farm.Address1,
                         address2 = farm.Address2,
+                        latitude = farm.latitude,
+                        longitude = farm.longitude,
                         city = farm.City.CityLanguages.Where(x => x.LanguageCode == languageCode).First().Translation,
                         district = farm.District.DistrictLanguages.Where(x => x.LanguageCode == languageCode).First().Translation,
                         tehsil = farm.Tehsil.TehsilLanguagess.Where(x => x.LanguageCode == languageCode).First().Translation,

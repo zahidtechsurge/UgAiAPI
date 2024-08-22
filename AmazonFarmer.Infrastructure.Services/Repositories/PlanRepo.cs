@@ -465,10 +465,11 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             var lst = new List<PlanStatusResult>();
             var sortOrderParam = new SqlParameter("@SortOrder", sortOrder ?? "DESC");
-            var sortColumnParam = new SqlParameter("@SortColumn", sortColumn ?? "Season");
+            var sortColumnParam = new SqlParameter("@SortColumn", sortColumn ?? "");
             var pageNumberParam = new SqlParameter("@PageNumber", pageNumber);
             var pageSizeParam = new SqlParameter("@PageSize", pageSize);
             var SearchTerm = new SqlParameter("@SearchTerm", string.IsNullOrEmpty(searchTerm) ? "" : searchTerm);
+            var UserID = new SqlParameter("@UserID", userId);
 
             var sql = @"
             EXEC GetPlanStatusPaged 
@@ -476,9 +477,10 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 @PageSize, 
                 @SortColumn, 
                 @SortOrder,
-                @SearchTerm";
+                @SearchTerm,
+                @UserID";
             //return lst;
-            return await _context.SP_PlanStatusResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam, SearchTerm).ToListAsync();
+            return await _context.SP_PlanStatusResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam, SearchTerm, UserID).ToListAsync();
         }
         public async Task<List<PlanSeasonCropResult>> GetPlanSeasonCropPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm, string userId)
         {
@@ -488,7 +490,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             var pageNumberParam = new SqlParameter("@PageNumber", pageNumber);
             var pageSizeParam = new SqlParameter("@PageSize", pageSize);
             var SearchTerm = new SqlParameter("@SearchTerm", string.IsNullOrEmpty(searchTerm) ? "" : searchTerm);
-            var UserID = new SqlParameter("@SearchTerm", string.IsNullOrEmpty(userId) ? "" : userId);
+            var UserID = new SqlParameter("@UserID", string.IsNullOrEmpty(userId) ? "" : userId);
             var sql = @"
             EXEC GetPlanCropPaged 
                 @PageNumber, 

@@ -163,6 +163,7 @@ namespace AmazonFarmerAPI.Controllers
             resp.response = inResp;
             return resp;
         }
+        [AllowAnonymous]
         [HttpGet("getSoilSampleReportByPlanID/{planID}")]
         public async Task<APIResponse> getSoilSampleReportByPlanID(string planID)
         {
@@ -332,7 +333,7 @@ namespace AmazonFarmerAPI.Controllers
                 // Connect to the SFTP server
                 sftp.Connect();
                 // Download a file
-                var remoteFiles = sftp.ListDirectory(remoteDirectory)
+                 var remoteFiles = sftp.ListDirectory(remoteDirectory)
                             .Where(file => file.IsRegularFile && file.Name.EndsWith(".pdf"))
                             .ToList();
                 foreach (var file in remoteFiles)

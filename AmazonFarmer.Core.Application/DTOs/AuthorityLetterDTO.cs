@@ -78,7 +78,7 @@ namespace AmazonFarmer.Core.Application.DTOs
         public DateTime letterCreationDate { get; set; }
         public string orderNo { get; set; }
         public string sapOrderID { get; set; }
-        public DateTime orderDate { get; set; }
+        public DateTime? orderDate { get; set; }
         public string bearerName { get; set; }
         public string bearerNIC { get; set; }
         public string godownIncharge { get; set; }

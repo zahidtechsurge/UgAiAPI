@@ -22,15 +22,14 @@ namespace AmazonFarmerAPI.Controllers
             _repoWrapper = repoWrapper;
         }
 
-        [AllowAnonymous]
         [HttpPost("GetSeasonProductReport")]
         public async Task<APIResponse> GetSeasonProductReport(ReportPagination_Req req)
         {
-            APIResponse resp = new APIResponse();
+            APIResponse resp = new APIResponse(); 
             pagination_Resp InResp = new pagination_Resp();
-            //var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Retrieving UserID from user claims
+            var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Retrieving UserID from user claims
             //List<PlanStatusResult> report = await _repoWrapper.PlanRepo.GetPlanStatusPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search, userID);
-            List<PlanStatusResult> report = await _repoWrapper.PlanRepo.GetPlanStatusPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search, string.Empty);
+            List<PlanStatusResult> report = await _repoWrapper.PlanRepo.GetPlanStatusPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search, userID);
             if (report != null && report.Count() > 0)
             {
                 InResp.totalRecord = report.First().TotalRows;
@@ -54,16 +53,16 @@ namespace AmazonFarmerAPI.Controllers
             return resp;
         }
 
-        [AllowAnonymous]
+
         [HttpPost("getSeasonCropReport")]
         public async Task<APIResponse> GetSeasonCropReport(ReportPagination_Req req)
         {
             APIResponse resp = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
 
-            //var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Retrieving UserID from user claims
+            var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Retrieving UserID from user claims
             //List<PlanSeasonCropResult> report = await _repoWrapper.PlanRepo.GetPlanSeasonCropPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search, userID);
-            List<PlanSeasonCropResult> report = await _repoWrapper.PlanRepo.GetPlanSeasonCropPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search, string.Empty);
+            List<PlanSeasonCropResult> report = await _repoWrapper.PlanRepo.GetPlanSeasonCropPagedAsync(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search, userID);
             if (report != null && report.Count() > 0)
             {
                 InResp.totalRecord = report.Count > 0 ? report.First().TotalRows : 0;

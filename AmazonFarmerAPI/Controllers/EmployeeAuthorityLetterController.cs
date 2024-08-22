@@ -135,7 +135,7 @@ namespace AmazonFarmerAPI.Controllers
                     letterID = authLetter.AuthorityLetterID,
                     letterNo = authLetter.AuthorityLetterNo,
                     letterCreationDate = authLetter.CreatedOn,
-                    orderDate = authLetter.Dated,
+                    orderDate = authLetter.Order.ExpectedDeliveryDate,
                     bearerName = authLetter.BearerName,
                     bearerNIC = authLetter.BearerNIC,
                     orderNo = authLetter.Order.OrderID.ToString().PadLeft(10, '0'),
