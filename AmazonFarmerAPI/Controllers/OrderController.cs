@@ -33,12 +33,15 @@ namespace AmazonFarmerAPI.Controllers
         private IRepositoryWrapper _repoWrapper; // Repository wrapper to interact with data
         private readonly NotificationService _notificationService;
         private WsdlConfig _wsdlConfig;
+        private IConfiguration _configuration;
 
-        public OrderController(IRepositoryWrapper repoWrapper, NotificationService notificationService, IOptions<WsdlConfig> wsdlConfig) // Constructor for initializing repository wrapper
+        public OrderController(IRepositoryWrapper repoWrapper, NotificationService notificationService, IOptions<WsdlConfig> wsdlConfig,
+            IConfiguration configuration) // Constructor for initializing repository wrapper
         {
             _repoWrapper = repoWrapper; // Initializing the repository wrapper 
             _notificationService = notificationService;
             _wsdlConfig = wsdlConfig.Value;
+            _configuration = configuration;
         }
 
         [HttpPost("GetOrderPaymentInfo")]
@@ -435,7 +438,7 @@ namespace AmazonFarmerAPI.Controllers
             bool isAnyPendingPayment = planOrders.Where(po => po.PaymentStatus == EOrderPaymentStatus.PaymentProcessing).Any();
 
             decimal alreadyPaidAdvancePayment = planOrders
-                    .Where(po => 
+                    .Where(po =>
                         po.PaymentStatus == EOrderPaymentStatus.Paid
                         && !po.IsConsumed
                         && (po.OrderType == EOrderType.Advance || po.OrderType == EOrderType.AdvancePaymentReconcile)
@@ -533,13 +536,14 @@ namespace AmazonFarmerAPI.Controllers
             {
                 customerBalance = 0;
             }
-
+            string PaymentGatewayPrefix = _configuration["PaymentGatewayPrefix"].ToString();
             OrderPaymentDetailResponse response = new OrderPaymentDetailResponse
             {
                 DoPlabceOrder = payableAmount - customerBalance <= 0 ? true : false,
                 PayableAmount = payableAmount - customerBalance > 0 ? payableAmount - customerBalance : 0.0m,
                 OrderAmount = orderPrice,
-                TransactionID = planOrder.OrderID.ToString() + "-" + planOrder.OrderRandomTransactionID.ToString(),
+                //TransactionID = planOrder.OrderID.ToString() + "-" + planOrder.OrderRandomTransactionID.ToString(),
+                TransactionID = PaymentGatewayPrefix + planOrder.OrderID.ToString() + planOrder.OrderRandomTransactionID.ToString(), //Removed hyphen fom order id
                 OrderID = planOrder.OrderID,
                 AvailableBalance = customerBalance == 0 ? 0.0m : customerBalance,
             };
