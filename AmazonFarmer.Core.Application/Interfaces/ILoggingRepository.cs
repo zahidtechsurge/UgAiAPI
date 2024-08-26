@@ -19,5 +19,6 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         IQueryable<RequestLog> GetLogs();
         Task<List<SP_LogEntryResult>> GetLogs(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm);
         IQueryable<WSDLLog> GetWSDLLogs();
+        IQueryable<NotificationLog> GetNotificationLogs();
     }
 }

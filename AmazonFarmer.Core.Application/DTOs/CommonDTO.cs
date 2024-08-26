@@ -32,7 +32,7 @@ namespace AmazonFarmer.Core.Application.DTOs
     public class ReportPagination_Req : pagination_Req
     {
         public string sortColumn { get; set; } = string.Empty;
-        public string sortOrder { get; set; } = string.Empty;
+        public string sortOrder { get; set; } = "DESC";
     }
 
     /// <summary>

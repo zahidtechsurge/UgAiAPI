@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Org.BouncyCastle.Ocsp;
 using SimulatePrice;
-using System.IdentityModel.Claims; 
+using System.IdentityModel.Claims;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace AmazonFarmer.Administrator.API.Controllers
@@ -195,7 +195,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 _repoWrapper.ProductRepo.UpdateProductCategoryTranslation(productCategoryTranslation);
                 response.message = "product category updated";
             }
-                await _repoWrapper.SaveAsync();
+            await _repoWrapper.SaveAsync();
             return response;
         }
         #endregion
@@ -294,7 +294,52 @@ namespace AmazonFarmer.Administrator.API.Controllers
             else
                 throw new AmazonFarmerException(_exceptions.productNotFound);
         }
-        
+
+        [HttpPatch("syncProductTranslation")]
+        public async Task<JSONResponse> SyncProductTranslation(UpdateProductTranslationRequest req)
+        {
+            JSONResponse resp = new JSONResponse();
+            tblProductTranslation? productTranslation = await _repoWrapper.ProductRepo.GetProductTranslationById(req.productID, req.languageCode);
+            if (productTranslation != null)
+            {
+                if (string.IsNullOrEmpty(req.filePath))
+                {
+                    AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
+                    AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: (req.fileName ?? "untitledProduct.svg"), content: (req.content ?? string.Empty), requestTypeID: EAttachmentType.Product);
+                    productTranslation.Image = attachment.filePath;
+                }
+                else
+                    productTranslation.Image = req.filePath;
+
+                productTranslation.ProductID = req.productID;
+                productTranslation.LanguageCode = req.languageCode;
+                productTranslation.Text = req.text;
+                _repoWrapper.ProductRepo.UpdateProductTranslation(productTranslation);
+                await _repoWrapper.SaveAsync();
+                resp.message = "Product translation updated";
+            }
+            else
+            {
+                AttachmentsDTO attachment = new AttachmentsDTO();
+                if (string.IsNullOrEmpty(req.filePath))
+                {
+                    AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
+                    attachment = await attachmentExt.UploadAttachment(name: (req.fileName ?? "untitledProduct.svg"), content: (req.content ?? string.Empty), requestTypeID: EAttachmentType.Product);
+                }
+                productTranslation = new tblProductTranslation()
+                {
+                    ProductID = req.productID,
+                    LanguageCode = req.languageCode,
+                    Text = req.text,
+                    Image = req.filePath ?? attachment.filePath
+                };
+                _repoWrapper.ProductRepo.AddProductTranslation(productTranslation);
+                await _repoWrapper.SaveAsync();
+                resp.message = "Product translation added";
+            }
+            return resp;
+
+        }
         #endregion
 
         #region Product Module

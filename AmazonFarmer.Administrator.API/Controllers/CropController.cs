@@ -110,9 +110,58 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }).ToList();
             return resp;
         }
-        [Obsolete]
-        [HttpPost("addCropTranslation")]
-        public async Task<JSONResponse> AddCropTranslation(AddCropTranslationRequest req)
+        //[Obsolete]
+        //[HttpPost("addCropTranslation")]
+        //public async Task<JSONResponse> AddCropTranslation(AddCropTranslationRequest req)
+        //{
+        //    JSONResponse resp = new JSONResponse();
+        //    tblCropTranslation? ct = await _repoWrapper.CropRepo.GetCropTranslationByCropID(req.cropID, req.languageCode);
+        //    if (ct != null)
+        //    {
+        //        ct.Image = req.filePath ?? await getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty));
+        //        ct.Text = req.text;
+        //        //ct.Status = EActivityStatus.Active;
+        //        _repoWrapper.CropRepo.UpdateCropTranslation(ct);
+        //        await _repoWrapper.SaveAsync();
+        //        resp.message = "Translation updated";
+        //    }
+        //    else
+        //    {
+        //        ct = new tblCropTranslation()
+        //        {
+        //            CropID = req.cropID,
+        //            LanguageCode = req.languageCode,
+        //            Image = req.filePath ?? await getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty)),
+        //            Text = req.text,
+        //            //Status = EActivityStatus.Active
+        //        };
+        //        _repoWrapper.CropRepo.AddCropTranslation(ct);
+        //        await _repoWrapper.SaveAsync();
+        //        resp.message = "Translation added";
+        //    }
+        //    return resp;
+        //}
+        //[Obsolete]
+        //[HttpPut("updateCropTranslation")]
+        //public async Task<JSONResponse> UpdateCropTranslation(UpdateCropTranslationRequest req)
+        //{
+        //    JSONResponse resp = new JSONResponse();
+        //    tblCropTranslation? ct = await _repoWrapper.CropRepo.GetCropTranslationByCropID(req.cropID, req.languageCode);
+        //    if (ct != null)
+        //    {
+        //        ct.Image = req.filePath ?? await getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty));
+        //        ct.Text = req.text;
+        //        //ct.Status = EActivityStatus.Active;
+        //        _repoWrapper.CropRepo.UpdateCropTranslation(ct);
+        //        await _repoWrapper.SaveAsync();
+        //        resp.message = "Translation updated";
+        //    }
+
+        //    return resp;
+        //}
+
+        [HttpPatch("syncCropTranslation")]
+        public async Task<JSONResponse> SyncCropTranslation(UpdateCropTranslationRequest req)
         {
             JSONResponse resp = new JSONResponse();
             tblCropTranslation? ct = await _repoWrapper.CropRepo.GetCropTranslationByCropID(req.cropID, req.languageCode);
@@ -123,7 +172,6 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 //ct.Status = EActivityStatus.Active;
                 _repoWrapper.CropRepo.UpdateCropTranslation(ct);
                 await _repoWrapper.SaveAsync();
-                resp.message = "Translation updated";
             }
             else
             {
@@ -131,33 +179,14 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 {
                     CropID = req.cropID,
                     LanguageCode = req.languageCode,
-                    Image = req.filePath ?? await getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty)),
                     Text = req.text,
-                    //Status = EActivityStatus.Active
+                    Image = req.filePath ?? await getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty)),
                 };
+                //ct.Status = EActivityStatus.Active;
                 _repoWrapper.CropRepo.AddCropTranslation(ct);
                 await _repoWrapper.SaveAsync();
-                resp.message = "Translation added";
             }
-            return resp;
-        }
-
-        [Obsolete]
-        [HttpPut("updateCropTranslation")]
-        public async Task<JSONResponse> UpdateCropTranslation(UpdateCropTranslationRequest req)
-        {
-            JSONResponse resp = new JSONResponse();
-            tblCropTranslation? ct = await _repoWrapper.CropRepo.GetCropTranslationByCropID(req.cropID, req.languageCode);
-            if (ct != null)
-            {
-                ct.Image = req.filePath ?? await getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty));
-                ct.Text = req.text;
-                //ct.Status = EActivityStatus.Active;
-                _repoWrapper.CropRepo.UpdateCropTranslation(ct);
-                await _repoWrapper.SaveAsync();
-                resp.message = "Translation updated";
-            }
-
+            resp.message = "Translation updated";
             return resp;
         }
         #endregion
@@ -254,10 +283,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
         }
         #endregion
 
-        #region Crop 
-        #endregion
-        
-        
+
+
         private async Task<string> getImagePathByContent(string name, string content)
         {
             if (string.IsNullOrEmpty(content))

@@ -100,5 +100,9 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             return _context.WSDLLogs;
         }
+        public IQueryable<NotificationLog> GetNotificationLogs()
+        {
+            return _context.NotificationLog;
+        }
     }
 }
