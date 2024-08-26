@@ -74,11 +74,12 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
             try
             {
                 bool validOrder = true;
-                string Prefix = _configuration["Transaction:Prefix"].ToString();
-                request.prefix = Prefix;
+                //string Prefix = _configuration["Transaction:Prefix"].ToString();
+                //request.prefix = Prefix;
                 //if (request.consumer_number.StartsWith(Prefix))
                 //{
                 //    request.prefix = Prefix;
+                //    request.consumer_number = request.consumer_number.Replace(Prefix, "");
                 //    validOrder = true;
                 //}
 
@@ -113,11 +114,17 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                 {
                     throw new AmazonFarmerException("Invalid Order");
                 }
-                if (request.order_id.Contains('-'))
+                if (request.order_id.Length > 7)
                 {
-                    OrderID = Convert.ToInt64(request.order_id.Split("-")[0]);
-                    OrderRandomNumber = Convert.ToInt32(request.order_id.Split("-")[1]);
-                    request.order_id = request.order_id.Split("-")[0];
+
+                    OrderID = Convert.ToInt64(request.order_id.Substring(0, request.order_id.Length - 4));
+                    OrderRandomNumber = Convert.ToInt32(request.order_id.Substring(request.order_id.Length - 4));
+                    request.order_id = OrderID.ToString();
+
+                    //No Hyphen in cosumer number
+                    //OrderID = Convert.ToInt64(request.order_id.Split("-")[0]);
+                    //OrderRandomNumber = Convert.ToInt32(request.order_id.Split("-")[1]);
+                    //request.order_id = request.order_id.Split("-")[0];
                 }
                 else
                 {
@@ -397,11 +404,17 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                     BillPaymentRequestID = BillPaymentRequestID
                 };
 
-                if (request.orderid.Contains("-"))
+                if (request.orderid.Length > 7)
                 {
-                    OrderID = Convert.ToInt64(request.orderid.Split("-")[0]);
-                    OrderRandomNumber = Convert.ToInt32(request.orderid.Split("-")[1]);
-                    request.orderid = request.orderid.Split("-")[0];
+
+                    OrderID = Convert.ToInt64(request.orderid.Substring(0, request.orderid.Length - 4));
+                    OrderRandomNumber = Convert.ToInt32(request.orderid.Substring(request.orderid.Length - 4));
+                    request.orderid = OrderID.ToString();
+
+                    //No Hyphen in cosumer number
+                    //OrderID = Convert.ToInt64(request.order_id.Split("-")[0]);
+                    //OrderRandomNumber = Convert.ToInt32(request.order_id.Split("-")[1]);
+                    //request.order_id = request.order_id.Split("-")[0];
                 }
                 else
                 {
@@ -652,7 +665,7 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
 
                         NotificationReplacementDTO replacementDTO = new NotificationReplacementDTO();
                         replacementDTO.ConsumerNumber = request.consumer_number;
-                        replacementDTO.PlanID = Order.PlanID.ToString().PadLeft(10,'0');
+                        replacementDTO.PlanID = Order.PlanID.ToString().PadLeft(10, '0');
                         replacementDTO.NotificationBodyTypeID = ENotificationBody.PaymentProcessing;
 
                         if (notifications != null && notifications.Count() > 0)

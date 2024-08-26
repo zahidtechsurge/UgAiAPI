@@ -140,13 +140,15 @@ namespace AmazonFarmer.Scheduled.Payment.Services
 
             if (order.OrderType == EOrderType.Advance
                 || order.OrderType == EOrderType.AdvancePaymentReconcile
-                || order.OrderType == EOrderType.OrderReconcile
+                || order.OrderType == EOrderType.OrderReconcile 
                 )
             {
+
                 List<NotificationRequest> notifications = new();
                 NotificationReplacementDTO replacementDTO = new NotificationReplacementDTO();
                 replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
                 NotificationDTO notificationDTO = null;
+
                 if (order.OrderType == EOrderType.Advance
                 || order.OrderType == EOrderType.AdvancePaymentReconcile)
                 {

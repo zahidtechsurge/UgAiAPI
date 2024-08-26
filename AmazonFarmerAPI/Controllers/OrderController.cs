@@ -539,7 +539,8 @@ namespace AmazonFarmerAPI.Controllers
                 DoPlabceOrder = payableAmount - customerBalance <= 0 ? true : false,
                 PayableAmount = payableAmount - customerBalance > 0 ? payableAmount - customerBalance : 0.0m,
                 OrderAmount = orderPrice,
-                TransactionID = planOrder.OrderID.ToString() + "-" + planOrder.OrderRandomTransactionID.ToString(),
+                //TransactionID = planOrder.OrderID.ToString() + "-" + planOrder.OrderRandomTransactionID.ToString(),
+                TransactionID = planOrder.OrderID.ToString() + planOrder.OrderRandomTransactionID.ToString(), //Removed hyphen fom order id
                 OrderID = planOrder.OrderID,
                 AvailableBalance = customerBalance == 0 ? 0.0m : customerBalance,
             };
