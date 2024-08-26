@@ -69,6 +69,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             {
                 recID = l.RequestId,
                 method = l.HttpMethod,
+                url = l.Url,
                 request = l.RequestBody,
                 requestDatetime = l.RequestTimestamp,
                 status = l.Status ?? string.Empty,

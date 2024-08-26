@@ -183,7 +183,7 @@ using (var scope = app.Services.CreateScope())
         var dbContext = scope.ServiceProvider
             .GetRequiredService<AmazonFarmerContext>();
 
-        if (true)
+        if (Convert.ToBoolean(builder.Configuration["ProgramConfig:MigrationEnabled"]))
         {
             // Here is the migration executed
             dbContext.Database.Migrate();
@@ -210,8 +210,11 @@ using (var scope = app.Services.CreateScope())
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
 //{
-app.UseSwagger();
-app.UseSwaggerUI();
+if (Convert.ToBoolean(builder.Configuration["ProgramConfig:SwaggerEnabled"]))
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 //} 
 //{
 //Commenting as this is not working
