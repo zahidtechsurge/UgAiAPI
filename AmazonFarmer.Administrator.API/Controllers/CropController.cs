@@ -105,7 +105,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 cropID = x.CropID,
                 languageCode = x.LanguageCode,
                 language = x.Language.LanguageName,
-                filePath = x.Image,
+                filePath = string.Concat(ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL"),x.Image.Replace("/", "%2F").Replace(" ", "%20")),
                 text = x.Text
             }).ToList();
             return resp;
@@ -167,7 +167,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             tblCropTranslation? ct = await _repoWrapper.CropRepo.GetCropTranslationByCropID(req.cropID, req.languageCode);
             if (ct != null)
             {
-                ct.Image = req.filePath ?? await getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty));
+                ct.Image = !string.IsNullOrEmpty(req.filePath) ? req.filePath : await getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty));
                 ct.Text = req.text;
                 //ct.Status = EActivityStatus.Active;
                 _repoWrapper.CropRepo.UpdateCropTranslation(ct);
@@ -180,7 +180,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     CropID = req.cropID,
                     LanguageCode = req.languageCode,
                     Text = req.text,
-                    Image = req.filePath ?? await getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty)),
+                    Image = !string.IsNullOrEmpty(req.filePath) ? req.filePath : await getImagePathByContent(req.fileName ?? "untitledCrop.svg", (req.content ?? string.Empty)),
                 };
                 //ct.Status = EActivityStatus.Active;
                 _repoWrapper.CropRepo.AddCropTranslation(ct);
@@ -287,11 +287,12 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
         private async Task<string> getImagePathByContent(string name, string content)
         {
-            if (string.IsNullOrEmpty(content))
+            if (!string.IsNullOrEmpty(content))
             {
+                content = content.Replace("data:image/png;base64,", "");
                 AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
                 AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: name, content: content, requestTypeID: EAttachmentType.Crop);
-                return attachment.filePath;
+                return string.Concat("/", attachment.filePath.Replace("\\","/"));
             }
             throw new AmazonFarmerException("file path or content not found");
         }
