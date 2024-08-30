@@ -74,8 +74,8 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
             try
             {
                 bool validOrder = true;
-                //string Prefix = _configuration["Transaction:Prefix"].ToString();
-                //request.prefix = Prefix;
+                string Prefix = _configuration["Transaction:Prefix"].ToString();
+                request.prefix = Prefix;
                 //if (request.consumer_number.StartsWith(Prefix))
                 //{
                 //    request.prefix = Prefix;
