@@ -77,6 +77,11 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string? ApplicationStatus { get; set; } = string.Empty;
         public string? TSO { get; set; } = string.Empty;
         public string? RSM { get; set; } = string.Empty;
+        public string Address1 { get; set; } = string.Empty;
+        public string Address2 { get; set; } = string.Empty;
+        public string latitude { get; set; } = string.Empty;
+        public string longitude { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
         public DateTime? ApplicationSubmitDateTime { get; set; }  // Storing time as TimeSpan
         public DateTime? TSOApprovalDateTime { get; set; }  // Nullable TimeSpan for optional values
         public DateTime? RSMApprovalDateTime { get; set; }  // Nullable TimeSpan for optional values
@@ -102,6 +107,11 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string applicationStatus { get; set; }
         public string tso { get; set; } = string.Empty;
         public string rsm { get; set; } = string.Empty;
+        public string Address1 { get; set; } = string.Empty;
+        public string Address2 { get; set; } = string.Empty;
+        public string latitude { get; set; } = string.Empty;
+        public string longitude { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
         public DateTime? applicationSubmitDateTime { get; set; }  // Storing time as TimeSpan
         public DateTime? tsoApprovalDateTime { get; set; }  // Nullable TimeSpan for optional values
         public DateTime? rsmApprovalDateTime { get; set; }  // Nullable TimeSpan for optional values
