@@ -691,7 +691,12 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     rsmApprovalDateTime = x.RSMApprovalDateTime,
                     totalLand = x.TotalLand,
                     tso = x.TSO,
-                    tsoApprovalDateTime = x.TSOApprovalDateTime
+                    tsoApprovalDateTime = x.TSOApprovalDateTime,
+                    Address1 = x.Address1,
+                    Address2  = x.Address2,
+                    latitude = x.latitude,
+                    longitude = x.longitude,
+                    PhoneNumber = x.PhoneNumber
                 }).ToList();
             }
             else
