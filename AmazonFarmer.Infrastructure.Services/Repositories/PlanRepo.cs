@@ -500,7 +500,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 @SearchTerm,
                 @UserID";
             //return lst;
-            return await _context.SP_PlanSeasonCropResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam, SearchTerm, userId).ToListAsync();
+            return await _context.SP_PlanSeasonCropResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam, SearchTerm, UserID).ToListAsync();
         }
         public async Task<List<SP_FarmerDetailsResult>> GetSP_FarmerDetailsResult(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm)
         {

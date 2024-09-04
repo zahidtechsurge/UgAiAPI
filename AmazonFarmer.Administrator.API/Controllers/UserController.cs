@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Org.BouncyCastle.Ocsp;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 
@@ -225,6 +227,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 string randPassword = OTPExtension.GenerateOTP();
                 employee = new TblUser()
                 {
+                    CNICNumber = req.cnicNumber,
                     FirstName = req.firstName,
                     LastName = req.lastName,
                     PhoneNumber = req.phoneNumber,
@@ -249,6 +252,22 @@ namespace AmazonFarmer.Administrator.API.Controllers
                         await _userManager.AddToRoleAsync(employee, newRole.Name);
                     else
                         throw new AmazonFarmerException(_exceptions.userAddedRoleNotAssigned);
+
+                    #region Adding Districts / Regions 
+                    if (employee.Designation == EDesignation.Territory_Sales_Officer)
+                    {
+                        employee.EmployeeDistricts.ForEach(x => x.Status = EActivityStatus.DeActive);
+                        employee.EmployeeDistricts.AddRange(assignDistrict(req.districtIDs));
+                    }
+                    else if (employee.Designation == EDesignation.Regional_Sales_Manager)
+                    {
+                        employee.EmployeeRegions.ForEach(x => x.Status = EActivityStatus.DeActive);
+                        employee.EmployeeRegions.AddRange(assignRegion(req.regionIDs));
+                    }
+
+                    await _repoWrapper.UserRepo.updateUser(employee);
+                    await _repoWrapper.SaveAsync();
+                    #endregion
 
                     NotificationDTO notificationDTO = await _repoWrapper.NotificationRepo.getNotificationByENotificationBody(ENotificationBody.OTP, "EN");
                     if (notificationDTO != null)
@@ -309,6 +328,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     throw new AmazonFarmerException(_exceptions.userNotFound);
                 else
                 {
+                    user.CNICNumber = req.cnicNumber;
                     user.FirstName = req.firstName;
                     user.LastName = req.lastName;
                     user.PhoneNumber = req.phoneNumber;
@@ -353,13 +373,137 @@ namespace AmazonFarmer.Administrator.API.Controllers
             else if (!Regex.IsMatch(req.emailAddress, pattern))
                 throw new AmazonFarmerException(_exceptions.emailRegexExpressionFails);
         }
+        [AllowAnonymous]
         [HttpPost("getUsers")]
-        public async Task<APIResponse> GetUsers(pagination_Req req)
+        public async Task<APIResponse> GetUsers(ReportPagination_Req req)
         {
             APIResponse response = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
             IQueryable<TblUser> users = _repoWrapper.UserRepo.getUsers();
-            users = users.Where(x => x.Active != EActivityStatus.Deleted);
+
+            //removing farmers from list
+            users = users.Where(x => x.Designation != null);
+
+            //filtering deleted users
+            if (req.rootID == 0)
+            {
+                users = users.Where(x => x.Active == EActivityStatus.Deleted);
+            }
+            //filtering active or inactive users
+            else if (req.rootID == 1)
+            {
+                users = users.Where(x => x.Active != EActivityStatus.Deleted);
+            }
+            //sorting 
+            if (!string.IsNullOrEmpty(req.sortColumn))
+            {
+                if (req.sortColumn.Contains("userID"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.Id);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.Id);
+                    }
+                }
+                else if (req.sortColumn.Contains("firstName"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.FirstName);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.FirstName);
+                    }
+                }
+                else if (req.sortColumn.Contains("lastName"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.LastName);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.LastName);
+                    }
+                }
+                else if (req.sortColumn.Contains("phoneNumber"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.PhoneNumber);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.PhoneNumber);
+                    }
+                }
+                else if (req.sortColumn.Contains("email"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.Email);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.Email);
+                    }
+                }
+                else if (req.sortColumn.Contains("cnic"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.CNICNumber);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.CNICNumber);
+                    }
+                }
+                else if (req.sortColumn.Contains("userName"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.UserName);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.UserName);
+                    }
+                }
+                else if (req.sortColumn.Contains("status"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.Active);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.Active);
+                    }
+                }
+                else if (req.sortColumn.Contains("lockedOutEnabled"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.isAccountLocked);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.isAccountLocked);
+                    }
+                }
+
+            }
+            else
+            {
+                // on default users will be sorted by userID desc
+                users = users.OrderByDescending(x => x.Id);
+            }
+            //search Term filteration
             if (!string.IsNullOrEmpty(req.search))
             {
                 users = users.Where(x =>
@@ -370,10 +514,16 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 (x.UserName != null && x.UserName.ToLower().Contains(req.search.ToLower()))
                 );
             }
+            //designation wise filteration
+            if (!string.IsNullOrEmpty(req.search1))
+            {
+                users = users.Where(x => x.Designation == (EDesignation)(Convert.ToInt32(req.search1)));
+            }
             InResp.totalRecord = users.Count();
             users = users.Skip(req.pageNumber * req.pageSize)
                          .Take(req.pageSize);
             InResp.filteredRecord = users.Count();
+            var t = users.ToList();
             InResp.list = await users.Select(x => new
             {
                 userID = x.Id,
@@ -381,9 +531,11 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 lastName = x.LastName ?? string.Empty,
                 phoneNumber = x.PhoneNumber ?? string.Empty,
                 email = x.Email ?? string.Empty,
+                cnic = x.CNICNumber ?? string.Empty,
                 userName = x.UserName ?? string.Empty,
                 status = (int)x.Active,
-                lockedOutEnabled = x.isAccountLocked
+                lockedOutEnabled = x.isAccountLocked,
+                designation = x.Designation != null ? ConfigExntension.GetEnumDescription(x.Designation) : string.Empty
             }).ToListAsync();
             response.response = InResp;
             return response;
@@ -412,7 +564,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 dateOfBirth = user.FarmerProfile != null && user.FarmerProfile.Count() > 0 ? user.FarmerProfile.FirstOrDefault().DateOfBirth : string.Empty,
                 fatherName = user.FarmerProfile != null && user.FarmerProfile.Count() > 0 ? user.FarmerProfile.FirstOrDefault().FatherName : string.Empty,
                 strnNumber = user.FarmerProfile != null && user.FarmerProfile.Count() > 0 ? user.FarmerProfile.FirstOrDefault().STRNNumber : string.Empty,
-                cnicNumber = user.FarmerProfile != null && user.FarmerProfile.Count() > 0 ? user.FarmerProfile.FirstOrDefault().CNICNumber : string.Empty,
+                cnicNumber = user.CNICNumber ?? string.Empty,
                 cnicAttachment = user.UserAttachments != null ? user.UserAttachments
                 .Where(y => y.Attachment.AttachmentTypes.AttachmentType == EAttachmentType.User_CNIC_Document)
                 .Select(y => new uploadAttachmentResp
@@ -434,16 +586,18 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 }).ToList() : new List<uploadAttachmentResp>(),
                 status = (int)user.Active,
                 lockedOutEnabled = user.isAccountLocked,
-                regions = user.EmployeeRegions == null || user.EmployeeRegions.Count() <= 0 ? [] : user.EmployeeRegions.Where(er => er.Status == EActivityStatus.Active).Select(er => new
-                {
-                    regionID = er.RegionID,
-                    region = er.Region?.Name,
-                }).ToList(),
-                districts = user.EmployeeDistricts == null || user.EmployeeDistricts.Count() <= 0 ? [] : user.EmployeeDistricts.Where(er => er.Status == EActivityStatus.Active).Select(er => new
-                {
-                    districtID = er.DitrictID,
-                    district = er.District?.Name
-                }).ToList()
+                regions = user.EmployeeRegions == null || user.EmployeeRegions.Count() <= 0 ? [] : user.EmployeeRegions.Where(er => er.Status == EActivityStatus.Active).Select(er => er.RegionID
+                //{
+                //    regionID = er.RegionID,
+                //    region = er.Region?.Name,
+                //}
+                ).ToList(),
+                districts = user.EmployeeDistricts == null || user.EmployeeDistricts.Count() <= 0 ? [] : user.EmployeeDistricts.Where(er => er.Status == EActivityStatus.Active).Select(er => er.DitrictID
+                //{
+                //    districtID = er.DitrictID,
+                //    district = er.District?.Name
+                //}
+                ).ToList()
             };
 
             return response;
@@ -464,8 +618,44 @@ namespace AmazonFarmer.Administrator.API.Controllers
             return resp;
         }
 
+        [HttpPut("changePassword")]
+        public async Task<JSONResponse> ChangePassword(changePassword_Req req)
+        {
+            JSONResponse resp = new JSONResponse();
+            // Check if the current password is provided
+            if (string.IsNullOrEmpty(req.currentPassword))
+                throw new AmazonFarmerException(_exceptions.passwordRequired);
 
-        [AllowAnonymous]
+            // Check if the new password is provided
+            if (string.IsNullOrEmpty(req.password))
+                throw new AmazonFarmerException(_exceptions.passwordRequired);
+
+            // Check if the confirm password is provided
+            else if (string.IsNullOrEmpty(req.confirmPassword))
+                throw new AmazonFarmerException(_exceptions.confirmPasswordRequired);
+
+            // Check if the new password matches the confirm password
+            else if (req.password != req.confirmPassword)
+                throw new AmazonFarmerException(_exceptions.confirmPasswordNotMatch);
+
+            matchPasswordCriteria(req.password);
+
+            TblUser user = await _repoWrapper.UserRepo.getUserByUserID((User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
+            if (user != null)
+            {
+                var result = await _userManager.ChangePasswordAsync(user, req.currentPassword, req.password);
+                if (!result.Succeeded)
+                {
+                    throw new AmazonFarmerException(result.Errors.FirstOrDefault().Description.ToString());
+                }
+            }
+            else
+            {
+                throw new AmazonFarmerException(_exceptions.userNotFound);
+            }
+            resp.message = "Password Changed";
+            return resp;
+        }
         [HttpPost("getFarmerProfiles")]
         public async Task<APIResponse> GetFarmerProfiles(ReportPagination_Req req)
         {
@@ -511,6 +701,23 @@ namespace AmazonFarmer.Administrator.API.Controllers
             resp.response = InResp;
             return resp;
         }
+        [HttpDelete("deleteUser/{userID}")]
+        public async Task<JSONResponse> DeleteUser(string userID)
+        {
+            JSONResponse resp = new JSONResponse();
+            TblUser user = await _repoWrapper.UserRepo.getUserByUserID(userID);
+            if (user == null)
+                throw new AmazonFarmerException(_exceptions.userNotFound);
+            else
+            {
+                user.Active = EActivityStatus.Deleted;
+                await _repoWrapper.UserRepo.updateUser(user);
+                await _repoWrapper.SaveAsync();
+                resp.message = string.Concat(user.FirstName, " has been removed");
+            }
+
+            return resp;
+        }
         private List<TblEmployeeDistrictAssignment> assignDistrict(int[]? districtID)
         {
             List<TblEmployeeDistrictAssignment> list = new List<TblEmployeeDistrictAssignment>();
@@ -544,6 +751,69 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 }
             }
             return list;
+        }
+        //Function to check password criteria
+        private void matchPasswordCriteria(string password)
+        {
+            bool isMatch = false;
+
+            //if Password is null
+            if (password == null)
+                throw new AmazonFarmerException(_exceptions.passwordRequired);
+            // Minimum length should be at least 8
+            else if (password.Length < 8)
+                throw new AmazonFarmerException(_exceptions.passwordMinLength);
+            // Number of special characters to include 1
+            else if (!Regex.IsMatch(password, @"[!@#$%^&*()_+}{:;'?/>.<,|=-]"))
+                throw new AmazonFarmerException(_exceptions.specialCharacterRequired);
+            // Must contain at least 1 upper case character(s)
+            else if (!password.Any(char.IsUpper))
+                throw new AmazonFarmerException(_exceptions.passwordOneUpperCaseRequired);
+
+            // Number of numerals to include 1
+            else if (!password.Any(char.IsDigit))
+                throw new AmazonFarmerException(_exceptions.passwordOneDigitRequired);
+
+            // Must not be a palindrome
+            else if (IsPalindrome(password))
+                throw new AmazonFarmerException(_exceptions.palindromeFound);
+
+            // Must not contain any character more than twice consecutively
+            else if (Regex.IsMatch(password, @"(.)\1{2,}"))
+                throw new AmazonFarmerException(_exceptions.consecutivityFound);
+
+            // Must not contain restricted patterns
+            else if (ContainsRestrictedPattern(password))
+                throw new AmazonFarmerException(_exceptions.ristrictedCharactersFound);
+
+            // Must contain at least 1 lower case character(s)
+            else if (!password.Any(char.IsLower))
+                throw new AmazonFarmerException(_exceptions.passwordOneLowerCaseRequired);
+
+        }
+        // Function to check if the password is a palindrome
+        private bool IsPalindrome(string password)
+        {
+            int length = password.Length;
+            for (int i = 0; i < length / 2; i++)
+            {
+                if (password[i] != password[length - i - 1])
+                    return false;
+            }
+            return true;
+        }
+
+        // Function to check if the password contains restricted patterns
+        private bool ContainsRestrictedPattern(string password)
+        {
+            string restrictedWords = ConfigExntension.GetConfigurationValue("RestrictedWords");
+            string[] restrictedPatterns = restrictedWords.Split(","); // Add more patterns as needed.
+            foreach (string pattern in restrictedPatterns)
+            {
+                if (password.ToLower().Contains(pattern.ToLower()))
+                    return true;
+            }
+            return false;
         }
 
     }

@@ -29,7 +29,7 @@ namespace AmazonFarmer.Core.Application.DTOs
         public dynamic? list { get; set; }
     }
 
-    public class ReportPagination_Req : pagination_Req
+    public class ReportPagination_Req : pagination_AdditionalFilters_Req
     {
         public string sortColumn { get; set; } = string.Empty;
         public string sortOrder { get; set; } = "DESC";
@@ -53,5 +53,9 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string? search { get; set; } = string.Empty;
         public int pageNumber { get; set; }
         public int pageSize { get; set; }
+    }
+    public class pagination_AdditionalFilters_Req : pagination_Req
+    {
+        public string? search1 { get; set; } = string.Empty;
     }
 }

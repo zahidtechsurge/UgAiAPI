@@ -6,6 +6,7 @@ using AmazonFarmer.Core.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Asn1.Ocsp;
 using Org.BouncyCastle.Ocsp;
 using System.Collections.Generic;
 
@@ -48,11 +49,53 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }
         }
         [HttpPost("getCrops")]
-        public async Task<APIResponse> GetCrops(pagination_Req req)
+        public async Task<APIResponse> GetCrops(ReportPagination_Req req)
         {
             APIResponse resp = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
             IQueryable<tblCrop> crops = _repoWrapper.CropRepo.GetCrops();
+
+            if (!string.IsNullOrEmpty(req.sortColumn))
+            {
+                if (req.sortColumn.Contains("cropID"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        crops = crops.OrderBy(x => x.ID);
+                    }
+                    else
+                    {
+                        crops = crops.OrderByDescending(x => x.ID);
+                    }
+                }
+                else if (req.sortColumn.Contains("cropName"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        crops = crops.OrderBy(x => x.Name);
+                    }
+                    else
+                    {
+                        crops = crops.OrderByDescending(x => x.Name);
+                    }
+                }
+                else if (req.sortColumn.Contains("status"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        crops = crops.OrderBy(x => x.Status);
+                    }
+                    else
+                    {
+                        crops = crops.OrderByDescending(x => x.Status);
+                    }
+                }
+
+            }
+            else
+            {
+                crops = crops.OrderByDescending(x => x.ID);
+            }
             if (!string.IsNullOrEmpty(req.search))
             {
                 crops = crops.Where(x =>
@@ -105,7 +148,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 cropID = x.CropID,
                 languageCode = x.LanguageCode,
                 language = x.Language.LanguageName,
-                filePath = string.Concat(ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL"),x.Image.Replace("/", "%2F").Replace(" ", "%20")),
+                filePath = string.Concat(ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL"), x.Image.Replace("/", "%2F").Replace(" ", "%20")),
                 text = x.Text
             }).ToList();
             return resp;
@@ -212,22 +255,26 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }).ToList();
             return resp;
         }
-        [Obsolete]
-        [HttpPost("addCropTiming")]
-        public async Task<JSONResponse> AddCropTiming(AddCropTiming req)
+        [HttpPost("syncCropTiming")]
+        public async Task<JSONResponse> SyncCropTiming(AddCropTiming req)
         {
             JSONResponse resp = new JSONResponse();
+            int currentYear = DateTime.UtcNow.Year;
             tblCropTimings? ct = await _repoWrapper.CropRepo.GetCropTimingByID(req.cropID, req.seasonID, req.districtID, req.fromMonth, req.toMonth);
             if (ct != null)
             {
+                ct.CropID = req.cropID;
+                ct.DistrictID = req.districtID;
+                ct.SeasonID = req.seasonID;
+                ct.FromDate = new DateTime(currentYear, req.fromMonth, 1);
+                ct.ToDate = new DateTime(currentYear, req.fromMonth, DateTime.DaysInMonth(currentYear, req.toMonth));
                 //ct.Status = EActivityStatus.Active;
                 _repoWrapper.CropRepo.UpdateCropTiming(ct);
                 await _repoWrapper.SaveAsync();
-                resp.message = "Crop with the same configuration found and reactivated";
+                resp.message = "Crop timing updated";
             }
             else
             {
-                int currentYear = DateTime.UtcNow.Year;
                 ct = new tblCropTimings()
                 {
                     CropID = req.cropID,
@@ -266,19 +313,70 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
             return resp;
         }
-        [Obsolete]
-        [HttpDelete("deleteCropTiming/{recID}")]
-        public async Task<JSONResponse> DeleteCropTiming(int recID)
+        //[Obsolete]
+        //[HttpDelete("deleteCropTiming/{recID}")]
+        //public async Task<JSONResponse> DeleteCropTiming(int recID)
+        //{
+        //    JSONResponse resp = new JSONResponse();
+        //    tblCropTimings? ct = await _repoWrapper.CropRepo.GetCropTimingByID(recID);
+        //    if (ct != null)
+        //    {
+        //        //ct.Status = EActivityStatus.DeActive;
+        //        _repoWrapper.CropRepo.UpdateCropTiming(ct);
+        //        await _repoWrapper.SaveAsync();
+        //        resp.message = "Crop Timing Deleted";
+        //    }
+        //    return resp;
+        //}
+        /// <summary>
+        /// Updates crop timings for all active districts and seasons based on the given cropID.
+        /// It fetches the existing crop timings and determines which new crop timings need to be added.
+        /// All new crop timings are then saved to the database.
+        /// </summary>
+        /// <param name="cropID">The ID of the crop for which timings need to be set.</param>
+        /// <returns>A JSON response indicating the result of the operation.</returns>
+        
+        [HttpPut("setCropForAll")]
+        public async Task<JSONResponse> SetCropForAll(CropTimingValues req)
         {
             JSONResponse resp = new JSONResponse();
-            tblCropTimings? ct = await _repoWrapper.CropRepo.GetCropTimingByID(recID);
-            if (ct != null)
+            // Fetching data from repositories
+            List<tblSeason> seasons = await _repoWrapper.SeasonRepo.getSeasons();
+            List<tblDistrict> districts = await _repoWrapper.DistrictRepo.GetDistricts();
+            var existingCropTimings = await _repoWrapper.CropRepo.GetCropTimingsByCropID(req.cropID);
+            // Preparing new crop timings list
+            List<tblCropTimings> cropTimings = new List<tblCropTimings>();
+            int currentYear = DateTime.UtcNow.Year;
+            // Filtering active seasons
+            foreach (var season in seasons.Where(s => s.Status == EActivityStatus.Active))
             {
-                //ct.Status = EActivityStatus.DeActive;
-                _repoWrapper.CropRepo.UpdateCropTiming(ct);
-                await _repoWrapper.SaveAsync();
-                resp.message = "Crop Timing Deleted";
+                // Adding new crop timings for the filtered districts
+                cropTimings.AddRange(
+                    // Filtering active districts that are not already in the existing crop timings
+                    districts
+                    .Where(d =>
+                        d.Status == EActivityStatus.Active &&
+                        !existingCropTimings.Any(
+                            ect => ect.DistrictID == d.ID && ect.SeasonID == season.ID
+                        )
+                    )
+                    .Select(d => new tblCropTimings()
+                    {
+                        CropID = req.cropID,
+                        DistrictID = d.ID,
+                        SeasonID = season.ID,
+                        FromDate = new DateTime(currentYear, req.fromMonth, 1),
+                        ToDate = new DateTime(currentYear, req.fromMonth, DateTime.DaysInMonth(currentYear, req.toMonth))
+                    }).ToList()
+                );
             }
+            // Saving all new crop timings to the database
+            if (cropTimings.Any())
+            {
+                _repoWrapper.CropRepo.AddCropTimings(cropTimings);
+                await _repoWrapper.SaveAsync();
+            }
+
             return resp;
         }
         #endregion
@@ -292,7 +390,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 content = content.Replace("data:image/png;base64,", "");
                 AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
                 AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: name, content: content, requestTypeID: EAttachmentType.Crop);
-                return string.Concat("/", attachment.filePath.Replace("\\","/"));
+                return string.Concat("/", attachment.filePath.Replace("\\", "/"));
             }
             throw new AmazonFarmerException("file path or content not found");
         }

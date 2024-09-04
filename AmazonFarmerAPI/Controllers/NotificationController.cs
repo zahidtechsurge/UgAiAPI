@@ -77,6 +77,7 @@ namespace AmazonFarmerAPI.Controllers
                                 .Replace("[Reasons Dropdown Option]", item.Reason?.ReasonTranslation.Where(rt => rt.LanguageCode == languageCode).Select(rt => rt.Text).FirstOrDefault())
                                 .Replace("[Reason Comment Box]", item.ReasonCommentBox)
                                 .Replace("[Authority Letter ID]", item.AuthorityLetterID.ToString().PadLeft(10,'0'))
+                                //.Replace("[Authority Letter QTY]", item.AuthorityLetterID.ToString().PadLeft(10,'0'))
                                 .Replace("<br/>", Environment.NewLine)
                                 .Replace("<br>", Environment.NewLine)
                                 : string.Empty,

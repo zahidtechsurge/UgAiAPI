@@ -24,24 +24,64 @@ namespace AmazonFarmer.Administrator.API.Controllers
             _repoWrapper = repositoryWrapper;
         }
         [HttpPost("getLanguages")]
-        public async Task<APIResponse> GetLanguages(pagination_Req req)
+        public async Task<APIResponse> GetLanguages(ReportPagination_Req req)
         {
             APIResponse response = new APIResponse();
-                pagination_Resp InResp = new pagination_Resp();
-                IQueryable<tblLanguages> lang = _repoWrapper.LanguageRepo.getLangauges();
-                if (!string.IsNullOrEmpty(req.search))
-                    lang = lang.Where(x => x.LanguageCode.ToLower().Contains(req.search.ToLower()) || x.LanguageName.ToLower().Contains(req.search.ToLower()));
-                InResp.totalRecord = lang.Count();
-                lang = lang.Skip(req.pageNumber * req.pageSize)
-                             .Take(req.pageSize);
-                InResp.filteredRecord = lang.Count();
-                InResp.list = await lang.Select(x => new GetLanguageResponse_Admin
+            pagination_Resp InResp = new pagination_Resp();
+            IQueryable<tblLanguages> lang = _repoWrapper.LanguageRepo.getLangauges();
+            if (!string.IsNullOrEmpty(req.sortColumn))
+            {
+                if (req.sortColumn.Contains("languageCode"))
                 {
-                    languageCode = x.LanguageCode,
-                    language = x.LanguageName,
-                    status = (int)x.Status
-                }).ToListAsync();
-                response.response = InResp;
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        lang = lang.OrderBy(x => x.LanguageCode);
+                    }
+                    else
+                    {
+                        lang = lang.OrderByDescending(x => x.LanguageCode);
+                    }
+                }
+                else if (req.sortColumn.Contains("language"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        lang = lang.OrderBy(x => x.LanguageName);
+                    }
+                    else
+                    {
+                        lang = lang.OrderByDescending(x => x.LanguageName);
+                    }
+                }
+                else  if (req.sortColumn.Contains("status"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        lang = lang.OrderBy(x => x.Status);
+                    }
+                    else
+                    {
+                        lang = lang.OrderByDescending(x => x.Status);
+                    }
+                }
+            }
+            else
+            {
+                lang = lang.OrderByDescending(x => x.LanguageCode);
+            }
+            if (!string.IsNullOrEmpty(req.search))
+                lang = lang.Where(x => x.LanguageCode.ToLower().Contains(req.search.ToLower()) || x.LanguageName.ToLower().Contains(req.search.ToLower()));
+            InResp.totalRecord = lang.Count();
+            lang = lang.Skip(req.pageNumber * req.pageSize)
+                         .Take(req.pageSize);
+            InResp.filteredRecord = lang.Count();
+            InResp.list = await lang.Select(x => new GetLanguageResponse_Admin
+            {
+                languageCode = x.LanguageCode,
+                language = x.LanguageName,
+                status = (int)x.Status
+            }).ToListAsync();
+            response.response = InResp;
 
             return response;
         }
@@ -68,20 +108,20 @@ namespace AmazonFarmer.Administrator.API.Controllers
         public async Task<JSONResponse> AddLanguage(UpdateLanguageRequest_Admin req)
         {
             JSONResponse response = new JSONResponse();
-                if (string.IsNullOrEmpty(req.languageCode) || string.IsNullOrEmpty(req.language))
-                    throw new AmazonFarmerException(_exceptions.languageNotFound);
-                tblLanguages language = await _repoWrapper.LanguageRepo.getLanguageByCodeOrName(req.languageCode, string.Empty);
-                if (language == null || string.IsNullOrEmpty(language.LanguageCode))
-                    throw new AmazonFarmerException(_exceptions.languageAlreadyExist);
-                else
-                {
-                    language.LanguageCode = req.languageCode;
-                    language.LanguageName = req.language;
-                    language.Status = req.status == 1 ? EActivityStatus.Active : EActivityStatus.DeActive;
-                    _repoWrapper.LanguageRepo.updateLanguage(language);
-                    await _repoWrapper.SaveAsync();
-                    response.message = "language updated";
-                }
+            if (string.IsNullOrEmpty(req.languageCode) || string.IsNullOrEmpty(req.language))
+                throw new AmazonFarmerException(_exceptions.languageNotFound);
+            tblLanguages language = await _repoWrapper.LanguageRepo.getLanguageByCodeOrName(req.languageCode, string.Empty);
+            if (language == null || string.IsNullOrEmpty(language.LanguageCode))
+                throw new AmazonFarmerException(_exceptions.languageAlreadyExist);
+            else
+            {
+                language.LanguageCode = req.languageCode;
+                language.LanguageName = req.language;
+                language.Status = req.status == 1 ? EActivityStatus.Active : EActivityStatus.DeActive;
+                _repoWrapper.LanguageRepo.updateLanguage(language);
+                await _repoWrapper.SaveAsync();
+                response.message = "language updated";
+            }
 
             return response;
         }

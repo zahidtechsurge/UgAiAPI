@@ -42,7 +42,7 @@ namespace AmazonFarmerAPI.Controllers
             _azureFileShareService = azureFileShareService;
             _converter = converter;
         }
-
+        [AllowAnonymous]
         [HttpPost("addAuthorityLetter")]
         public async Task<JSONResponse> addAuthorityLetter(add_AuthorityLetter_Res req)
         {
@@ -81,7 +81,7 @@ namespace AmazonFarmerAPI.Controllers
                         throw new AmazonFarmerException(_exceptions.sapFarmerCodeNotFound);
                     if ((order.Products.FirstOrDefault().ClosingQTY + req.qty) > order.Products.FirstOrDefault().QTY)
                         throw new AmazonFarmerException(_exceptions.authorityLetterQtyReached);
-                    if (order.AuthorityLetters != null && (order.AuthorityLetters.Sum(a => a.AuthorityLetterDetails.Sum(d => d.BagQuantity)) + req.qty) > order.Products.FirstOrDefault().QTY)
+                    if (order.AuthorityLetters != null && (order.AuthorityLetters.Where(x=>x.Active == EAuthorityLetterStatus.Active).Sum(a => a.AuthorityLetterDetails.Sum(d => d.BagQuantity)) + req.qty) > order.Products.FirstOrDefault().QTY)
                         throw new AmazonFarmerException(_exceptions.authorityLetterQtyReached);
                     else
                     {

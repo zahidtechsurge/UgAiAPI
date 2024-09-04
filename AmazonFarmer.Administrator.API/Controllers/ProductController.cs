@@ -106,11 +106,52 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
         }
         [HttpPost("getProductCategories")]
-        public async Task<APIResponse> GetProductCategories(pagination_Req req)
+        public async Task<APIResponse> GetProductCategories(ReportPagination_Req req)
         {
             APIResponse response = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
             IQueryable<tblProductCategory> lst = _repoWrapper.ProductRepo.getCategories();
+            if (!string.IsNullOrEmpty(req.sortColumn))
+            {
+                if (req.sortColumn.Contains("categoryID"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        lst = lst.OrderBy(x => x.ID);
+                    }
+                    else
+                    {
+                        lst = lst.OrderByDescending(x => x.ID);
+                    }
+                }
+                else if (req.sortColumn.Contains("name"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        lst = lst.OrderBy(x => x.Name);
+                    }
+                    else
+                    {
+                        lst = lst.OrderByDescending(x => x.Name);
+                    }
+                }
+                else if (req.sortColumn.Contains("status"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        lst = lst.OrderBy(x => x.Status);
+                    }
+                    else
+                    {
+                        lst = lst.OrderByDescending(x => x.Status);
+                    }
+                }
+
+            }
+            else
+            {
+                lst = lst.OrderByDescending(x => x.ID);
+            }
             if (!string.IsNullOrEmpty(req.search))
             {
                 lst = lst.Where(x =>

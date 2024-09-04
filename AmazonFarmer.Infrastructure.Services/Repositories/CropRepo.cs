@@ -78,6 +78,10 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             _context.CropTimings.Add(ct);
         }
+        public void AddCropTimings(List<tblCropTimings> ct)
+        {
+            _context.CropTimings.AddRange(ct);
+        }
         public void UpdateCropTiming(tblCropTimings ct)
         {
             _context.CropTimings.Update(ct);

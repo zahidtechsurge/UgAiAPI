@@ -15,6 +15,8 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string warehouseAddress {  get; set; } = string.Empty;
         public string warehouseInchargeID {  get; set; } = string.Empty;
         public string warehouseIncharge {  get; set; } = string.Empty;
+        public string warehouseInchargeEmail {  get; set; } = string.Empty;
+        public string warehouseInchargePhone {  get; set; } = string.Empty;
         public int districtID {  get; set; }
         public string district {  get; set; } = string.Empty;
         public string salePoint {  get; set; } = string.Empty;
