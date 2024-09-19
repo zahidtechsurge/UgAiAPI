@@ -15,6 +15,7 @@ namespace AmazonFarmerAPI.Extensions
         {
             _converter = converter;
         }
+
         public async Task<string> generatePlanSummary(planSummary summary, EPlanSummaryType summaryType)
         {
             string resp = string.Empty;

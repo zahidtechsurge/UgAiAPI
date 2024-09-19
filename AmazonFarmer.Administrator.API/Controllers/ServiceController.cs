@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
+using System.Collections.Generic;
 using System.IdentityModel.Claims;
 using System.Net.Mail;
 
@@ -55,15 +56,69 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }
         }
         [HttpPost("getService")]
-        public async Task<APIResponse> GetService(pagination_Req req)
+        public async Task<APIResponse> GetService(ReportPagination_Req req)
         {
             APIResponse resp = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
             resp.message = "Fetched paginated Services";
             IQueryable<tblService> services = _repoWrapper.ServiceRepo.GetService();
+
+            if (!string.IsNullOrEmpty(req.sortColumn))
+            {
+                if (req.sortColumn.Contains("serviceID"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        services = services.OrderBy(x => x.ID);
+                    }
+                    else
+                    {
+                        services = services.OrderByDescending(x => x.ID);
+                    }
+                }
+                else if (req.sortColumn.Contains("serviceName"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        services = services.OrderBy(x => x.Name);
+                    }
+                    else
+                    {
+                        services = services.OrderByDescending(x => x.Name);
+                    }
+                }
+                else if (req.sortColumn.Contains("serviceCode"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        services = services.OrderBy(x => x.Code);
+                    }
+                    else
+                    {
+                        services = services.OrderByDescending(x => x.Code);
+                    }
+                }
+                else if (req.sortColumn.Contains("status"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        services = services.OrderBy(x => x.Active);
+                    }
+                    else
+                    {
+                        services = services.OrderByDescending(x => x.Active);
+                    }
+                }
+            }
+            else
+            {
+                services = services.OrderByDescending(x => x.ID);
+            }
             if (!string.IsNullOrEmpty(req.search))
                 services = services.Where(x => (x.Name ?? string.Empty).Contains(req.search) || (x.Code ?? string.Empty).Contains(req.search));
             InResp.totalRecord = services.Count();
+
+
             services = services.Skip(req.pageNumber * req.pageSize)
                          .Take(req.pageSize);
             InResp.filteredRecord = services.Count();
@@ -130,6 +185,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 throw new AmazonFarmerException(_exceptions.serviceTranslationAlreadyExist);
             }
         }
+        [AllowAnonymous]
         [HttpGet("getTranslations/{serviceID}")]
         public async Task<APIResponse> GetTranslations(int serviceID)
         {
@@ -140,27 +196,30 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 translationID = x.ID,
                 serviceID = x.ServiceID,
                 text = x.Text,
-                filePath = x.Image,
+                filePath = string.Concat(ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL"), "%2F", x.Image.TrimStart('/').Replace("\\", "%2F").Replace("/", "%2F").Replace(" ", "%20")),
                 languageCode = x.LanguageCode,
                 language = x.Language.LanguageName,
             }).ToList();
             return resp;
         }
-        [HttpPut("updateServiceTranslation")]
-        public async Task<JSONResponse> UpdateServiceTranslation(UpdateServiceTranslationRequest req)
+        [AllowAnonymous]
+        [HttpPatch("syncServiceTranslation")]
+        public async Task<JSONResponse> SyncServiceTranslation(UpdateServiceTranslationRequest req)
         {
             JSONResponse resp = new JSONResponse();
-            tblServiceTranslation? serviceTranslation = await _repoWrapper.ServiceRepo.GetServiceTranslationByID(req.translationID);
+            tblServiceTranslation? serviceTranslation = await _repoWrapper.ServiceRepo.GetServiceTranslationByID(req.serviceID, req.languageCode);
             if (serviceTranslation != null)
             {
                 if (string.IsNullOrEmpty(req.filePath))
                 {
+                    req.content = req.content.Replace("data:image/png;base64,", "");
                     AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
                     AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: (req.fileName ?? "service.svg"), content: req.content, requestTypeID: EAttachmentType.Service);
-                    serviceTranslation.Image = attachment.filePath;
+                    serviceTranslation.Image = attachment.filePath.Replace("\\","/");
                 }
                 else
-                    serviceTranslation.Image = req.filePath;
+                    serviceTranslation.Image = req.filePath.Replace(string.Concat(ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL")),"").Replace("%20", " ").Replace("%2F", "/");
+
                 serviceTranslation.ServiceID = req.serviceID;
                 serviceTranslation.Text = req.text;
                 _repoWrapper.ServiceRepo.UpdateServiceTranslation(serviceTranslation);
@@ -169,7 +228,25 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }
             else
             {
-                throw new AmazonFarmerException(_exceptions.serviceTranslationNotFound);
+                AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
+                AttachmentsDTO attachment = new AttachmentsDTO();
+                if (!string.IsNullOrEmpty(req.content))
+                {
+                    req.content = req.content.Replace("data:image/png;base64,", "");
+                    attachment = await attachmentExt.UploadAttachment(name: (req.fileName ?? "service.svg"), content: req.content, requestTypeID: EAttachmentType.Service);
+                }
+
+                serviceTranslation = new tblServiceTranslation()
+                {
+                    ServiceID = req.serviceID,
+                    LanguageCode = req.languageCode,
+                    Text = req.text,
+                    Image = attachment.filePath.Replace("\\", "/") ?? string.Empty
+                };
+                _repoWrapper.ServiceRepo.AddServiceTranslation(serviceTranslation);
+                await _repoWrapper.SaveAsync();
+                resp.message = "Service Translation Added";
+                //throw new AmazonFarmerException(_exceptions.serviceTranslationNotFound);
             }
             return resp;
         }

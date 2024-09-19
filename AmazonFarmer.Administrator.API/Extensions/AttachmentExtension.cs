@@ -76,7 +76,7 @@ namespace AmazonFarmer.Administrator.API.Extensions
         }
 
 
-        private string getFilePathByRequestType(EAttachmentType requestType)
+        public string getFilePathByRequestType(EAttachmentType requestType)
         {
             string resp = string.Empty;
 
@@ -98,6 +98,9 @@ namespace AmazonFarmer.Administrator.API.Extensions
                     break;
                 case EAttachmentType.Service:
                     resp = Path.Combine("attachments", "services");
+                    break;
+                case EAttachmentType.Weather_Icons:
+                    resp = Path.Combine("attachments", "weather-icons");
                     break;
                 default:
                     resp = Path.Combine("attachments");

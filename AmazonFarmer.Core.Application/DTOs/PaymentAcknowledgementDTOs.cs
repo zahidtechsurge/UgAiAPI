@@ -29,6 +29,7 @@ namespace AmazonFarmer.Core.Application.DTOs
 
     public class PaymentAcknowledgmentDto
     {
+        public int paymentAcknowledgementID { get; set; }
         public string CompanyName { get; set; }
         public string ConsumerNumber { get; set; }
         public string Amount { get; set; }

@@ -235,12 +235,139 @@ namespace AmazonFarmer.Administrator.API.Controllers
         #endregion
 
         #region Crop Timings
-        [HttpGet("getCropTimings/{cropID}")]
-        public async Task<APIResponse> GetCropTimings(int cropID)
+        [HttpPost("getCropTimings")]
+        public async Task<APIResponse> GetCropTimings(ReportPagination_Req req)
         {
             APIResponse resp = new APIResponse();
-            List<tblCropTimings> cropTimings = await _repoWrapper.CropRepo.GetCropTimingsByCropID(cropID);
-            resp.response = cropTimings.Select(ct => new GetCropTimingsResponse
+            pagination_Resp InResp = new pagination_Resp();
+            IQueryable<tblCropTimings> cropTimings = _repoWrapper.CropRepo.GetCropTimings();
+            if (req.rootID.HasValue)
+            {
+                cropTimings = cropTimings.Where(x => x.CropID == req.rootID.Value);
+                //List<tblCropTimings> cropTimings = await _repoWrapper.CropRepo.GetCropTimingsByCropID(req.rootID.Value);
+            }
+            if (!string.IsNullOrEmpty(req.sortColumn))
+            {
+                if (req.sortColumn.Contains("recID"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        cropTimings = cropTimings.OrderBy(x => x.ID);
+                    }
+                    else
+                    {
+                        cropTimings = cropTimings.OrderByDescending(x => x.ID);
+                    }
+                }
+                else if (req.sortColumn.Contains("cropID"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        cropTimings = cropTimings.OrderBy(x => x.CropID);
+                    }
+                    else
+                    {
+                        cropTimings = cropTimings.OrderByDescending(x => x.CropID);
+                    }
+                }
+                else if (req.sortColumn.Contains("cropName"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        cropTimings = cropTimings.OrderBy(x => x.Crop.Name);
+                    }
+                    else
+                    {
+                        cropTimings = cropTimings.OrderByDescending(x => x.Crop.Name);
+                    }
+                }
+                else if (req.sortColumn.Contains("districtID"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        cropTimings = cropTimings.OrderBy(x => x.DistrictID);
+                    }
+                    else
+                    {
+                        cropTimings = cropTimings.OrderByDescending(x => x.DistrictID);
+                    }
+                }
+                else if (req.sortColumn.Contains("districtName"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        cropTimings = cropTimings.OrderBy(x => x.District.Name);
+                    }
+                    else
+                    {
+                        cropTimings = cropTimings.OrderByDescending(x => x.District.Name);
+                    }
+                }
+                else if (req.sortColumn.Contains("seasonID"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        cropTimings = cropTimings.OrderBy(x => x.SeasonID);
+                    }
+                    else
+                    {
+                        cropTimings = cropTimings.OrderByDescending(x => x.SeasonID);
+                    }
+                }
+                else if (req.sortColumn.Contains("seasonName"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        cropTimings = cropTimings.OrderBy(x => x.Season.Name);
+                    }
+                    else
+                    {
+                        cropTimings = cropTimings.OrderByDescending(x => x.Season.Name);
+                    }
+                }
+                else if (req.sortColumn.Contains("fromMonth"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        cropTimings = cropTimings.OrderBy(x => x.FromDate);
+                    }
+                    else
+                    {
+                        cropTimings = cropTimings.OrderByDescending(x => x.FromDate);
+                    }
+                }
+                else if (req.sortColumn.Contains("toMonth"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        cropTimings = cropTimings.OrderBy(x => x.ToDate);
+                    }
+                    else
+                    {
+                        cropTimings = cropTimings.OrderByDescending(x => x.ToDate);
+                    }
+                }
+
+            }
+            else
+            {
+                cropTimings = cropTimings.OrderByDescending(x => x.ID);
+            }
+            if (!string.IsNullOrEmpty(req.search))
+            {
+                cropTimings = cropTimings.Where(x =>
+                    x.Crop.Name.ToLower().Contains(req.search.ToLower()) ||
+                    x.District.Name.ToLower().Contains(req.search.ToLower()) ||
+                    x.Season.Name.ToLower().Contains(req.search.ToLower())
+                );
+            }
+
+            InResp.totalRecord = cropTimings.Count();
+            cropTimings = cropTimings.Skip(req.pageNumber * req.pageSize)
+                         .Take(req.pageSize);
+            InResp.filteredRecord = cropTimings.Count();
+
+            InResp.list = await cropTimings.Select(ct => new GetCropTimingsResponse
             {
                 recID = ct.ID,
                 cropID = ct.CropID,
@@ -251,23 +378,27 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 seasonName = ct.Season.Name,
                 fromMonth = ct.FromDate.Month,
                 toMonth = ct.ToDate.Month,
+                fromDate_String = ct.FromDate.ToString("MMM"),
+                toDate_String = ct.ToDate.ToString("MMM")
                 //statusID = (int)ct.Status
-            }).ToList();
+            }).ToListAsync();
+            resp.response = InResp;
             return resp;
         }
+
         [HttpPost("syncCropTiming")]
-        public async Task<JSONResponse> SyncCropTiming(AddCropTiming req)
+        public async Task<JSONResponse> SyncCropTiming(UpdateCropTiming req)
         {
             JSONResponse resp = new JSONResponse();
             int currentYear = DateTime.UtcNow.Year;
-            tblCropTimings? ct = await _repoWrapper.CropRepo.GetCropTimingByID(req.cropID, req.seasonID, req.districtID, req.fromMonth, req.toMonth);
+            tblCropTimings? ct = await _repoWrapper.CropRepo.GetCropTimingByID(req.recID);
             if (ct != null)
             {
                 ct.CropID = req.cropID;
                 ct.DistrictID = req.districtID;
                 ct.SeasonID = req.seasonID;
                 ct.FromDate = new DateTime(currentYear, req.fromMonth, 1);
-                ct.ToDate = new DateTime(currentYear, req.fromMonth, DateTime.DaysInMonth(currentYear, req.toMonth));
+                ct.ToDate = new DateTime(currentYear, req.toMonth, DateTime.DaysInMonth(currentYear, req.toMonth));
                 //ct.Status = EActivityStatus.Active;
                 _repoWrapper.CropRepo.UpdateCropTiming(ct);
                 await _repoWrapper.SaveAsync();
@@ -281,7 +412,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     DistrictID = req.districtID,
                     SeasonID = req.seasonID,
                     FromDate = new DateTime(currentYear, req.fromMonth, 1),
-                    ToDate = new DateTime(currentYear, req.fromMonth, DateTime.DaysInMonth(currentYear, req.toMonth)),
+                    ToDate = new DateTime(currentYear, req.toMonth, DateTime.DaysInMonth(currentYear, req.toMonth)),
                     //Status = EActivityStatus.Active
                 };
                 _repoWrapper.CropRepo.AddCropTiming(ct);
@@ -335,7 +466,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
         /// </summary>
         /// <param name="cropID">The ID of the crop for which timings need to be set.</param>
         /// <returns>A JSON response indicating the result of the operation.</returns>
-        
+
         [HttpPut("setCropForAll")]
         public async Task<JSONResponse> SetCropForAll(CropTimingValues req)
         {

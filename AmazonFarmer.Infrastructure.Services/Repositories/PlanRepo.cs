@@ -502,22 +502,24 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             //return lst;
             return await _context.SP_PlanSeasonCropResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam, SearchTerm, UserID).ToListAsync();
         }
-        public async Task<List<SP_FarmerDetailsResult>> GetSP_FarmerDetailsResult(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm)
+        public async Task<List<SP_FarmerDetailsResult>> GetSP_FarmerDetailsResult(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm, int isDownload)
         {
             var sortOrderParam = new SqlParameter("@SortOrder", sortOrder ?? "DESC");
             var sortColumnParam = new SqlParameter("@SortColumn", sortColumn ?? "FarmerName");
             var pageNumberParam = new SqlParameter("@PageNumber", pageNumber);
             var pageSizeParam = new SqlParameter("@PageSize", pageSize);
             var SearchTerm = new SqlParameter("@SearchTerm", string.IsNullOrEmpty(searchTerm) ? "" : searchTerm);
+            var Download = new SqlParameter("@Download", isDownload);
             var sql = @"
             EXEC sp_GetFarmerDetails 
                 @PageNumber, 
                 @PageSize, 
                 @SortColumn, 
                 @SortOrder,
-                @SearchTerm";
+                @SearchTerm,
+                @Download";
             //return lst;
-            return await _context.SP_FarmerDetailsResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam, SearchTerm).ToListAsync();
+            return await _context.SP_FarmerDetailsResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam, SearchTerm, Download).ToListAsync();
         }
     }
 }

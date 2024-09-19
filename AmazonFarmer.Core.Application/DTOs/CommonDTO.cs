@@ -34,6 +34,13 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string sortColumn { get; set; } = string.Empty;
         public string sortOrder { get; set; } = "DESC";
     }
+    public class DownloadableReport_Req : ReportPagination_Req
+    {
+        /// <summary>
+        /// Property to indicate if the request is for download
+        /// </summary>
+        public bool? isDownload { get; set; } = false;
+    }
 
     /// <summary>
     /// DTO for dropdown values

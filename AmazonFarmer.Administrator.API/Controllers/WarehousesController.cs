@@ -24,6 +24,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             _repoWrapper = repositoryWrapper;
         }
 
+        [AllowAnonymous]
         [HttpPost("getWarehouses")]
         public async Task<APIResponse> GetWarehouses(ReportPagination_Req req)
         {
@@ -183,7 +184,18 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 warehouses = warehouses.OrderByDescending(x => x.ID);
             }
             if (!string.IsNullOrEmpty(req.search))
-                warehouses = warehouses.Where(x => x.Name.ToLower().Contains(req.search.ToLower()));
+            {
+                warehouses = warehouses.Where(x =>
+                    x.Name.ToLower().Contains(req.search.ToLower()) ||
+                    x.WHCode.ToLower().Contains(req.search.ToLower()) ||
+                    (
+                        x.WarehouseIncharge != null && (x.WarehouseIncharge.FirstName+ " "+ x.WarehouseIncharge.LastName).ToString().ToLower().Contains(req.search.ToLower())
+                    ) ||
+                    (
+                        x.WarehouseIncharge != null && (x.WarehouseIncharge.Email).ToLower().Contains(req.search.ToLower())
+                    )
+                );
+            }
             InResp.totalRecord = warehouses.Count();
             warehouses = warehouses.Skip(req.pageNumber * req.pageSize)
                          .Take(req.pageSize);

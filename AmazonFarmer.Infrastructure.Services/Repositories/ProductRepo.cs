@@ -35,7 +35,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                     .ThenInclude(x => x.Products)
                         .ThenInclude(x => x.UOM)
                             .ThenInclude(x => x.UnitOfMeasureTranslation.Where(x => x.LanguageCode == req.languageCode))
-                .Where(x => x.LanguageCode == req.languageCode)
+                .Where(x => x.LanguageCode == req.languageCode && x.ProductCategory.Status == EActivityStatus.Active && x.ProductCategory.Products.Where(p=>p.Active == EActivityStatus.Active).Count() > 0)
                 .Select(x => new categoryDTO_Resp
                 {
                     categoryID = x.ProductCategoryID,
@@ -140,7 +140,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         }
         public async Task<tblProductCategoryTranslation?> getProductCategoryTranslationByCatID(int catID, string languageCode)
         {
-            return await _context.ProductCategoryTranslation.Where(x => x.ID == catID && x.LanguageCode == languageCode).FirstOrDefaultAsync();
+            return await _context.ProductCategoryTranslation.Where(x => x.ProductCategoryID == catID && x.LanguageCode == languageCode).FirstOrDefaultAsync();
         }
         public async Task<List<tblProductTranslation>> GetProductTranslationsByProductID(int productID)
         {
@@ -192,6 +192,29 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         public void UpdateProductCategoryTranslation(tblProductCategoryTranslation translation)
         {
             _context.ProductCategoryTranslation.Update(translation);
+        }
+        public IQueryable<tblProductConsumptionMetrics> GetProductConsumptionMetrics()
+        {
+            return _context.ProductConsumptionMetric
+                .Include(x => x.Product)
+                .Include(x => x.TerritoryID)
+                .Include(x => x.Crop);
+        }
+        public async Task<tblProductConsumptionMetrics?> GetProductConsumptionMetrics(int product, int? territory, int crop)
+        {
+           return await _context.ProductConsumptionMetric.Where(pcm => 
+                pcm.ProductID == product &&
+                pcm.CropID == crop &&
+                pcm.TerritoryID == territory
+            ).FirstOrDefaultAsync();
+        }
+        public void AddProductConsumptionMetrics(tblProductConsumptionMetrics req)
+        {
+            _context.ProductConsumptionMetric.Add(req);
+        }
+        public void UpdateProductConsumptionMetrics(tblProductConsumptionMetrics req)
+        {
+            _context.ProductConsumptionMetric.Update(req);
         }
     }
 }

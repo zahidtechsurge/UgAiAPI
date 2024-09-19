@@ -35,5 +35,9 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         void UpdateProduct(TblProduct product);
         void AddProductCategoryTranslation(tblProductCategoryTranslation translation);
         void UpdateProductCategoryTranslation(tblProductCategoryTranslation translation);
+        IQueryable<tblProductConsumptionMetrics> GetProductConsumptionMetrics();
+        Task<tblProductConsumptionMetrics?> GetProductConsumptionMetrics(int product, int? territory, int crop);
+        void AddProductConsumptionMetrics(tblProductConsumptionMetrics req);
+        void UpdateProductConsumptionMetrics(tblProductConsumptionMetrics req);
     }
 }

@@ -52,6 +52,13 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Where(x => x.CropID == CropID)
                 .ToListAsync();
         }
+        public IQueryable<tblCropTimings> GetCropTimings()
+        {
+            return _context.CropTimings
+                .Include(x => x.Crop)
+                .Include(x => x.Season)
+                .Include(x => x.District);
+        }
         public async Task<tblCropTimings?> GetCropTimingByID(int ID)
         {
             return await _context.CropTimings.Where(x => x.ID == ID).FirstOrDefaultAsync();

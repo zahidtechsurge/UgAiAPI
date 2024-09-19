@@ -43,7 +43,7 @@ namespace AmazonFarmer.Core.Application.DTOs
     }
     public class GetCityTranslations : UpdateCityTranslationRequest
     {
-        public required string languge { get; set; }
+        public required string language { get; set; }
     }
 
 }

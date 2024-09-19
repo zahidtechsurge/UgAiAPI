@@ -73,6 +73,7 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         /// <param name="districtIds"></param>
         /// <returns></returns>
         Task<List<TblUser>> getTSOsByDistrictIDs(List<int> districtIds);
+        Task<List<TblUser>> getTSOsByDistrictIDsForHelp(List<int> districtIds);
         /// <summary>
         /// get farmer by planID
         /// <param name="planID"></param>

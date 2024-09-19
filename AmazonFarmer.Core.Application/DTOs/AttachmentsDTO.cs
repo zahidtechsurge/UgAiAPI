@@ -62,4 +62,11 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string filePath { get; set; } = string.Empty;
         public string fileName { get; set; } = string.Empty;
     }
+    public class UploadAttachmentRequest
+    {
+        public string? fileName { get; set; } = string.Empty;
+        public string? filePath { get; set; } = string.Empty;
+        public string? content { get; set; } = string.Empty;
+        public byte[] contentBytes { get; set; } = [];
+    }
 }

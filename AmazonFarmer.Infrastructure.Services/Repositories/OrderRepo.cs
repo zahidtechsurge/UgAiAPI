@@ -3,6 +3,7 @@ using AmazonFarmer.Core.Application.Exceptions;
 using AmazonFarmer.Core.Application.Interfaces;
 using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace AmazonFarmer.Infrastructure.Services.Repositories
@@ -206,6 +207,25 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 UpdateDate = DateTime.UtcNow
             };
             _context.OrderLogs.Add(log);
+        }
+        public async Task<List<SP_OrderDetailsResult>> Get_OrderDetailsResults(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm, int isDownload)
+        {
+            var sortOrderParam = new SqlParameter("@SortOrder", sortOrder ?? "DESC");
+            var sortColumnParam = new SqlParameter("@SortColumn", sortColumn ?? "OrderID");
+            var pageNumberParam = new SqlParameter("@PageNumber", pageNumber);
+            var pageSizeParam = new SqlParameter("@PageSize", pageSize);
+            var SearchTerm = new SqlParameter("@SearchTerm", string.IsNullOrEmpty(searchTerm) ? "" : searchTerm);
+            var Download = new SqlParameter("@Download", isDownload);
+            var sql = @"
+            EXEC sp_GetOrderDetails 
+                @PageNumber, 
+                @PageSize, 
+                @SortColumn, 
+                @SortOrder,
+                @SearchTerm,
+                @Download";
+            return await _context.SP_OrderDetailsResult.FromSqlRaw(sql, pageNumberParam, pageSizeParam, sortColumnParam, sortOrderParam, SearchTerm, Download).ToListAsync();
+
         }
     }
 }

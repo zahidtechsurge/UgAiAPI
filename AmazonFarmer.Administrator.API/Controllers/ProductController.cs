@@ -19,7 +19,7 @@ using static System.Net.Mime.MediaTypeNames;
 namespace AmazonFarmer.Administrator.API.Controllers
 {
     [EnableCors("corsPolicy")]
-    [Route("api/[controller]")]
+    [Route("api/Admin/[controller]")]
     [ApiController]
     public class ProductController : ControllerBase
     {
@@ -104,6 +104,29 @@ namespace AmazonFarmer.Administrator.API.Controllers
             response.message = "Product category added";
             return response;
 
+        }
+
+        [HttpGet("getProductCategories")]
+        public async Task<APIResponse> GetProductCategories()
+        {
+            APIResponse resp = new APIResponse();
+            IQueryable<tblProductCategory> lst = _repoWrapper.ProductRepo.getCategories();
+            lst = lst.Where(x => x.Status == EActivityStatus.Active);
+            resp.response = await lst.Select(x => new GetProductCategoryByAdminResponse
+            {
+                categoryID = x.ID,
+                name = x.Name,
+                status = (int)x.Status,
+                translations = x.ProductCategoryTranslation.Select(t => new ProductCategoryTranslationDTO
+                {
+                    translationID = t.ID,
+                    categoryID = t.ProductCategoryID,
+                    languageCode = t.LanguageCode,
+                    text = t.Text
+                }).ToList()
+            }).ToListAsync();
+
+            return resp;
         }
         [HttpPost("getProductCategories")]
         public async Task<APIResponse> GetProductCategories(ReportPagination_Req req)
@@ -210,6 +233,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }).ToList();
             return response;
         }
+
+        [AllowAnonymous]
         [HttpPatch("syncProductCategoryTranslation")]
         public async Task<JSONResponse> AddProductCategoryTranslation(SyncProductCategoryTranslationDTO req)
         {
@@ -241,7 +266,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
         }
         #endregion
 
-        [HttpPost("getUnitOfMeasures")]
+        [HttpGet("getUnitOfMeasures")]
         public async Task<APIResponse> GeUnitOfMeasures()
         {
             APIResponse response = new APIResponse();
@@ -277,7 +302,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     productID = pt.ProductID,
                     languageCode = pt.LanguageCode,
                     text = pt.Text,
-                    filePath = pt.Image,
+                    filePath = string.Concat(ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL"), "%2F", pt.Image.TrimStart('/').Replace("\\", "%2F").Replace("/", "%2F").Replace(" ", "%20")),
                     language = pt.Language.LanguageName
                 })
                 .ToList();
@@ -308,6 +333,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             else
                 throw new AmazonFarmerException(_exceptions.productAlreadyExist);
         }
+        [AllowAnonymous]
         [HttpPut("updateProductTranslation")]
         public async Task<JSONResponse> UpdateProductTranslation(UpdateProductTranslationRequest req)
         {
@@ -335,7 +361,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             else
                 throw new AmazonFarmerException(_exceptions.productNotFound);
         }
-
+        [AllowAnonymous]
         [HttpPatch("syncProductTranslation")]
         public async Task<JSONResponse> SyncProductTranslation(UpdateProductTranslationRequest req)
         {
@@ -346,11 +372,12 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 if (string.IsNullOrEmpty(req.filePath))
                 {
                     AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
+                    req.content = req.content.Replace("data:image/png;base64,", "");
                     AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: (req.fileName ?? "untitledProduct.svg"), content: (req.content ?? string.Empty), requestTypeID: EAttachmentType.Product);
-                    productTranslation.Image = attachment.filePath;
+                    productTranslation.Image = string.Concat("/", attachment.filePath.Replace("\\", "/"));
                 }
                 else
-                    productTranslation.Image = req.filePath;
+                    productTranslation.Image = req.filePath.Replace(string.Concat(ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL")), "").Replace("%20", " ").Replace("%2F", "/");
 
                 productTranslation.ProductID = req.productID;
                 productTranslation.LanguageCode = req.languageCode;
@@ -365,6 +392,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 if (string.IsNullOrEmpty(req.filePath))
                 {
                     AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
+                    req.content = req.content.Replace("data:image/png;base64,", "");
                     attachment = await attachmentExt.UploadAttachment(name: (req.fileName ?? "untitledProduct.svg"), content: (req.content ?? string.Empty), requestTypeID: EAttachmentType.Product);
                 }
                 productTranslation = new tblProductTranslation()
@@ -372,7 +400,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     ProductID = req.productID,
                     LanguageCode = req.languageCode,
                     Text = req.text,
-                    Image = req.filePath ?? attachment.filePath
+                    Image = string.IsNullOrEmpty(req.filePath) ? string.Concat("/", attachment.filePath.TrimStart('/').Replace("\\", "/")) : req.filePath.Replace(string.Concat(ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL")), "").Replace("%20", " ").Replace("%2F", "/")
                 };
                 _repoWrapper.ProductRepo.AddProductTranslation(productTranslation);
                 await _repoWrapper.SaveAsync();
@@ -386,13 +414,109 @@ namespace AmazonFarmer.Administrator.API.Controllers
         #region Product Module
 
         [HttpPost("getProducts")]
-        public async Task<APIResponse> GetProducts(pagination_Req req)
+        public async Task<APIResponse> GetProducts(ReportPagination_Req req)
         {
             APIResponse response = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
 
             IQueryable<TblProduct> lst = _repoWrapper.ProductRepo.getProducts();
-            lst = lst.Where(x => x.CategoryID == req.rootID);
+            //lst = lst.Where(x => x.CategoryID == req.rootID);
+            if (!string.IsNullOrEmpty(req.sortColumn))
+            {
+                if (req.sortColumn.Contains("productID"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        lst = lst.OrderBy(x => x.ID);
+                    }
+                    else
+                    {
+                        lst = lst.OrderByDescending(x => x.ID);
+                    }
+                }
+                else if (req.sortColumn.Contains("productName"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        lst = lst.OrderBy(x => x.Name);
+                    }
+                    else
+                    {
+                        lst = lst.OrderByDescending(x => x.Name);
+                    }
+                }
+                else if (req.sortColumn.Contains("productCode"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        lst = lst.OrderBy(x => x.ProductCode);
+                    }
+                    else
+                    {
+                        lst = lst.OrderByDescending(x => x.ProductCode);
+                    }
+                }
+                else if (req.sortColumn.Contains("category"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        lst = lst.OrderBy(x => x.Category.Name);
+                    }
+                    else
+                    {
+                        lst = lst.OrderByDescending(x => x.Category.Name);
+                    }
+                }
+                else if (req.sortColumn.Contains("saleOrg"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        lst = lst.OrderBy(x => x.SalesOrg);
+                    }
+                    else
+                    {
+                        lst = lst.OrderByDescending(x => x.SalesOrg);
+                    }
+                }
+                else if (req.sortColumn.Contains("division"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        lst = lst.OrderBy(x => x.Division);
+                    }
+                    else
+                    {
+                        lst = lst.OrderByDescending(x => x.Division);
+                    }
+                }
+                else if (req.sortColumn.Contains("uom"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        lst = lst.OrderBy(x => x.UOM.UOM);
+                    }
+                    else
+                    {
+                        lst = lst.OrderByDescending(x => x.UOM.UOM);
+                    }
+                }
+                else if (req.sortColumn.Contains("status"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        lst = lst.OrderBy(x => x.Active);
+                    }
+                    else
+                    {
+                        lst = lst.OrderByDescending(x => x.Active);
+                    }
+                }
+            }
+            else
+            {
+                lst = lst.OrderByDescending(x => x.ID);
+            }
+
             if (!string.IsNullOrEmpty(req.search))
             {
                 lst = lst.Where(x =>
@@ -404,6 +528,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     (x.Division != null && x.Division.ToLower().Contains(req.search.ToLower()))
                 );
             }
+
             InResp.totalRecord = lst.Count();
             lst = lst.Skip(req.pageNumber * req.pageSize)
                          .Take(req.pageSize);
@@ -447,6 +572,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     Name = req.productName,
                     ProductCode = req.productCode,
                     UOMID = req.uomID,
+                    SalesOrg = req.saleOrg,
                     CreatedByID = userID,
                     CreatedDate = DateTime.UtcNow,
                     Active = EActivityStatus.Active,
@@ -484,6 +610,146 @@ namespace AmazonFarmer.Administrator.API.Controllers
         }
         #endregion
 
+        #region Product Consumption Matrix
+        [HttpPost("getConsumptionMatrix")]
+        public async Task<APIResponse> GetConsumptionMatrix(ReportPagination_Req req)
+        {
+            APIResponse resp = new APIResponse();
+            pagination_Resp InResp = new pagination_Resp();
+            IQueryable<tblProductConsumptionMetrics> pcm = _repoWrapper.ProductRepo.GetProductConsumptionMetrics();
+            if (!string.IsNullOrEmpty(req.sortColumn))
+            {
+                if (req.sortColumn.Contains("pcmID"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        pcm = pcm.OrderBy(x => x.ID);
+                    }
+                    else
+                    {
+                        pcm = pcm.OrderByDescending(x => x.ID);
+                    }
+                }
+                else if (req.sortColumn.Contains("product"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        pcm = pcm.OrderBy(x => x.Product.Name);
+                    }
+                    else
+                    {
+                        pcm = pcm.OrderByDescending(x => x.Product.Name);
+                    }
+                }
+                else if (req.sortColumn.Contains("crop"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        pcm = pcm.OrderBy(x => x.Crop.Name);
+                    }
+                    else
+                    {
+                        pcm = pcm.OrderByDescending(x => x.Crop.Name);
+                    }
+                }
+                else if (req.sortColumn.Contains("territoryID"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        pcm = pcm.OrderBy(x => x.TerritoryID);
+                    }
+                    else
+                    {
+                        pcm = pcm.OrderByDescending(x => x.TerritoryID);
+                    }
+                }
+                else if (req.sortColumn.Contains("qty"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        pcm = pcm.OrderBy(x => x.Usage);
+                    }
+                    else
+                    {
+                        pcm = pcm.OrderByDescending(x => x.Usage);
+                    }
+                }
+                else if (req.sortColumn.Contains("uom"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        pcm = pcm.OrderBy(x => x.UOM);
+                    }
+                    else
+                    {
+                        pcm = pcm.OrderByDescending(x => x.UOM);
+                    }
+                }
+
+            }
+            else
+            {
+                pcm = pcm.OrderByDescending(x => x.ID);
+            }
+            if (!string.IsNullOrEmpty(req.search))
+            {
+                pcm = pcm.Where(x =>
+                    x.Product.Name.ToLower().Contains(req.search.ToLower()) ||
+                    x.Crop.Name.ToLower().Contains(req.search.ToLower()) ||
+                    x.ID.ToString().ToLower().Contains(req.search.ToLower()) ||
+                    x.TerritoryID.ToString().ToLower().Contains(req.search.ToLower())
+                );
+            }
+            InResp.totalRecord = pcm.Count();
+            pcm = pcm.Skip(req.pageNumber * req.pageSize)
+                         .Take(req.pageSize);
+            InResp.filteredRecord = pcm.Count();
+            InResp.list = await pcm
+                .Select(x => new GetConsumptionMatrixResponse
+                {
+                    pcmID = x.ID,
+                    productID = x.ProductID,
+                    product = x.Product.Name,
+                    cropID = x.CropID,
+                    crop = x.Crop.Name,
+                    territoryID = x.TerritoryID,
+                    qty = x.Usage,
+                    uom = x.UOM
+                })
+                .ToListAsync();
+
+            resp.response = InResp;
+            return resp;
+        }
+        [HttpPatch("syncConsumptionMatrix")]
+        public async Task<JSONResponse> AddConsumptionMatrix(AddConsumptionMatrix req)
+        {
+            JSONResponse resp = new JSONResponse();
+            tblProductConsumptionMetrics? pcm = await _repoWrapper.ProductRepo.GetProductConsumptionMetrics(req.productID, req.territoryID, req.cropID);
+            if (pcm != null)
+            {
+                pcm.Usage = req.qty;
+                pcm.UOM = req.uom;
+                _repoWrapper.ProductRepo.UpdateProductConsumptionMetrics(pcm);
+                resp.message = "Product Consumption Metrics Updated";
+            }
+            else
+            {
+                pcm = new tblProductConsumptionMetrics()
+                {
+                    ProductID = req.productID,
+                    TerritoryID = req.territoryID,
+                    CropID = req.cropID,
+                    Usage = req.qty,
+                    UOM = req.uom
+                };
+                _repoWrapper.ProductRepo.AddProductConsumptionMetrics(pcm);
+                resp.message = "Product Consumption Metrics Added";
+            }
+            await _repoWrapper.SaveAsync();
+            return resp;
+        }
+        #endregion
 
         private async Task<decimal> GetOrderPriceWSDL(TblOrders planOrder, tblPlan plan, string SAPFarmerCode)
         {

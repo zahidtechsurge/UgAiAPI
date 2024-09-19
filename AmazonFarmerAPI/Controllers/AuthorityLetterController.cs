@@ -380,7 +380,7 @@ namespace AmazonFarmerAPI.Controllers
                 products = order.Products != null ? order.Products.Select(x => new authorityLetter_GetOrderDetail_Product
                 {
                     productID = x.ProductID,
-                    productImage = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL") + x.Product.ProductTranslations.First().Image,
+                    productImage = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL") + x.Product.ProductTranslations.First().Image.Replace("/", "%2F").Replace(" ", "%20"),
                     productCode = x.Product.ProductCode,
                     productName = x.Product.ProductTranslations.First().Text,
                     qty = x.QTY,

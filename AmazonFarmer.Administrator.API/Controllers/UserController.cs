@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OfficeOpenXml;
 using Org.BouncyCastle.Ocsp;
 using System.Collections.Generic;
 using System.Security.Claims;
@@ -373,7 +374,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             else if (!Regex.IsMatch(req.emailAddress, pattern))
                 throw new AmazonFarmerException(_exceptions.emailRegexExpressionFails);
         }
-        [AllowAnonymous]
+
         [HttpPost("getUsers")]
         public async Task<APIResponse> GetUsers(ReportPagination_Req req)
         {
@@ -511,6 +512,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 (x.LastName != null && x.LastName.ToLower().Contains(req.search.ToLower())) ||
                 (x.PhoneNumber != null && x.PhoneNumber.ToLower().Contains(req.search.ToLower())) ||
                 (x.Email != null && x.Email.ToLower().Contains(req.search.ToLower())) ||
+                (x.CNICNumber != null && x.CNICNumber.ToLower().Contains(req.search.ToLower())) ||
                 (x.UserName != null && x.UserName.ToLower().Contains(req.search.ToLower()))
                 );
             }
@@ -656,56 +658,118 @@ namespace AmazonFarmer.Administrator.API.Controllers
             resp.message = "Password Changed";
             return resp;
         }
+        [AllowAnonymous]
         [HttpPost("getFarmerProfiles")]
-        public async Task<APIResponse> GetFarmerProfiles(ReportPagination_Req req)
+        public async Task<dynamic> GetFarmerProfiles(ReportPagination_Req req)
         {
 
             APIResponse resp = new APIResponse();
             pagination_Resp InResp = new pagination_Resp();
 
-            List<SP_FarmerDetailsResult> report = await _repoWrapper.PlanRepo.GetSP_FarmerDetailsResult(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search);
-            if (report != null && report.Count() > 0)
+            List<SP_FarmerDetailsResult> report = await _repoWrapper.PlanRepo.GetSP_FarmerDetailsResult(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search, 0);
+            if (false)
             {
-                InResp.totalRecord = report.Count > 0 ? report.First().TotalRows : 0;
-                InResp.filteredRecord = report.Count();
-                InResp.list = report.Select(x => new FarmerDetailsResponse
-                {
-                    applicationStatus = x.ApplicationStatus,
-                    applicationSubmitDateTime = x.ApplicationSubmitDateTime,
-                    farmAcres = x.FarmAcres,
-                    farmCity = x.FarmCity,
-                    farmerCity = x.FarmerCity,
-                    farmerCNIC = x.FarmerCNIC,
-                    farmerName = x.FarmerName,
-                    farmerRegion = x.FarmerRegion,
-                    farmerTehsil = x.FarmerTehsil,
-                    farmerTerritory = x.FarmerTerritory,
-                    farmName = x.FarmName,
-                    farmRegion = x.FarmRegion,
-                    farmTehsil = x.FarmTehsil,
-                    farmTerritory = x.FarmTerritory,
-                    leasedLand = x.LeasedLand,
-                    noofFarmsAdded = x.NoofFarmsAdded,
-                    ownedLand = x.OwnedLand,
-                    rsm = x.RSM,
-                    rsmApprovalDateTime = x.RSMApprovalDateTime,
-                    totalLand = x.TotalLand,
-                    tso = x.TSO,
-                    tsoApprovalDateTime = x.TSOApprovalDateTime,
-                    Address1 = x.Address1,
-                    Address2  = x.Address2,
-                    latitude = x.latitude,
-                    longitude = x.longitude,
-                    PhoneNumber = x.PhoneNumber
-                }).ToList();
+                return await GetFarmerProfileLink(report);
             }
             else
             {
-                InResp.list = new List<SP_FarmerDetailsResult>();
+                if (report != null && report.Count() > 0)
+                {
+                    InResp.totalRecord = report.Count > 0 ? report.First().TotalRows : 0;
+                    InResp.filteredRecord = report.Count();
+                    InResp.list = report.Select(x => new FarmerDetailsResponse
+                    {
+                        applicationStatus = x.ApplicationStatus,
+                        applicationSubmitDateTime = x.ApplicationSubmitDateTime,
+                        farmAcres = x.FarmAcres,
+                        farmCity = x.FarmCity,
+                        farmerCity = x.FarmerCity,
+                        farmerCNIC = x.FarmerCNIC,
+                        farmerName = x.FarmerName,
+                        farmerCode = x.FarmerCode ?? string.Empty,
+                        farmerEmail = x.FarmerEmail ?? string.Empty,
+                        farmerUsername = x.FarmerUsername ?? string.Empty,
+                        farmerRegion = x.FarmerRegion,
+                        farmerTehsil = x.FarmerTehsil,
+                        farmerTerritory = x.FarmerTerritory,
+                        farmName = x.FarmName,
+                        farmRegion = x.FarmRegion,
+                        farmTehsil = x.FarmTehsil,
+                        farmTerritory = x.FarmTerritory,
+                        leasedLand = x.LeasedLand,
+                        noofFarmsAdded = x.NoofFarmsAdded,
+                        ownedLand = x.OwnedLand,
+                        rsm = x.RSM,
+                        rsmApprovalDateTime = x.RSMApprovalDateTime,
+                        totalLand = x.TotalLand,
+                        tso = x.TSO,
+                        tsoApprovalDateTime = x.TSOApprovalDateTime,
+                        Address1 = x.Address1,
+                        Address2 = x.Address2,
+                        latitude = x.latitude,
+                        longitude = x.longitude,
+                        PhoneNumber = x.PhoneNumber
+                    }).ToList();
+                }
+                else
+                {
+                    InResp.list = new List<SP_FarmerDetailsResult>();
+                }
+                resp.response = InResp;
             }
-            resp.response = InResp;
             return resp;
         }
+        [AllowAnonymous]
+        [HttpGet("downloadFarmerProfile")]
+        public async Task<dynamic> DownloadFarmerProfile()
+        {
+            List<SP_FarmerDetailsResult> report = await _repoWrapper.PlanRepo.GetSP_FarmerDetailsResult(0, 10, "", "", "", 1);
+            return await GetFarmerProfileLink(report);
+        }
+        private async Task<dynamic> GetFarmerProfileLink(List<SP_FarmerDetailsResult> lst)
+        {
+            List<SP_FarmerDetailsDownload> lst1 = lst.Select(x=> new SP_FarmerDetailsDownload
+            {
+                Address1 = x.Address1,
+                Address2 = x.Address2,
+                ApplicationStatus = x.ApplicationStatus,
+                ApplicationSubmitDateTime = x.ApplicationSubmitDateTime,
+                FarmAcres = x.FarmAcres,
+                FarmCity = x.FarmCity,
+                FarmerCity = x.FarmCity,
+                FarmerCNIC = x.FarmerCNIC,
+                FarmerName = x.FarmName,
+                FarmerCode = x.FarmerCode,
+                FarmerEmail = x.FarmerEmail,
+                FarmerRegion = x.FarmerRegion,
+                FarmerTerritory = x.FarmerTerritory,
+                FarmerUsername = x.FarmerUsername,
+                FarmName = x.FarmName,
+                FarmRegion = x.FarmRegion,
+                FarmTehsil = x.FarmTehsil,
+                FarmTerritory = x.FarmTerritory,
+                latitude = x.latitude,
+                LeasedLand = x.LeasedLand,
+                longitude = x.longitude,
+                NoofFarmsAdded = x.NoofFarmsAdded,
+                OwnedLand = x.OwnedLand,
+                PhoneNumber = x.PhoneNumber,
+                RSM = x.RSM,
+                RSMApprovalDateTime = x.RSMApprovalDateTime,
+                TotalLand = x.TotalLand,
+                TSO = x.TSO,
+                TSOApprovalDateTime = x.TSOApprovalDateTime
+            }).ToList();
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            var package = new OfficeOpenXml.ExcelPackage();
+            //ExcelExtension excelExt = new ExcelExtension();
+            package = ExcelExtension.generateTable(lst1.Cast<dynamic>().ToList(), package, ConfigExntension.GetEnumDescription(EDocumentName.FarmerProfile)); 
+            Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            Response.Headers.Add("content-disposition", "attachment: filename=Report.xlsx");
+            return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", string.Concat(ConfigExntension.GetEnumDescription(EDocumentName.FarmerProfile),"-", DateTime.Now.ToString(), ".xlsx"));
+            return "";
+        }
+
         [HttpDelete("deleteUser/{userID}")]
         public async Task<JSONResponse> DeleteUser(string userID)
         {
@@ -715,7 +779,15 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 throw new AmazonFarmerException(_exceptions.userNotFound);
             else
             {
+                string Del = string.Concat("_Deleted_", DateTime.UtcNow.ToString("ddMMyyyyhhmmss"));
+                user.UserName = string.Concat(user.UserName, Del);
+                user.NormalizedUserName = string.Concat(user.NormalizedUserName, Del);
+                user.CNICNumber = string.Concat(user.CNICNumber, Del);
+                user.PhoneNumber = string.Concat(user.PhoneNumber, Del);
+                user.Email = string.Concat(user.Email, Del);
+                user.NormalizedEmail = string.Concat(user.NormalizedEmail, Del);
                 user.Active = EActivityStatus.Deleted;
+
                 await _repoWrapper.UserRepo.updateUser(user);
                 await _repoWrapper.SaveAsync();
                 resp.message = string.Concat(user.FirstName, " has been removed");

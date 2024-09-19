@@ -24,6 +24,8 @@ namespace AmazonFarmer.Core.Application.Exceptions
             return resourceManager.GetString(exceptionKey) ?? "Error message not found";
         }
 
+        public const string daterangeIsNotValid = "Date range is not valid";
+
         public const string regionNotFound = "Region Not found.";
         public const string regionAlreadyExist = "Region with the same Name or code already exist.";
 
@@ -48,6 +50,8 @@ namespace AmazonFarmer.Core.Application.Exceptions
 
         public const string tehsilNotFound = "Tehsil not found.";
         public const string tehsilAlreadyExist = "Tehsil with the same name or code already exist.";
+
+        public const string seasonAlreadyExist = "Season with the same name already exist.";
 
         public const string emailRegexExpressionFails = "Invalid email format. Please try again.";
         public const string errorOccuredWhileAddingUser = "Error adding user details. Please retry.";
@@ -161,6 +165,7 @@ namespace AmazonFarmer.Core.Application.Exceptions
         public const string productsRequired = "Please add atleast one product in the cart";
         public const string seasonRequired = "Please select a season";
         public const string seasonNotFound = "Season not found";
+        public const string seasonRangeOverlaping = "Seems like season starting & ending month overlaping";
         public const string usernameTaken = "Username already taken. Please try again.";
         public const string statusIDRequired = "An error occurred. Please try again.";
         public const string farmNotFound = "An error occurred. Please try again.";

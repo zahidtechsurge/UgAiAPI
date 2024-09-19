@@ -11,6 +11,7 @@ using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace AmazonFarmer.Infrastructure.Services.Repositories
 {
@@ -696,6 +697,13 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Include(x => x.User)
                 .Where(d => districtIds.Contains(d.DitrictID))
                 .Select(d => d.User).ToListAsync();
+        }
+        public async Task<List<TblUser>> getTSOsByDistrictIDsForHelp(List<int> districtIds)
+        {
+            return await _context.Users
+                .Include(x => x.EmployeeDistricts.Where(d=>districtIds.Contains(d.DitrictID) && d.Status == EActivityStatus.Active))
+                .ThenInclude(x=>x.District)
+                .Where(u => u.EmployeeDistricts.Count() > 0).ToListAsync();
         }
 
         public async Task<List<int>> GetRegionIDsForRSM(string userId)

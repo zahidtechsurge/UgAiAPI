@@ -77,6 +77,8 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string cropName { get; set; } = string.Empty;
         public string seasonName { get; set; } = string.Empty;
         public string districtName { get; set; } = string.Empty;
+        public string fromDate_String { get; set; } = string.Empty;
+        public string toDate_String { get; set; } = string.Empty;
     }
     public class AddCropTiming : CropTimingValues
     {

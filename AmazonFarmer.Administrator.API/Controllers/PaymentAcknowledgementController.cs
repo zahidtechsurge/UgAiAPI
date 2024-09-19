@@ -20,7 +20,7 @@ using CreateOrder;
 
 namespace AmazonFarmer.Administrator.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/Admin/[controller]")]
     [ApiController]
     [Authorize(AuthenticationSchemes = "Bearer")]
     public class PaymentAcknowledgementController : ControllerBase
@@ -76,6 +76,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
             var acknowledgmentDtos = pagedAcknowledgments.Items.Select(ack => new PaymentAcknowledgmentDto
             {
+                paymentAcknowledgementID = ack.Id,
                 CompanyName = ack.CompanyName,
                 ConsumerNumber = ack.ConsumerNumber,
                 Amount = ack.Amount,
@@ -314,7 +315,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
                     replacementDTO.PKRAmount = "Rs" + transaction.Amount.ToString("N2");
                     replacementDTO.ConsumerNumber = transaction.ConsumerCode;
-                    replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10,'0');
+                    replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
 
                     await _notificationService.SendNotifications(notifications, replacementDTO);
                 }

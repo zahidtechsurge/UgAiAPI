@@ -334,6 +334,8 @@ namespace AmazonFarmerAPI.Controllers
                             acreage = farm.Acreage,
                             address1 = farm.Address1,
                             address2 = farm.Address2,
+                            latitude = farm.latitude,
+                            longitude = farm.longitude,
                             city = farm.City.Name,
                             district = farm.District.Name,
                             tehsil = farm.Tehsil.Name,

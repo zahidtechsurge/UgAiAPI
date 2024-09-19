@@ -19,8 +19,10 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         void UpdateService(tblService service);
         Task<List<tblServiceTranslation>> GetServiceTranslationByServiceID(int ID);
         Task<tblServiceTranslation?> GetServiceTranslationByID(int ID);
+        Task<tblServiceTranslation?> GetServiceTranslationByID(int ServiceID, string LanguageCode);
         Task<tblServiceTranslation?> GetServiceTranslationByID(string name, string code);
         void AddServiceTranslation(tblServiceTranslation serviceTranslation);
         void UpdateServiceTranslation(tblServiceTranslation serviceTranslation);
+
     }
 }

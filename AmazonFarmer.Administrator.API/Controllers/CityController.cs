@@ -154,7 +154,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 cityID = cl.ID,
                 languageCode = cl.LanguageCode,
                 text = cl.Translation,
-                languge = cl.Language.LanguageName
+                language = cl.Language.LanguageName
             }).ToList();
             return resp;
         }

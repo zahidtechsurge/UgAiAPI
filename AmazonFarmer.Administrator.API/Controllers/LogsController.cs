@@ -21,6 +21,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
         {
             _repoWrapper = repoWrapper;
         }
+
+        [AllowAnonymous]
         [HttpPost("getEventLogs")]
         public async Task<APIResponse> Get_Event_Logs(ReportPagination_Req req)
         {
@@ -202,6 +204,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             if (!string.IsNullOrEmpty(req.search))
             {
                 logs = logs.Where(x =>
+                    x.Id.ToString().Contains(req.search.ToLower()) ||
                     x.Recipient.ToLower().Contains(req.search.ToLower()) ||
                     x.Subject.ToLower().Contains(req.search.ToLower()) ||
                     x.Message.ToLower().Contains(req.search.ToLower())

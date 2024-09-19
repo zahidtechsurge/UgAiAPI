@@ -274,15 +274,26 @@ namespace AmazonFarmerAPI.Controllers
             APIResponse resp = new APIResponse();
             // Get the user ID from claims
             var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            tblFarmerProfile farmer = await _repoWrapper.UserRepo.getFarmerProfileByUserID(userID);
-            List<TblUser> employees = await _repoWrapper.UserRepo.getTSOsByDistrictIDs([farmer.DistrictID]);
-            resp.response = employees.Select(e => new HelpDTO_Resp
+            tblFarmerProfile? farmer = await _repoWrapper.UserRepo.getFarmerProfileByUserID(userID);
+            List<int> farmDistrictIDs = await _repoWrapper.FarmRepo.getFarmDistrictIDsByUserID(userID);
+            if (farmer != null)
             {
-                name = string.Concat(e.FirstName, ' ', e.LastName),
-                email = e.Email,
-                phone = e.PhoneNumber,
-                designation = ConfigExntension.GetEnumDescription(e.Designation.Value)
-            }).ToList();
+                farmDistrictIDs.Add(farmer.DistrictID);
+
+                List<TblUser> employees = await _repoWrapper.UserRepo.getTSOsByDistrictIDsForHelp(farmDistrictIDs);
+
+                resp.response = employees
+                    .Where(x => x.Active == EActivityStatus.Active && x.EmployeeDistricts.Count() > 0)
+                    .DistinctBy(x => x.Id)
+                    .Select(e => new HelpDTO_Resp
+                    {
+                        name = string.Concat(e.FirstName, ' ', e.LastName),
+                        email = e.Email ?? string.Empty,
+                        phone = e.PhoneNumber ?? string.Empty,
+                        designation = ConfigExntension.GetEnumDescription(e.Designation.Value),
+                        district = string.Join(", ", e.EmployeeDistricts.Select(ed => ed.District.Name)),
+                    }).ToList();
+            }
             return resp;
         }
 
@@ -1301,23 +1312,23 @@ namespace AmazonFarmerAPI.Controllers
 
 
                 #region get weather Information
-                    EngroWeatherAPI_Response locationResp = await _accuWeatherService.getWeather(location.city);
-                    //getWeatherAPI_Req locationResp = await _accuWeatherService.getLocation(location);
-                    //_inResp.weather = await _accuWeatherService.getWeather(locationResp);
+                EngroWeatherAPI_Response locationResp = await _accuWeatherService.getWeather(location.city);
+                //getWeatherAPI_Req locationResp = await _accuWeatherService.getLocation(location);
+                //_inResp.weather = await _accuWeatherService.getWeather(locationResp);
 
-                    string baseUrl = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL"); //setting up base url
+                string baseUrl = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL"); //setting up base url
 
-                    string weatherIconPath = baseUrl + ConfigExntension.GetConfigurationValue("AccuWeather:iconURL").Replace("[icon]", locationResp.weatherIconCode).Replace("/", "%2F").Replace(" ", "%20");
+                string weatherIconPath = baseUrl + ConfigExntension.GetConfigurationValue("AccuWeather:iconURL").Replace("[icon]", locationResp.weatherIconCode).Replace("/", "%2F").Replace(" ", "%20");
 
-                    _inResp.weather = new WeatherDTO()
-                    {
-                        weatherText = locationResp.description,
-                        weatherValue = Math.Round(locationResp.temp).ToString(),
-                        weatherArea = locationResp.name,
-                        weatherUnit = "C",
-                        weatherIconID = locationResp.weatherIconCode,
-                        weatherIconPath = weatherIconPath
-                    };
+                _inResp.weather = new WeatherDTO()
+                {
+                    weatherText = locationResp.description,
+                    weatherValue = Math.Round(locationResp.temp).ToString(),
+                    weatherArea = locationResp.name,
+                    weatherUnit = "C",
+                    weatherIconID = locationResp.weatherIconCode,
+                    weatherIconPath = weatherIconPath
+                };
                 //tblWeatherIcon tblWeather = await _repoWrapper.WeatherRepo.getWeatherByWeatherType(_inResp.weather.weatherIconID);
                 //var weatherTranslation = tblWeather == null ? null : tblWeather.WeatherIconTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault();
                 //_inResp.weather.weatherText = weatherTranslation == null ? "" : weatherTranslation.Text;
