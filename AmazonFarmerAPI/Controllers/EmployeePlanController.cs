@@ -270,6 +270,7 @@ namespace AmazonFarmerAPI.Controllers
                         productID = p.ProductID,
                         product = p.Product.Name,
                         qty = p.Qty,
+                        uom = p.Product.UOM.UOM,
                         date = p.Date//.ToString("yyyy-MM-dd")
                     }).ToList(),
                     services = x.PlanServices.Select(s => new cropService_planCrops_getPlanDetail
@@ -970,74 +971,181 @@ namespace AmazonFarmerAPI.Controllers
         {
             APIResponse resp = new();
 
-            if (string.IsNullOrEmpty(req.planID))
-                throw new AmazonFarmerException(_exceptions.planIDRequired);
+            #region Old Plan Summary Logic
+            //if (string.IsNullOrEmpty(req.planID))
+            //    throw new AmazonFarmerException(_exceptions.planIDRequired);
 
-            var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Retrieving UserID from user claims
-            if (string.IsNullOrEmpty(userID))
-            {
-                throw new AmazonFarmerException(_exceptions.userIDNotFound);
-            }
+            //var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Retrieving UserID from user claims
+            //if (string.IsNullOrEmpty(userID))
+            //{
+            //    throw new AmazonFarmerException(_exceptions.userIDNotFound);
+            //}
 
+            //if (!User.IsInRole("Employee"))
+            //    throw new AmazonFarmerException(_exceptions.userNotAuthorized);
+
+            //tblPlan plan = await _repoWrapper.PlanRepo.getPlanByPlanID(Convert.ToInt32(req.planID.TrimStart('0')), "EN");
+
+            //if (plan != null)
+            //{
+            //    getDistance getDistance = new getDistance // Creating getDistance object for distance calculation
+            //    {
+            //        farmLatitude = plan.Farm.latitude.Value, // Setting farm latitude
+            //        farmLongitude = plan.Farm.longitude.Value, // Setting farm longitude
+            //        WarehouseLocations = new List<LocationDTO>() { new LocationDTO { latitude = plan.Warehouse.latitude, longitude = plan.Warehouse.longitude } } // Initializing warehouse locations list
+            //    };
+            //    getDistance = await _googleLocationExtension.GetDistanceBetweenLocations(getDistance); // Getting distance between locations using Google location extension
+
+
+            //    resp.response = new planSummary()
+            //    {
+            //        isCropsAvailable = plan!.PlanCrops!.Where(x => x.Status == EActivityStatus.Active).Count() == plan!.PlanCrops!.Count() && plan!.PlanCrops!.Count() > 0 ? true : false,
+            //        seasonID = plan.SeasonID,
+            //        season = plan.Season.SeasonTranslations.First().Translation,
+            //        months = await _repoWrapper.MonthRepo.getMonthsByLanguageCodeAndSeasonID("EN", plan.SeasonID),
+            //        crops = plan.PlanCrops.Where(x => x.Status == EActivityStatus.Active).Select(x => new Crop
+            //        {
+            //            cropGroupID = x.CropGroupID,
+            //            //crop = x.Crop.CropTranslations.First().Text,
+            //            crops = x.CropGroup.CropGroupCrops.Select(cgc => new planCropGroup_get
+            //            {
+            //                cropID = cgc.CropID,
+            //                cropName = cgc.Crop.CropTranslations.Where(x => x.LanguageCode == "EN").FirstOrDefault().Text,
+            //                filePath = cgc.Crop.CropTranslations.Where(x => x.LanguageCode == "EN").FirstOrDefault().Image
+            //            }).ToList(),
+            //            acreage = Convert.ToInt32(x.Acre),
+            //            products = x.PlanProducts.Where(x => x.Status == EActivityStatus.Active).GroupBy(x => x.Date.Month).Select(x => new getMonthWiseProductCount
+            //            {
+            //                monthID = x.Key,
+            //                totalProducts = x.Sum(p => p.Qty)
+            //            }).ToList()
+            //        }).ToList(),
+            //        products = plan.PlanCrops.Where(x => x.Status == EActivityStatus.Active).SelectMany(x => x.PlanProducts)
+            //                  .GroupBy(p => new { p.Date.Month, p.ProductID, p.Product.Name })
+            //                  .Select(g => new Product_DTO
+            //                  {
+            //                      productID = g.Key.ProductID,
+            //                      product = g.Key.Name, // You might need to set the product name here
+            //                      months = g.Select(p => new Month
+            //                      {
+            //                          monthID = p.Date.Month,
+            //                          productID = p.Product.ID,
+            //                          product = p.Product.ProductTranslations.First().Text, // You might need to set the product name here
+            //                          totalProducts = g.Sum(x => x.Qty),
+            //                          uom = p.Product.UOM.UnitOfMeasureTranslation.First().Text // You might need to set the unit of measurement here
+            //                      }).ToList()
+            //                  }).ToList(),
+            //        warehouseLocation = plan.Warehouse.Name + " - " + getDistance.WarehouseLocations.FirstOrDefault().distanceText,
+            //        warehouseDistance = getDistance.WarehouseLocations.FirstOrDefault().distanceText
+            //    };
+            //}
+
+            #endregion
+            //var languageCode = User.FindFirst("languageCode")?.Value; // Extracting language code from claims
+            var languageCode = "EN";
+            //var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Extracting user ID from claims
+            //string designationID = User.FindFirst("designationID")?.Value; // Retrieving designation ID from user claims
             if (!User.IsInRole("Employee"))
                 throw new AmazonFarmerException(_exceptions.userNotAuthorized);
 
-            tblPlan plan = await _repoWrapper.PlanRepo.getPlanByPlanID(Convert.ToInt32(req.planID.TrimStart('0')), "EN");
+            tblPlan plan = await _repoWrapper.PlanRepo.getPlanByPlanID(Convert.ToInt32(req.planID.TrimStart('0')), languageCode);
 
-            if (plan != null)
+            
+            if (string.IsNullOrEmpty(req.planID))
+                throw new AmazonFarmerException(_exceptions.planIDRequired);
+            else
             {
-                getDistance getDistance = new getDistance // Creating getDistance object for distance calculation
+                //tblPlan plan = await _repoWrapper.PlanRepo.getPlanByPlanID(Convert.ToInt32(req.planID), userID, languageCode);
+                if (plan == null)
+                    throw new AmazonFarmerException(_exceptions.planNotFound);
+                //else if (User.IsInRole("Farmer") && plan.UserID != userID)
+                //    throw new AmazonFarmerException(_exceptions.planNotFound);
+                //else if (User.IsInRole("Employee"))
+                //    throw new AmazonFarmerException(_exceptions.userNotAuthorized);
+                else
                 {
-                    farmLatitude = plan.Farm.latitude.Value, // Setting farm latitude
-                    farmLongitude = plan.Farm.longitude.Value, // Setting farm longitude
-                    WarehouseLocations = new List<LocationDTO>() { new LocationDTO { latitude = plan.Warehouse.latitude, longitude = plan.Warehouse.longitude } } // Initializing warehouse locations list
-                };
-                getDistance = await _googleLocationExtension.GetDistanceBetweenLocations(getDistance); // Getting distance between locations using Google location extension
 
+                    plan.PlanCrops = plan.PlanCrops.Where(
+                        c => c.PlanProducts.Where(
+                            prod => (prod.Qty - prod.DeliveredQty) > 0
+                        ).Count() > 0
+                    ).ToList();
 
-                resp.response = new planSummary()
-                {
-                    isCropsAvailable = plan!.PlanCrops!.Where(x => x.Status == EActivityStatus.Active).Count() == plan!.PlanCrops!.Count() && plan!.PlanCrops!.Count() > 0 ? true : false,
-                    seasonID = plan.SeasonID,
-                    season = plan.Season.SeasonTranslations.First().Translation,
-                    months = await _repoWrapper.MonthRepo.getMonthsByLanguageCodeAndSeasonID("EN", plan.SeasonID),
-                    crops = plan.PlanCrops.Where(x => x.Status == EActivityStatus.Active).Select(x => new Crop
+                    foreach (tblPlanCrops item in plan.PlanCrops)
                     {
-                        cropGroupID = x.CropGroupID,
-                        //crop = x.Crop.CropTranslations.First().Text,
-                        crops = x.CropGroup.CropGroupCrops.Select(cgc => new planCropGroup_get
-                        {
-                            cropID = cgc.CropID,
-                            cropName = cgc.Crop.CropTranslations.Where(x => x.LanguageCode == "EN").FirstOrDefault().Text,
-                            filePath = cgc.Crop.CropTranslations.Where(x => x.LanguageCode == "EN").FirstOrDefault().Image
-                        }).ToList(),
-                        acreage = Convert.ToInt32(x.Acre),
-                        products = x.PlanProducts.Where(x => x.Status == EActivityStatus.Active).GroupBy(x => x.Date.Month).Select(x => new getMonthWiseProductCount
-                        {
-                            monthID = x.Key,
-                            totalProducts = x.Sum(p => p.Qty)
-                        }).ToList()
-                    }).ToList(),
-                    products = plan.PlanCrops.Where(x => x.Status == EActivityStatus.Active).SelectMany(x => x.PlanProducts)
-                              .GroupBy(p => new { p.Date.Month, p.ProductID, p.Product.Name })
-                              .Select(g => new Product_DTO
-                              {
-                                  productID = g.Key.ProductID,
-                                  product = g.Key.Name, // You might need to set the product name here
-                                  months = g.Select(p => new Month
-                                  {
-                                      monthID = p.Date.Month,
-                                      productID = p.Product.ID,
-                                      product = p.Product.ProductTranslations.First().Text, // You might need to set the product name here
-                                      totalProducts = g.Sum(x => x.Qty),
-                                      uom = p.Product.UOM.UnitOfMeasureTranslation.First().Text // You might need to set the unit of measurement here
-                                  }).ToList()
-                              }).ToList(),
-                    warehouseLocation = plan.Warehouse.Name + " - " + getDistance.WarehouseLocations.FirstOrDefault().distanceText,
-                    warehouseDistance = getDistance.WarehouseLocations.FirstOrDefault().distanceText
-                };
-            }
+                        item.PlanProducts = item.PlanProducts.Where(x => (x.Qty - x.DeliveredQty) > 0).ToList();
+                    }
+                    getDistance getDistance = new getDistance // Creating getDistance object for distance calculation
+                    {
+                        farmLatitude = plan.Farm.latitude.Value, // Setting farm latitude
+                        farmLongitude = plan.Farm.longitude.Value, // Setting farm longitude
+                        WarehouseLocations = new List<LocationDTO>() { new LocationDTO { latitude = plan.Warehouse.latitude, longitude = plan.Warehouse.longitude } } // Initializing warehouse locations list
+                    };
+                    getDistance = await _googleLocationExtension.GetDistanceBetweenLocations(getDistance); // Getting distance between locations using Google location extension
 
+                    var imageBase = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL");
+
+                    resp.response = new getPlanDetail_Resp()
+                    {
+                        planID = plan.ID,
+                        farmID = plan.FarmID,
+                        farm = plan.Farm.FarmName,
+                        warehouseID = plan.WarehouseID,
+                        warehouse = plan.Warehouse.WarehouseTranslation.FirstOrDefault().Text + " - " + getDistance.WarehouseLocations.FirstOrDefault().distanceText,
+                        warehouseDistance = getDistance.WarehouseLocations.FirstOrDefault().distanceText,
+                        seasonID = plan.SeasonID,
+                        season = plan.Season.SeasonTranslations.Where(x => x.LanguageCode == languageCode).First().Translation,
+                        status = plan.Status,
+                        reason = plan.Reason,
+                        planner = plan.User.FirstName,
+                        farmerComment = plan.FarmerComment ?? string.Empty,
+                        crops = plan.PlanCrops.Where(x => x.Status == EActivityStatus.Active).Select(x => new planCrops_getPlanDetail
+                        {
+                            planCropID = x.ID,
+                            //cropID = x.CropID,
+                            cropGroupID = x.CropGroupID,
+                            cropsGroup = _repoWrapper.PlanRepo.getCropInformationByCropGroupID(x.CropGroupID, languageCode, imageBase).Result,
+                            //cropIDs = x.CropGroup.CropGroupCrops.Select(gc => gc.CropID).ToList(),
+                            //imagePath = x.Crop.CropTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault().Image,
+                            //crop = x.Crop.CropTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault().Text,
+                            acreage = Convert.ToInt32(x.Acre),
+                            hasException = x.PlanCropEndorse == EPlanCropEndorse.Exception ? true : false,
+                            //suggestion = x.CropGroup.CropGroupCrops.Select(cgc => new ConsumptionMatrixDTO
+                            //{
+                            //    cgc.Crop.ProductConsumptionMetrics
+                            //.Select(x => new ConsumptionMatrixDTO
+                            //{
+                            //    name = x.Product.ProductTranslations
+                            //        .Where(x => x.LanguageCode == languageCode)
+                            //        .FirstOrDefault().Text,
+                            //    qty = x.Usage.ToString(),
+                            //    uom = x.UOM
+                            //}).FirstOrDefault() }).ToList(),
+                            //}).ToList(),
+                            products = x.PlanProducts.Where(x => x.Status == EActivityStatus.Active).Select(p => new cropProduct_planCrops_getPlanDetail
+                            {
+                                planProductID = p.ID,
+                                productID = p.ProductID,
+                                product = p.Product.ProductTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault() != null ? p.Product.ProductTranslations.Where(x => x.LanguageCode == languageCode).First().Text : string.Empty,
+                                qty = p.Qty - p.DeliveredQty,
+                                uom = p.Product.UOM.UnitOfMeasureTranslation.Where(x => x.LanguageCode == languageCode).FirstOrDefault() != null ? p.Product.UOM.UnitOfMeasureTranslation.Where(x => x.LanguageCode == languageCode).First().Text : string.Empty,
+                                date = p.Date//.ToString("yyyy-MM-dd")
+                            }).ToList(),
+                            services = x.PlanServices.Where(x => x.Status == EActivityStatus.Active).Select(s => new cropService_planCrops_getPlanDetail
+                            {
+                                planServiceID = s.ID,
+                                serviceID = s.ServiceID,
+                                service = s.Service.ServiceTranslations.Where(x => x.LanguageCode == languageCode).First().Text,
+                                lastHarvestDate = s.LastHarvestDate,//.ToString("yyyy-MM-dd"),
+                                landPreparationDate = s.LandPreparationDate,//.ToString("yyyy-MM-dd"),
+                                sewingDate = s.SewingDate//.ToString("yyyy-MM-dd")
+                            }).ToList()
+                        }).ToList(),
+                        changeRequestStatus = plan.PlanChangeStatus,
+                        isEmptyCropsAllowed = plan!.Orders!.Any() ? true : false
+                    };
+                }
+            }
             return resp;
         }
         private async Task ApproveNewPlan(tblPlan plan, List<PlanCropProductPrice> planCropProductPrices,

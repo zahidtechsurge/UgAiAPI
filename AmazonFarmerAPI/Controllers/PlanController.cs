@@ -1040,6 +1040,7 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                                 productID = p.ProductID,
                                 product = p.Product.ProductTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault() != null ? p.Product.ProductTranslations.Where(x => x.LanguageCode == languageCode).First().Text : string.Empty,
                                 qty = p.Qty,
+                                uom = p.Product.UOM.UnitOfMeasureTranslation.Where(x => x.LanguageCode == languageCode).FirstOrDefault() != null ? p.Product.UOM.UnitOfMeasureTranslation.Where(x => x.LanguageCode == languageCode).First().Text : string.Empty,
                                 date = p.Date//.ToString("yyyy-MM-dd")
                             }).ToList(),
                             services = x.PlanServices.Where(x => x.Status == EActivityStatus.Active).Select(s => new cropService_planCrops_getPlanDetail
@@ -1147,6 +1148,7 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                                 productID = p.ProductID,
                                 product = p.Product.ProductTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault() != null ? p.Product.ProductTranslations.Where(x => x.LanguageCode == languageCode).First().Text : string.Empty,
                                 qty = p.Qty - p.DeliveredQty,
+                                uom = p.Product.UOM.UnitOfMeasureTranslation.Where(x => x.LanguageCode == languageCode).FirstOrDefault() != null ? p.Product.UOM.UnitOfMeasureTranslation.Where(x => x.LanguageCode == languageCode).First().Text : string.Empty,
                                 date = p.Date//.ToString("yyyy-MM-dd")
                             }).ToList(),
                             services = x.PlanServices.Where(x => x.Status == EActivityStatus.Active).Select(s => new cropService_planCrops_getPlanDetail

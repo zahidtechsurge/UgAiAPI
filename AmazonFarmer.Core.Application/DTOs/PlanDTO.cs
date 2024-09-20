@@ -334,7 +334,8 @@ namespace AmazonFarmer.Core.Application.DTOs
     {
         public int planProductID { get; set; }
         public int productID { get; set; }
-        public string product { get; set; }
+        public string product { get; set; } = string.Empty;
+        public string uom { get; set; } = string.Empty;
         public int qty { get; set; }
         public DateTime date { get; set; }
     }
