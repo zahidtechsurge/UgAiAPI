@@ -213,6 +213,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 if (string.IsNullOrEmpty(req.filePath))
                 {
                     req.content = req.content.Replace("data:image/png;base64,", "");
+                    req.content = req.content.Replace("data:image/svg+xml;base64,", "");
                     AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
                     AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: (req.fileName ?? "service.svg"), content: req.content, requestTypeID: EAttachmentType.Service);
                     serviceTranslation.Image = attachment.filePath.Replace("\\","/");
@@ -233,6 +234,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 if (!string.IsNullOrEmpty(req.content))
                 {
                     req.content = req.content.Replace("data:image/png;base64,", "");
+                    req.content = req.content.Replace("data:image/svg+xml;base64,", "");
                     attachment = await attachmentExt.UploadAttachment(name: (req.fileName ?? "service.svg"), content: req.content, requestTypeID: EAttachmentType.Service);
                 }
 

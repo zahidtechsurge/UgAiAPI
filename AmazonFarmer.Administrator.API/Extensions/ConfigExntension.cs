@@ -18,9 +18,16 @@ namespace AmazonFarmer.Administrator.API.Extensions
         }
         public static string GetEnumDescription(Enum value)
         {
-            var field = value.GetType().GetField(value.ToString());
-            var attribute = (DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
-            return attribute == null ? value.ToString() : attribute.Description;
+            if ((int)(object)value != 0)
+            {
+                var field = value.GetType().GetField(value.ToString());
+                var attribute = (DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
+                return attribute == null ? value.ToString() : attribute.Description;
+            }
+            else
+            {
+                return "";
+            }
         }
     }
 }

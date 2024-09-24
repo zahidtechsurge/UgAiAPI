@@ -230,4 +230,12 @@ namespace AmazonFarmer.Core.Application.DTOs
         public required string userID { get; set; }
     }
 
+    public class updateFarmerDTO
+    {
+        public required string userID { get; set; }
+        public required bool isLocked { get; set; }
+        public required bool status { get; set; }
+        public required string phoneNumber { get; set; }
+        public required string emailAddress { get; set; }
+    }
 }

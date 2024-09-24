@@ -5,6 +5,8 @@ using AmazonFarmer.Core.Application.Exceptions;
 using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Services.Repositories;
 using AmazonFarmer.NotificationServices.Services;
+using AmazonFarmer.WSDL.Helpers;
+using AmazonFarmer.WSDL;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
@@ -17,6 +19,8 @@ using Org.BouncyCastle.Ocsp;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
+using ChangeCustomer;
+using Microsoft.Extensions.Options;
 
 namespace AmazonFarmer.Administrator.API.Controllers
 {
@@ -34,15 +38,18 @@ namespace AmazonFarmer.Administrator.API.Controllers
         private readonly RoleManager<TblRole> _roleManager;
         private readonly SignInManager<TblUser> _signInManager;
         private readonly NotificationService _notificationService;
+        private WsdlConfig _wsdlConfig;
         public UserController(IRepositoryWrapper repoWrapper,
             UserManager<TblUser> userManager, RoleManager<TblRole> roleManager,
-            SignInManager<TblUser> signInManager, NotificationService notificationService)
+            SignInManager<TblUser> signInManager, NotificationService notificationService,
+            IOptions<WsdlConfig> wsdlConfig)
         {
             _repoWrapper = repoWrapper;
             _userManager = userManager;
             _roleManager = roleManager;
             _signInManager = signInManager;
             _notificationService = notificationService;
+            _wsdlConfig = wsdlConfig.Value;
         }
 
         /// <summary>
@@ -358,6 +365,64 @@ namespace AmazonFarmer.Administrator.API.Controllers
             }
             return response;
         }
+        [HttpPut("updateFarmer")]
+        public async Task<JSONResponse> UpdateFarmer(updateFarmerDTO req)
+        {
+            JSONResponse resp = new JSONResponse();
+            TblUser user = await _repoWrapper.UserRepo.getUserDetailByUserID(req.userID);
+            user.PhoneNumber = req.phoneNumber;
+            user.FarmerProfile.FirstOrDefault().CellNumber = req.phoneNumber;
+            user.Email = req.emailAddress;
+            user.NormalizedEmail = req.emailAddress.ToUpper();
+            user.isAccountLocked = req.isLocked;
+            user.Active = req.status ? EActivityStatus.Active : EActivityStatus.DeActive;
+            await _repoWrapper.UserRepo.updateUser(user);
+            var wsdlResponse = await CallUpdateCustomerWSDL(user.FarmerProfile.FirstOrDefault(), user);
+            if (wsdlResponse != null && wsdlResponse.Messages.Count() > 0 && wsdlResponse.Messages.FirstOrDefault().Message.msgTyp.ToUpper() == "S")
+            {
+                resp.message = "updated";
+                await _repoWrapper.SaveAsync();
+            }
+            else
+            {
+                throw new AmazonFarmerException(wsdlResponse.Messages.FirstOrDefault().Message.msg);
+            }
+            return resp;
+        }
+        private async Task<ResponseType?> CallUpdateCustomerWSDL(tblFarmerProfile profile, TblUser user)
+        {
+            var request = new RequestType
+            {
+                city = "ZZ",
+                condGrp1 = "ZZ",
+                condGrp2 = "ZZ",
+                condGrp3 = "ZZ",
+                condGrp4 = "ZZ",
+                district = "ZZ",
+                email = user.Email,
+                fax = "ZZ",
+                mobileNum = profile.CellNumber,
+                name = "ZZ",
+                phoneNum = user.PhoneNumber,
+                postalCode = "ZZ",
+                salePoint = "ZZ",
+                searchTerm1 = "ZZ",
+                searchTerm2 = "ZZ",
+                street = "ZZ",
+                street2 = "ZZ",
+                street4 = "",
+                custNum = profile.SAPFarmerCode
+            };
+
+            WSDLFunctions wSDLFunctions = new WSDLFunctions(_repoWrapper, _wsdlConfig);
+
+            ResponseType? wsdlResponse = await wSDLFunctions.ChangeCustomerWSDLAsync(request);
+
+
+            return wsdlResponse;
+
+        }
+
         private void validateUserRequest(addEmployeeDTO req)
         {
             string pattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
@@ -375,6 +440,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 throw new AmazonFarmerException(_exceptions.emailRegexExpressionFails);
         }
 
+        [AllowAnonymous]
         [HttpPost("getUsers")]
         public async Task<APIResponse> GetUsers(ReportPagination_Req req)
         {
@@ -519,7 +585,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             //designation wise filteration
             if (!string.IsNullOrEmpty(req.search1))
             {
-                users = users.Where(x => x.Designation == (EDesignation)(Convert.ToInt32(req.search1)));
+                users = users.Where(x => x.Designation != null && x.Designation == (EDesignation)(Convert.ToInt32(req.search1)));
             }
             InResp.totalRecord = users.Count();
             users = users.Skip(req.pageNumber * req.pageSize)
@@ -537,7 +603,176 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 userName = x.UserName ?? string.Empty,
                 status = (int)x.Active,
                 lockedOutEnabled = x.isAccountLocked,
-                designation = x.Designation != null ? ConfigExntension.GetEnumDescription(x.Designation) : string.Empty
+                designation = x.Designation != null ? string.IsNullOrEmpty(ConfigExntension.GetEnumDescription(x.Designation)) ? "Farmer" : ConfigExntension.GetEnumDescription(x.Designation) : "Farmer"
+            }).ToListAsync();
+            response.response = InResp;
+            return response;
+        }
+
+        [AllowAnonymous]
+        [HttpPost("getFarmers")]
+        public async Task<APIResponse> GetFarmers(ReportPagination_Req req)
+        {
+            APIResponse response = new APIResponse();
+            pagination_Resp InResp = new pagination_Resp();
+            IQueryable<TblUser> users = _repoWrapper.UserRepo.getUsers();
+
+            //removing users from list
+            users = users.Where(x => x.Designation == null);
+
+            //filtering deleted users
+            if (req.rootID == 0)
+            {
+                users = users.Where(x => x.Active == EActivityStatus.Deleted);
+            }
+            //filtering active or inactive users
+            else if (req.rootID == 1)
+            {
+                users = users.Where(x => x.Active != EActivityStatus.Deleted);
+            }
+            //sorting 
+            if (!string.IsNullOrEmpty(req.sortColumn))
+            {
+                if (req.sortColumn.Contains("userID"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.Id);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.Id);
+                    }
+                }
+                else if (req.sortColumn.Contains("firstName"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.FirstName);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.FirstName);
+                    }
+                }
+                else if (req.sortColumn.Contains("lastName"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.LastName);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.LastName);
+                    }
+                }
+                else if (req.sortColumn.Contains("phoneNumber"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.PhoneNumber);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.PhoneNumber);
+                    }
+                }
+                else if (req.sortColumn.Contains("email"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.Email);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.Email);
+                    }
+                }
+                else if (req.sortColumn.Contains("cnic"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.CNICNumber);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.CNICNumber);
+                    }
+                }
+                else if (req.sortColumn.Contains("userName"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.UserName);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.UserName);
+                    }
+                }
+                else if (req.sortColumn.Contains("status"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.Active);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.Active);
+                    }
+                }
+                else if (req.sortColumn.Contains("lockedOutEnabled"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        users = users.OrderBy(x => x.isAccountLocked);
+                    }
+                    else
+                    {
+                        users = users.OrderByDescending(x => x.isAccountLocked);
+                    }
+                }
+
+            }
+            else
+            {
+                // on default users will be sorted by userID desc
+                users = users.OrderByDescending(x => x.Id);
+            }
+            //search Term filteration
+            if (!string.IsNullOrEmpty(req.search))
+            {
+                users = users.Where(x =>
+                x.FirstName.ToLower().Contains(req.search.ToLower()) ||
+                (x.LastName != null && x.LastName.ToLower().Contains(req.search.ToLower())) ||
+                (x.PhoneNumber != null && x.PhoneNumber.ToLower().Contains(req.search.ToLower())) ||
+                (x.Email != null && x.Email.ToLower().Contains(req.search.ToLower())) ||
+                (x.CNICNumber != null && x.CNICNumber.ToLower().Contains(req.search.ToLower())) ||
+                (x.UserName != null && x.UserName.ToLower().Contains(req.search.ToLower()))
+                );
+            }
+            //designation wise filteration
+            if (!string.IsNullOrEmpty(req.search1))
+            {
+                users = users.Where(x => x.Designation != null && x.Designation == (EDesignation)(Convert.ToInt32(req.search1)));
+            }
+            InResp.totalRecord = users.Count();
+            users = users.Skip(req.pageNumber * req.pageSize)
+                         .Take(req.pageSize);
+            InResp.filteredRecord = users.Count();
+            var t = users.ToList();
+            InResp.list = await users.Select(x => new
+            {
+                userID = x.Id,
+                firstName = x.FirstName,
+                lastName = x.LastName ?? string.Empty,
+                phoneNumber = x.PhoneNumber ?? string.Empty,
+                email = x.Email ?? string.Empty,
+                cnic = x.CNICNumber ?? string.Empty,
+                userName = x.UserName ?? string.Empty,
+                status = (int)x.Active,
+                lockedOutEnabled = x.isAccountLocked,
+                designation = x.Designation != null ? string.IsNullOrEmpty(ConfigExntension.GetEnumDescription(x.Designation)) ? "Farmer" : ConfigExntension.GetEnumDescription(x.Designation) : "Farmer"
             }).ToListAsync();
             response.response = InResp;
             return response;
@@ -567,6 +802,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 fatherName = user.FarmerProfile != null && user.FarmerProfile.Count() > 0 ? user.FarmerProfile.FirstOrDefault().FatherName : string.Empty,
                 strnNumber = user.FarmerProfile != null && user.FarmerProfile.Count() > 0 ? user.FarmerProfile.FirstOrDefault().STRNNumber : string.Empty,
                 cnicNumber = user.CNICNumber ?? string.Empty,
+                sapFarmerCode = user.FarmerProfile != null && user.FarmerProfile.Count() > 0 ? user.FarmerProfile.FirstOrDefault().SAPFarmerCode : string.Empty,
                 cnicAttachment = user.UserAttachments != null ? user.UserAttachments
                 .Where(y => y.Attachment.AttachmentTypes.AttachmentType == EAttachmentType.User_CNIC_Document)
                 .Select(y => new uploadAttachmentResp
@@ -679,30 +915,31 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     InResp.filteredRecord = report.Count();
                     InResp.list = report.Select(x => new FarmerDetailsResponse
                     {
-                        applicationStatus = x.ApplicationStatus,
+                        applicationStatus = x.ApplicationStatus ?? string.Empty,
                         applicationSubmitDateTime = x.ApplicationSubmitDateTime,
                         farmAcres = x.FarmAcres,
-                        farmCity = x.FarmCity,
-                        farmerCity = x.FarmerCity,
-                        farmerCNIC = x.FarmerCNIC,
-                        farmerName = x.FarmerName,
+                        farmID = x.FarmID ?? string.Empty,
+                        farmCity = x.FarmCity ?? string.Empty,
+                        farmerCity = x.FarmerCity ?? string.Empty,
+                        farmerCNIC = x.FarmerCNIC ?? string.Empty,
+                        farmerName = x.FarmerName ?? string.Empty,
                         farmerCode = x.FarmerCode ?? string.Empty,
                         farmerEmail = x.FarmerEmail ?? string.Empty,
                         farmerUsername = x.FarmerUsername ?? string.Empty,
-                        farmerRegion = x.FarmerRegion,
-                        farmerTehsil = x.FarmerTehsil,
-                        farmerTerritory = x.FarmerTerritory,
-                        farmName = x.FarmName,
-                        farmRegion = x.FarmRegion,
-                        farmTehsil = x.FarmTehsil,
-                        farmTerritory = x.FarmTerritory,
-                        leasedLand = x.LeasedLand,
+                        farmerRegion = x.FarmerRegion ?? string.Empty,
+                        farmerTehsil = x.FarmerTehsil ?? string.Empty,
+                        farmerTerritory = x.FarmerTerritory ?? string.Empty,
+                        farmName = x.FarmName ?? string.Empty,
+                        farmRegion = x.FarmRegion ?? string.Empty,
+                        farmTehsil = x.FarmTehsil ?? string.Empty,
+                        farmTerritory = x.FarmTerritory ?? string.Empty,
+                        leasedLand = x.LeasedLand ?? string.Empty,
                         noofFarmsAdded = x.NoofFarmsAdded,
-                        ownedLand = x.OwnedLand,
-                        rsm = x.RSM,
+                        ownedLand = x.OwnedLand ?? string.Empty,
+                        rsm = x.RSM ?? string.Empty,
                         rsmApprovalDateTime = x.RSMApprovalDateTime,
                         totalLand = x.TotalLand,
-                        tso = x.TSO,
+                        tso = x.TSO ?? string.Empty,
                         tsoApprovalDateTime = x.TSOApprovalDateTime,
                         Address1 = x.Address1,
                         Address2 = x.Address2,
@@ -728,7 +965,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
         }
         private async Task<dynamic> GetFarmerProfileLink(List<SP_FarmerDetailsResult> lst)
         {
-            List<SP_FarmerDetailsDownload> lst1 = lst.Select(x=> new SP_FarmerDetailsDownload
+            List<SP_FarmerDetailsDownload> lst1 = lst.Select(x => new SP_FarmerDetailsDownload
             {
                 Address1 = x.Address1,
                 Address2 = x.Address2,
@@ -744,6 +981,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 FarmerRegion = x.FarmerRegion,
                 FarmerTerritory = x.FarmerTerritory,
                 FarmerUsername = x.FarmerUsername,
+                FarmID = x.FarmID,
                 FarmName = x.FarmName,
                 FarmRegion = x.FarmRegion,
                 FarmTehsil = x.FarmTehsil,
@@ -763,10 +1001,10 @@ namespace AmazonFarmer.Administrator.API.Controllers
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
             var package = new OfficeOpenXml.ExcelPackage();
             //ExcelExtension excelExt = new ExcelExtension();
-            package = ExcelExtension.generateTable(lst1.Cast<dynamic>().ToList(), package, ConfigExntension.GetEnumDescription(EDocumentName.FarmerProfile)); 
+            package = ExcelExtension.generateTable(lst1.Cast<dynamic>().ToList(), package, ConfigExntension.GetEnumDescription(EDocumentName.FarmerProfile));
             Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             Response.Headers.Add("content-disposition", "attachment: filename=Report.xlsx");
-            return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", string.Concat(ConfigExntension.GetEnumDescription(EDocumentName.FarmerProfile),"-", DateTime.Now.ToString(), ".xlsx"));
+            return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", string.Concat(ConfigExntension.GetEnumDescription(EDocumentName.FarmerProfile), "-", DateTime.Now.ToString(), ".xlsx"));
             return "";
         }
 

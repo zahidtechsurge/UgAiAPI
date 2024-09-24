@@ -373,6 +373,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 {
                     AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
                     req.content = req.content.Replace("data:image/png;base64,", "");
+                    req.content = req.content.Replace("data:image/svg+xml;base64,", "");
                     AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: (req.fileName ?? "untitledProduct.svg"), content: (req.content ?? string.Empty), requestTypeID: EAttachmentType.Product);
                     productTranslation.Image = string.Concat("/", attachment.filePath.Replace("\\", "/"));
                 }
@@ -393,6 +394,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 {
                     AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
                     req.content = req.content.Replace("data:image/png;base64,", "");
+                    req.content = req.content.Replace("data:image/svg+xml;base64,", "");
                     attachment = await attachmentExt.UploadAttachment(name: (req.fileName ?? "untitledProduct.svg"), content: (req.content ?? string.Empty), requestTypeID: EAttachmentType.Product);
                 }
                 productTranslation = new tblProductTranslation()
