@@ -519,6 +519,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             if (!string.IsNullOrEmpty(content))
             {
                 content = content.Replace("data:image/png;base64,", "");
+                content = content.Replace("data:image/svg+xml;base64,", "");
                 AttachmentExtension attachmentExt = new AttachmentExtension(_repoWrapper, _azureFileShareService);
                 AttachmentsDTO attachment = await attachmentExt.UploadAttachment(name: name, content: content, requestTypeID: EAttachmentType.Crop);
                 return string.Concat("/", attachment.filePath.Replace("\\", "/"));

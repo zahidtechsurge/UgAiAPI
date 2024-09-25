@@ -88,6 +88,8 @@ namespace AmazonFarmer.Core.Application.DTOs
         public int NoofFarmsAdded { get; set; }
         [Description("Farm Name")]
         public string? FarmName { get; set; } = string.Empty;
+        [Description("Farm ID")]
+        public string? FarmID { get; set; } = string.Empty;
         [Description("Farm City")]
         public string? FarmCity { get; set; } = string.Empty;
         [Description("Farm Territory")]
@@ -147,6 +149,8 @@ namespace AmazonFarmer.Core.Application.DTOs
         public int TotalLand { get; set; }
         [Description("No of farms")]
         public int NoofFarmsAdded { get; set; }
+        [Description("Farm ID")]
+        public string? FarmID { get; set; } = string.Empty;
         [Description("Farm Name")]
         public string? FarmName { get; set; } = string.Empty;
         [Description("Farm City")]
@@ -197,6 +201,7 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string leasedLand { get; set; } = string.Empty;
         public int totalLand { get; set; }
         public int noofFarmsAdded { get; set; }
+        public string farmID { get; set; } = string.Empty;
         public string farmName { get; set; } = string.Empty;
         public string farmCity { get; set; } = string.Empty;
         public string farmTerritory { get; set; } = string.Empty;
@@ -234,6 +239,7 @@ namespace AmazonFarmer.Core.Application.DTOs
         public int totalRows { get; set; }
         public Int64 orderID { get; set; }
         public string? sapOrderID { get; set; } = string.Empty;
+        public string? sapTransactionID { get; set; } = string.Empty;
         public int orderType { get; set; }
         public int orderStatus { get; set; }
         public decimal orderAmount { get; set; }
@@ -255,6 +261,8 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string orderID { get; set; }
         [Description("SAP Order ID")]
         public string sapOrderID { get; set; } = string.Empty;
+        [Description("SAP Transaction ID")]
+        public string sapTransactionID { get; set; } = string.Empty;
         [Description("Order Type")]
         public string orderType { get; set; }
         [Description("Order Status")]

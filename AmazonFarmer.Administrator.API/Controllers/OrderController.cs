@@ -51,6 +51,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 {
                     orderID = x.orderID.ToString().PadLeft(10,'0'),
                     sapOrderID = x.sapOrderID ?? string.Empty,
+                    sapTransactionID = x.sapTransactionID ?? string.Empty,
                     orderType = ConfigExntension.GetEnumDescription((EOrderType)x.orderType),
                     orderStatus = ConfigExntension.GetEnumDescription((EOrderStatus)x.orderStatus),
                     orderAmount = x.orderAmount,
@@ -83,6 +84,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             {
                 orderID = x.orderID.ToString().PadLeft(10, '0'),
                 sapOrderID = x.sapOrderID ?? string.Empty,
+                sapTransactionID = x.sapTransactionID ?? string.Empty,
                 orderType = ConfigExntension.GetEnumDescription((EOrderType)x.orderType),
                 orderStatus = ConfigExntension.GetEnumDescription((EOrderStatus)x.orderStatus),
                 orderAmount = x.orderAmount,
