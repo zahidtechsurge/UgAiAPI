@@ -239,6 +239,7 @@ namespace AmazonFarmer.Core.Application.DTOs
         public int totalRows { get; set; }
         public Int64 orderID { get; set; }
         public string? sapOrderID { get; set; } = string.Empty;
+        public string? sapTransactionID { get; set; } = string.Empty;
         public int orderType { get; set; }
         public int orderStatus { get; set; }
         public decimal orderAmount { get; set; }
@@ -260,6 +261,8 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string orderID { get; set; }
         [Description("SAP Order ID")]
         public string sapOrderID { get; set; } = string.Empty;
+        [Description("SAP Transaction ID")]
+        public string sapTransactionID { get; set; } = string.Empty;
         [Description("Order Type")]
         public string orderType { get; set; }
         [Description("Order Status")]
