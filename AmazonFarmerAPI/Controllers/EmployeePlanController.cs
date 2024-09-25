@@ -38,7 +38,7 @@ namespace AmazonFarmerAPI.Controllers
         private readonly NotificationService _notificationService;
         private readonly IConfiguration _configruation;
         private WsdlConfig _wsdlConfig;
-        public EmployeePlanController(IRepositoryWrapper repoWrapper, NotificationService notificationService, 
+        public EmployeePlanController(IRepositoryWrapper repoWrapper, NotificationService notificationService,
             GoogleLocationExtension googleLocationExtension, IOptions<WsdlConfig> wsdlConfig, IConfiguration configuration)
         {
             _repoWrapper = repoWrapper;
@@ -432,23 +432,27 @@ namespace AmazonFarmerAPI.Controllers
                                     var calculatedValue = Convert.ToDecimal(planCrop.Acre) * metrics.Usage;
                                     if (designationID == (int)EDesignation.Territory_Sales_Officer)
                                     {
-
+                                        req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
                                         // Calculate TSO Margin of the reference value
                                         decimal tenPercent = calculatedValue * tsoMargin;
                                         if ((planOrderProduct.QTY > calculatedValue + tenPercent) || (planOrderProduct.QTY < calculatedValue - tenPercent))
                                         {
                                             req.statusID = (int)EPlanStatus.RSMProcessing;
+                                            req.reason = "Consumption metric issue";
                                             await EndorseWork(req, territoryIds);
                                             endorseDueToConsumptionMetrics = true;
                                         }
                                     }
-                                   else if (designationID == (int)EDesignation.Regional_Sales_Manager)
+                                    else if (designationID == (int)EDesignation.Regional_Sales_Manager)
                                     {
+
+                                        req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
                                         // Calculate RSM Margin of the reference value
                                         decimal twentyPercent = calculatedValue * rsmMargin;
                                         if ((planOrderProduct.QTY > calculatedValue + twentyPercent) || (planOrderProduct.QTY < calculatedValue - twentyPercent))
                                         {
                                             req.statusID = (int)EPlanStatus.NSMProcessing;
+                                            req.reason = "Consumption metric issue";
                                             await EndorseWork(req, territoryIds);
                                             endorseDueToConsumptionMetrics = true;
                                         }
@@ -458,13 +462,19 @@ namespace AmazonFarmerAPI.Controllers
                                 {
                                     if (designationID == (int)EDesignation.Territory_Sales_Officer)
                                     {
+
+                                        req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
                                         req.statusID = (int)EPlanStatus.RSMProcessing;
+                                        req.reason = "Consumption metric issue";
                                         await EndorseWork(req, territoryIds);
                                         endorseDueToConsumptionMetrics = true;
                                     }
                                     else if (designationID == (int)EDesignation.Regional_Sales_Manager)
                                     {
+
+                                        req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
                                         req.statusID = (int)EPlanStatus.NSMProcessing;
+                                        req.reason = "Consumption metric issue";
                                         await EndorseWork(req, territoryIds);
                                         endorseDueToConsumptionMetrics = true;
                                     }
@@ -474,13 +484,19 @@ namespace AmazonFarmerAPI.Controllers
                             {
                                 if (designationID == (int)EDesignation.Territory_Sales_Officer)
                                 {
+
+                                    req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
                                     req.statusID = (int)EPlanStatus.RSMProcessing;
+                                    req.reason = "Consumption metric issue";
                                     await EndorseWork(req, territoryIds);
                                     endorseDueToConsumptionMetrics = true;
                                 }
                                 else if (designationID == (int)EDesignation.Regional_Sales_Manager)
                                 {
+
+                                    req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
                                     req.statusID = (int)EPlanStatus.NSMProcessing;
+                                    req.reason = "Consumption metric issue";
                                     await EndorseWork(req, territoryIds);
                                     endorseDueToConsumptionMetrics = true;
                                 }
