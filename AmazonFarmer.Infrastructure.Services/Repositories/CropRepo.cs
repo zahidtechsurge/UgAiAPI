@@ -145,6 +145,22 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
 
             return crops;
         }
+
+        /// <summary>
+        /// Retrieves a list of crops by season and district ID.
+        /// </summary>
+        /// <param name="req">The request containing the season ID, district ID, farm ID, and language code.</param>
+        /// <returns>A list of Crops_Res objects.</returns>
+        public async Task<List<tblCrop>> getCropsProductConsumptionMetrics()
+        { 
+
+            // Query crops based on season, district, and language code
+            List<tblCrop> crops = await _context.Crops
+                .Include(x => x.ProductConsumptionMetrics)
+                .ThenInclude(x => x.Product).ToListAsync();
+
+            return crops;
+        }
         public async Task<tblCrop?> GetCropByID(int ID)
         {
             return await _context.Crops.Where(x => x.ID == ID).FirstOrDefaultAsync();

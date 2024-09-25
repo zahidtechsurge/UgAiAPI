@@ -27,5 +27,7 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         Task<tblCrop?> GetCropByName(string Name);
         void AddCrop(tblCrop crop);
         void UpdateCrop(tblCrop crop);
+
+        Task<List<tblCrop>> getCropsProductConsumptionMetrics( );
     }
 }
