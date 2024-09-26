@@ -430,11 +430,11 @@ namespace AmazonFarmerAPI.Controllers
                                     var calculatedValue = Convert.ToDecimal(planCrop.Acre) * metrics.Usage;
                                     if (designationID == (int)EDesignation.Territory_Sales_Officer)
                                     {
-                                        req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
                                         // Calculate TSO Margin of the reference value
                                         decimal tenPercent = calculatedValue * tsoMargin;
                                         if ((planProduct.Qty > calculatedValue + tenPercent) || (planProduct.Qty < calculatedValue - tenPercent))
                                         {
+                                            req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
                                             req.statusID = (int)EPlanStatus.RSMProcessing;
                                             req.reason = "Consumption metric issue";
                                             await EndorseWork(req, territoryIds);
@@ -444,11 +444,11 @@ namespace AmazonFarmerAPI.Controllers
                                     else if (designationID == (int)EDesignation.Regional_Sales_Manager)
                                     {
 
-                                        req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
                                         // Calculate RSM Margin of the reference value
                                         decimal twentyPercent = calculatedValue * rsmMargin;
                                         if ((planProduct.Qty > calculatedValue + twentyPercent) || (planProduct.Qty < calculatedValue - twentyPercent))
                                         {
+                                            req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
                                             req.statusID = (int)EPlanStatus.NSMProcessing;
                                             req.reason = "Consumption metric issue";
                                             await EndorseWork(req, territoryIds);
