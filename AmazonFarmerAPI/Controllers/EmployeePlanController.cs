@@ -412,11 +412,10 @@ namespace AmazonFarmerAPI.Controllers
                 decimal tsoMargin = Convert.ToDecimal(_configruation["loamSettings:TSOMargin"]);
                 decimal rsmMargin = Convert.ToDecimal(_configruation["loamSettings:RSMMargin"]);
                 //Checking for consumption metrics checks
-                foreach (TblOrders planOrder in planOrders)
+                foreach (tblPlanCrops planCrop in plan.PlanCrops)
                 {
-                    TblOrderProducts planOrderProduct = planOrder.Products.FirstOrDefault();
-
-                    foreach (var planCrop in planOrder.Plan.PlanCrops)
+                    //TblOrderProducts planOrderProduct = planOrder.Products.FirstOrDefault();
+                    foreach (var planProduct in planCrop.PlanProducts)
                     {
                         foreach (var item in planCrop.CropGroup.CropGroupCrops)
                         {
@@ -424,7 +423,7 @@ namespace AmazonFarmerAPI.Controllers
                             if (cropConsumption != null)
                             {
                                 tblProductConsumptionMetrics metrics = cropConsumption.ProductConsumptionMetrics
-                                      .Where(pcm => pcm.ProductID == planOrderProduct.ProductID).FirstOrDefault();
+                                      .Where(pcm => pcm.ProductID == planProduct.ProductID).FirstOrDefault();
 
                                 if (metrics != null)
                                 {
@@ -434,7 +433,7 @@ namespace AmazonFarmerAPI.Controllers
                                         req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
                                         // Calculate TSO Margin of the reference value
                                         decimal tenPercent = calculatedValue * tsoMargin;
-                                        if ((planOrderProduct.QTY > calculatedValue + tenPercent) || (planOrderProduct.QTY < calculatedValue - tenPercent))
+                                        if ((planProduct.Qty > calculatedValue + tenPercent) || (planProduct.Qty < calculatedValue - tenPercent))
                                         {
                                             req.statusID = (int)EPlanStatus.RSMProcessing;
                                             req.reason = "Consumption metric issue";
@@ -448,7 +447,7 @@ namespace AmazonFarmerAPI.Controllers
                                         req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
                                         // Calculate RSM Margin of the reference value
                                         decimal twentyPercent = calculatedValue * rsmMargin;
-                                        if ((planOrderProduct.QTY > calculatedValue + twentyPercent) || (planOrderProduct.QTY < calculatedValue - twentyPercent))
+                                        if ((planProduct.Qty > calculatedValue + twentyPercent) || (planProduct.Qty < calculatedValue - twentyPercent))
                                         {
                                             req.statusID = (int)EPlanStatus.NSMProcessing;
                                             req.reason = "Consumption metric issue";
