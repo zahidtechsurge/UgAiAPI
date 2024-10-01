@@ -54,5 +54,12 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
 
             return resp; // Returning the API response
         }
+
+        [AllowAnonymous]
+        [HttpGet("getdirections/{origin}/{destination}")]
+        public async Task<dynamic> getDirections(string origin, string destination)
+        {
+            return await _googleLocationExtension.GetDestination(origin, destination);
+        }
     }
 }
