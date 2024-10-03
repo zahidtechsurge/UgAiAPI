@@ -387,30 +387,34 @@ namespace AmazonFarmer.NotificationServices.Services
             {
                 foreach (var userId in userIds)
                 {
-                    tblNotification notification = new tblNotification()
+                    if (!string.IsNullOrEmpty(userId))
                     {
-                        UserID = userId,
-                        DeviceNotificationID = (int)notificationReplacement?.NotificationBodyTypeID,
-                        PlanID = string.IsNullOrEmpty(notificationReplacement.PlanID) ? null : Convert.ToInt32(notificationReplacement.PlanID.TrimStart('0')),
-                        FarmID = string.IsNullOrEmpty(notificationReplacement.FarmID) ? null : Convert.ToInt32(notificationReplacement.FarmID.TrimStart('0')),
-                        OrderID = string.IsNullOrEmpty(notificationReplacement.OrderID) ? null : Convert.ToInt64(notificationReplacement.OrderID.TrimStart('0')),
-                        AuthorityLetterID = string.IsNullOrEmpty(notificationReplacement.AuthorityLetterId) || notificationReplacement.AuthorityLetterId == "0" ? null : Convert.ToInt32(notificationReplacement.AuthorityLetterId),
-                        AuthorityLetterNo = (notificationReplacement.AuthorityLetterNo),
-                        FarmApplicationID = string.IsNullOrEmpty(notificationReplacement.ApplicationId) || notificationReplacement.ApplicationId == "0" ? null : Convert.ToInt32(notificationReplacement.ApplicationId.TrimStart('0')),
-                        FarmName = (notificationReplacement.FarmName),
-                        NewPaymentDueDate = notificationReplacement.NewPaymentDueDate,
-                        ConsumerNumber = notificationReplacement.ConsumerNumber,
-                        PKRAmount = notificationReplacement.PKRAmount,
-                        WarehouseID = string.IsNullOrEmpty(notificationReplacement.WarehouseId) || notificationReplacement.WarehouseId == "0" ? null : Convert.ToInt32(notificationReplacement.WarehouseId.TrimStart('0')),
-                        PickUPDate = notificationReplacement.PickupDate,
-                        ReasonsDropdownID = string.IsNullOrEmpty(notificationReplacement.ReasonDropDownOptionId) || notificationReplacement.ReasonDropDownOptionId == "0" ? null : Convert.ToInt32(notificationReplacement.ReasonDropDownOptionId.TrimStart('0')),
-                        ReasonCommentBox = notificationReplacement.ReasonComment,
-                        GoogleMapLinkWithCoordinated = notificationReplacement.GoogleMapLinkWithCoordinated,
-                        CreatedOn = DateTime.UtcNow,
-                        IsClicked = false
-                    };
 
-                    _repoWrapper.NotificationRepo.addDeviceNotification(notification);
+                        tblNotification notification = new tblNotification()
+                        {
+                            UserID = userId,
+                            DeviceNotificationID = (int)notificationReplacement?.NotificationBodyTypeID,
+                            PlanID = string.IsNullOrEmpty(notificationReplacement.PlanID) ? null : Convert.ToInt32(notificationReplacement.PlanID.TrimStart('0')),
+                            FarmID = string.IsNullOrEmpty(notificationReplacement.FarmID) ? null : Convert.ToInt32(notificationReplacement.FarmID.TrimStart('0')),
+                            OrderID = string.IsNullOrEmpty(notificationReplacement.OrderID) ? null : Convert.ToInt64(notificationReplacement.OrderID.TrimStart('0')),
+                            AuthorityLetterID = string.IsNullOrEmpty(notificationReplacement.AuthorityLetterId) || notificationReplacement.AuthorityLetterId == "0" ? null : Convert.ToInt32(notificationReplacement.AuthorityLetterId),
+                            AuthorityLetterNo = (notificationReplacement.AuthorityLetterNo),
+                            FarmApplicationID = string.IsNullOrEmpty(notificationReplacement.ApplicationId) || notificationReplacement.ApplicationId == "0" ? null : Convert.ToInt32(notificationReplacement.ApplicationId.TrimStart('0')),
+                            FarmName = (notificationReplacement.FarmName),
+                            NewPaymentDueDate = notificationReplacement.NewPaymentDueDate,
+                            ConsumerNumber = notificationReplacement.ConsumerNumber,
+                            PKRAmount = notificationReplacement.PKRAmount,
+                            WarehouseID = string.IsNullOrEmpty(notificationReplacement.WarehouseId) || notificationReplacement.WarehouseId == "0" ? null : Convert.ToInt32(notificationReplacement.WarehouseId.TrimStart('0')),
+                            PickUPDate = notificationReplacement.PickupDate,
+                            ReasonsDropdownID = string.IsNullOrEmpty(notificationReplacement.ReasonDropDownOptionId) || notificationReplacement.ReasonDropDownOptionId == "0" ? null : Convert.ToInt32(notificationReplacement.ReasonDropDownOptionId.TrimStart('0')),
+                            ReasonCommentBox = notificationReplacement.ReasonComment,
+                            GoogleMapLinkWithCoordinated = notificationReplacement.GoogleMapLinkWithCoordinated,
+                            CreatedOn = DateTime.UtcNow,
+                            IsClicked = false
+                        };
+
+                        _repoWrapper.NotificationRepo.addDeviceNotification(notification);
+                    }
                 }
                 await _repoWrapper.SaveAsync();
             }

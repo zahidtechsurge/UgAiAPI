@@ -474,6 +474,8 @@ namespace AmazonFarmerAPI.Controllers
                         farm.Status = EFarmStatus.Approved;
                         farm.isApproved = true;
                         profile.isApproved = EFarmerProfileStatus.Approved;
+                        profile.ApprovedDate = DateTime.UtcNow;
+                        profile.ApprovedByID = userID;
                         await _repoWrapper.UserRepo.approverFarmerProfile(profile);
                     }
                     else

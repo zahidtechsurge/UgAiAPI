@@ -125,6 +125,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                     isPrimary = false,
                     isApproved = false,
                     RequestStatus = EFarmStatus.Draft,
+                    UpdatedOn = DateTime.UtcNow,
                     UserID = UserID,
                     FarmerComment = farm.farmerComment
                 };
@@ -140,6 +141,34 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             {
                 throw new AmazonFarmerException("Application ID cannot be null.");
             }
+        }
+        public void AddFarmChangeRequest(tblfarm farm,string updatedByID)
+        {
+            // Create a new tblFarmChangeRequest object with the provided farm change request details
+            tblFarmChangeRequest _req = new tblFarmChangeRequest()
+            {
+                FarmID = farm.FarmID,
+                ApplicationID = farm.ApplicationID.Value,
+                FarmName = farm.FarmName,
+                Address1 = farm.Address1,
+                Address2 = farm.Address2,
+                Address3 = farm.Address3,
+                CityID = farm.CityID,
+                DistrictID = farm.DistrictID,
+                TehsilID = farm.TehsilID,
+                Acreage = farm.Acreage,
+                isLeased = farm.isLeased,
+                isPrimary = false,
+                isApproved = false,
+                RequestStatus = farm.Status,
+                UpdatedOn = DateTime.UtcNow,
+                UserID = farm.UserID,
+                UpdatedBy = updatedByID,
+                FarmerComment = farm.FarmerComment
+            };
+
+            // Add the new farm change request to the FarmChangeRequests DbSet and save changes to the database
+            _context.FarmChangeRequests.Add(_req);
         }
         public async Task<int> updateFarmRequest(FarmDTO farm, string UserID)
         {
@@ -163,6 +192,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                     isPrimary = false,
                     isApproved = false,
                     RequestStatus = EFarmStatus.Draft,
+                    UpdatedOn = DateTime.UtcNow,
                     UserID = UserID,
                     FarmerComment = farm.farmerComment
                 };
@@ -343,10 +373,11 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             farm.UpdatedOn = DateTime.UtcNow;
             farm.UpdatedBy = approverID;
-
+            
             _context.Farms.Update(farm);
 
             AddFarmUpdateLogs(farm, approverID);
+            AddFarmChangeRequest(farm, approverID);
         }
 
         public void AddFarmUpdateLogs(tblfarm farm, string updatedBy)
