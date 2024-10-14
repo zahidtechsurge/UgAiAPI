@@ -41,15 +41,17 @@ namespace AmazonFarmerAPI.Controllers
         public async Task<APIResponse> getProducts()
         {
             APIResponse resp = new APIResponse();
-                // Get the language code from the user claims
-                GetProductDTO_Internal_req req = new GetProductDTO_Internal_req()
-                {
-                    languageCode = User.FindFirst("languageCode")?.Value,
-                    basePath = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL")
-                };
+            // Get the language code from the user claims
+            GetProductDTO_Internal_req req = new GetProductDTO_Internal_req()
+            {
+                languageCode = User.FindFirst("languageCode")?.Value,
+                basePath = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL")
+            };
 
-                // Call repository method to get products by language ID
-                resp.response = await _repoWrapper.ProductRepo.getProductsByLangugageID(req, Convert.ToInt32(ConfigExntension.GetConfigurationValue("productSettings:PostDeliveryIn")));
+            string orderBufferTime = await _repoWrapper.CommonRepo.GetConfigurationValueByConfigType(EConfigType.OrderBufferTime);
+
+            // Call repository method to get products by language ID
+            resp.response = await _repoWrapper.ProductRepo.getProductsByLangugageID(req, Convert.ToInt32(orderBufferTime));
             return resp;
         }
 
