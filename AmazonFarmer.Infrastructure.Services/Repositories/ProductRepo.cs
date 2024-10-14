@@ -29,10 +29,10 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             return await _context.ProductCategoryTranslation
                 .Include(x => x.ProductCategory)
-                    .ThenInclude(x => x.Products)
+                    .ThenInclude(x => x.Products.Where(p => p.Active == EActivityStatus.Active))
                         .ThenInclude(x => x.ProductTranslations.Where(x => x.LanguageCode == req.languageCode))
                 .Include(x => x.ProductCategory)
-                    .ThenInclude(x => x.Products)
+                    .ThenInclude(x => x.Products.Where(p => p.Active == EActivityStatus.Active))
                         .ThenInclude(x => x.UOM)
                             .ThenInclude(x => x.UnitOfMeasureTranslation.Where(x => x.LanguageCode == req.languageCode))
                 .Where(x => x.LanguageCode == req.languageCode && x.ProductCategory.Status == EActivityStatus.Active && x.ProductCategory.Products.Where(p=>p.Active == EActivityStatus.Active).Count() > 0)
