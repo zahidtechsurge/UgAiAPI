@@ -377,15 +377,18 @@ namespace AmazonFarmer.Administrator.API.Controllers
             user.isAccountLocked = req.isLocked;
             user.Active = req.status ? EActivityStatus.Active : EActivityStatus.DeActive;
             await _repoWrapper.UserRepo.updateUser(user);
-            var wsdlResponse = await CallUpdateCustomerWSDL(user.FarmerProfile.FirstOrDefault(), user);
-            if (wsdlResponse != null && wsdlResponse.Messages.Count() > 0 && wsdlResponse.Messages.FirstOrDefault().Message.msgTyp.ToUpper() == "S")
+            if (!string.IsNullOrEmpty(user.FarmerProfile.FirstOrDefault().SAPFarmerCode))
             {
-                resp.message = "updated";
-                await _repoWrapper.SaveAsync();
-            }
-            else
-            {
-                throw new AmazonFarmerException(wsdlResponse.Messages.FirstOrDefault().Message.msg);
+                var wsdlResponse = await CallUpdateCustomerWSDL(user.FarmerProfile.FirstOrDefault(), user);
+                if (wsdlResponse != null && wsdlResponse.Messages.Count() > 0 && wsdlResponse.Messages.FirstOrDefault().Message.msgTyp.ToUpper() == "S")
+                {
+                    resp.message = "updated";
+                    await _repoWrapper.SaveAsync();
+                }
+                else
+                {
+                    throw new AmazonFarmerException(wsdlResponse.Messages.FirstOrDefault().Message.msg);
+                }
             }
             return resp;
         }
