@@ -383,13 +383,13 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 if (wsdlResponse != null && wsdlResponse.Messages.Count() > 0 && wsdlResponse.Messages.FirstOrDefault().Message.msgTyp.ToUpper() == "S")
                 {
                     resp.message = "updated";
-                    await _repoWrapper.SaveAsync();
                 }
                 else
                 {
                     throw new AmazonFarmerException(wsdlResponse.Messages.FirstOrDefault().Message.msg);
                 }
             }
+            await _repoWrapper.SaveAsync();
             return resp;
         }
         private async Task<ResponseType?> CallUpdateCustomerWSDL(tblFarmerProfile profile, TblUser user)

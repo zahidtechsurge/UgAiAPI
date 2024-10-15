@@ -35,13 +35,17 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                     .ThenInclude(x => x.Products.Where(p => p.Active == EActivityStatus.Active))
                         .ThenInclude(x => x.UOM)
                             .ThenInclude(x => x.UnitOfMeasureTranslation.Where(x => x.LanguageCode == req.languageCode))
-                .Where(x => x.LanguageCode == req.languageCode && x.ProductCategory.Status == EActivityStatus.Active && x.ProductCategory.Products.Where(p=>p.Active == EActivityStatus.Active).Count() > 0)
+                .Where(x => 
+                    x.LanguageCode == req.languageCode && 
+                    x.ProductCategory.Status == EActivityStatus.Active && 
+                    x.ProductCategory.Products.Where(p=>p.Active == EActivityStatus.Active).Count() > 0
+                )
                 .Select(x => new categoryDTO_Resp
                 {
                     categoryID = x.ProductCategoryID,
                     categoryName = x.Text,
                     filePath = x.Image,
-                    products = x.ProductCategory.Products.Select(x => new ProductDTO_Resp
+                    products = x.ProductCategory.Products.Where(pp=>pp.Active == EActivityStatus.Active).Select(x => new ProductDTO_Resp
                     {
                         postDeliveryIn = postDeliveryIn,
                         productID = x.ID,
