@@ -390,9 +390,9 @@ namespace AmazonFarmerAPI.Controllers
                 throw new AmazonFarmerException(_exceptions.nameLengthExteed_SAPValidation);
             else if (req.emailAddress.Length >= 242)
                 throw new AmazonFarmerException(_exceptions.emailAddressLengthExteed_SAPValidation);
-            else if (req.address1.Length >= 41)
+            else if (req.address1.Length >= 31)
                 throw new AmazonFarmerException(_exceptions.address1LengthExteed_SAPValidation);
-            else if (req.address2.Length >= 41)
+            else if (req.address2.Length >= 31)
                 throw new AmazonFarmerException(_exceptions.address2LengthExteed_SAPValidation);
         }
 
