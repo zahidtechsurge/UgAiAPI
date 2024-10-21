@@ -372,6 +372,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
             TblUser user = await _repoWrapper.UserRepo.getUserDetailByUserID(req.userID);
             user.PhoneNumber = req.phoneNumber;
             user.FarmerProfile.FirstOrDefault().CellNumber = req.phoneNumber;
+            user.FarmerProfile.FirstOrDefault().Address1 = req.address1;
+            user.FarmerProfile.FirstOrDefault().Address2 = req.address2;
             user.Email = req.emailAddress;
             user.NormalizedEmail = req.emailAddress.ToUpper();
             user.isAccountLocked = req.isLocked;
@@ -805,6 +807,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 fatherName = user.FarmerProfile != null && user.FarmerProfile.Count() > 0 ? user.FarmerProfile.FirstOrDefault().FatherName : string.Empty,
                 strnNumber = user.FarmerProfile != null && user.FarmerProfile.Count() > 0 ? user.FarmerProfile.FirstOrDefault().STRNNumber : string.Empty,
                 cnicNumber = user.CNICNumber ?? string.Empty,
+                address1 = user.FarmerProfile != null && user.FarmerProfile.Count() > 0 ? user.FarmerProfile.FirstOrDefault().Address1 : string.Empty,
+                address2 = user.FarmerProfile != null && user.FarmerProfile.Count() > 0 ? user.FarmerProfile.FirstOrDefault().Address2 : string.Empty,
                 sapFarmerCode = user.FarmerProfile != null && user.FarmerProfile.Count() > 0 ? user.FarmerProfile.FirstOrDefault().SAPFarmerCode : string.Empty,
                 cnicAttachment = user.UserAttachments != null ? user.UserAttachments
                 .Where(y => y.Attachment.AttachmentTypes.AttachmentType == EAttachmentType.User_CNIC_Document)
