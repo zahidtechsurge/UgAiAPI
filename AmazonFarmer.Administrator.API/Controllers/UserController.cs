@@ -982,7 +982,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 FarmCity = x.FarmCity,
                 FarmerCity = x.FarmCity,
                 FarmerCNIC = x.FarmerCNIC,
-                FarmerName = x.FarmName,
+                FarmerName = x.FarmerName,
                 FarmerCode = x.FarmerCode,
                 FarmerEmail = x.FarmerEmail,
                 FarmerRegion = x.FarmerRegion,
