@@ -237,5 +237,7 @@ namespace AmazonFarmer.Core.Application.DTOs
         public required bool status { get; set; }
         public required string phoneNumber { get; set; }
         public required string emailAddress { get; set; }
+        public string address1 { get; set; } = string.Empty;
+        public string address2 { get; set; } = string.Empty;
     }
 }

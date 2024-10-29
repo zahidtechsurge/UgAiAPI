@@ -55,106 +55,106 @@ namespace AmazonFarmerAPI.Controllers
 
             APIResponse resp = new APIResponse();
             pagination_Resp pagResp = new pagination_Resp();
-                var farms = await _repoWrapper.FarmRepo.getFarmApplications();
+            var farms = await _repoWrapper.FarmRepo.getFarmApplications();
 
-                List<int> territoryIds = new List<int>();
-                if (designationID == (int)EDesignation.Territory_Sales_Officer)
+            List<int> territoryIds = new List<int>();
+            if (designationID == (int)EDesignation.Territory_Sales_Officer)
+            {
+                territoryIds = await _repoWrapper.UserRepo.GetDistrictIDsForTSO(userID);
+                farms = farms.Where(f => territoryIds.Contains(f.DistrictID));
+                if (req.requestTypeID == (int)EFarmStatus.Approved)
                 {
-                    territoryIds = await _repoWrapper.UserRepo.GetDistrictIDsForTSO(userID);
-                    farms = farms.Where(f => territoryIds.Contains(f.DistrictID));
-                    if (req.requestTypeID == (int)EFarmStatus.Approved)
-                    {
-                        farms = farms.Where(f => f.Status == EFarmStatus.Approved);
-                    }
-                    else if (req.requestTypeID == (int)EFarmStatus.PendingForTSO)
-                    {
-                        farms = farms.Where(f => (f.Status == EFarmStatus.PendingForTSO));
-                    }
-                    else if (req.requestTypeID == (int)EFarmStatus.PendingForPatwari)
-                    {
-                        farms = farms.Where(f => (f.Status == EFarmStatus.PendingForPatwari));
-                    }
-                    else
-                    {
-                        farms = farms.Where(f => (f.Status == EFarmStatus.PendingForTSO || f.Status == EFarmStatus.PendingForPatwari));
-                    }
+                    farms = farms.Where(f => f.Status == EFarmStatus.Approved);
                 }
-                else if (designationID == (int)EDesignation.Regional_Sales_Manager)
+                else if (req.requestTypeID == (int)EFarmStatus.PendingForTSO)
                 {
-                    territoryIds = await _repoWrapper.UserRepo.GetRegionIDsForRSM(userID);
-                    farms = farms.Where(f => territoryIds.Contains(f.DistrictID));
-                    if (req.requestTypeID == (int)EFarmStatus.Approved)
-                    {
-                        farms = farms.Where(f => f.Status == EFarmStatus.Approved);
-                    }
-                    else
-                    {
-                        farms = farms.Where(f => f.Status == EFarmStatus.PendingforRSM);
-                    }
+                    farms = farms.Where(f => (f.Status == EFarmStatus.PendingForTSO));
                 }
-                //get farm applications
-
-
-                #region Search by Date Range
-                if (!string.IsNullOrEmpty(req.startDate) && !string.IsNullOrEmpty(req.endDate))
+                else if (req.requestTypeID == (int)EFarmStatus.PendingForPatwari)
                 {
-                    farms = farms.Where(x =>
-                        x.CreatedOn >= DateTime.ParseExact(req.startDate, "yyyy-MM-dd", CultureInfo.InvariantCulture) &&
-                        x.CreatedOn <= DateTime.ParseExact(req.endDate, "yyyy-MM-dd", CultureInfo.InvariantCulture).AddDays(1).AddSeconds(-1)
-                    );
+                    farms = farms.Where(f => (f.Status == EFarmStatus.PendingForPatwari));
                 }
-                else if (!string.IsNullOrEmpty(req.startDate))
+                else
                 {
-                    farms = farms.Where(x => x.CreatedOn >= DateTime.ParseExact(req.startDate, "yyyy-MM-dd", CultureInfo.InvariantCulture));
+                    farms = farms.Where(f => (f.Status == EFarmStatus.PendingForTSO || f.Status == EFarmStatus.PendingForPatwari));
                 }
-                else if (!string.IsNullOrEmpty(req.endDate))
+            }
+            else if (designationID == (int)EDesignation.Regional_Sales_Manager)
+            {
+                territoryIds = await _repoWrapper.UserRepo.GetRegionIDsForRSM(userID);
+                farms = farms.Where(f => territoryIds.Contains(f.DistrictID));
+                if (req.requestTypeID == (int)EFarmStatus.Approved)
                 {
-                    farms = farms.Where(x => x.CreatedOn <= DateTime.ParseExact(req.endDate, "yyyy-MM-dd", CultureInfo.InvariantCulture));
+                    farms = farms.Where(f => f.Status == EFarmStatus.Approved);
                 }
-                #endregion
-
-                var farmList = farms.OrderByDescending(x => x.ApplicationID).ToList();
-
-                var query = farmList
-                .GroupBy(x => x.ApplicationID)
-                .Select(group => group.First())
-                .Select(x => new
+                else
                 {
-                    ApplicationID = x.ApplicationID,
-                    Farmer = x.Users
-                }).ToList();
-
-                if (!string.IsNullOrEmpty(req.search))
-                {
-                    query = query.Where(x =>
-                        x.ApplicationID.ToString().PadLeft(10, '0').Contains(req.search.ToLower()) ||
-                        (x.Farmer.FirstName.ToLower() + " " + x.Farmer.LastName.ToLower()).Contains(req.search.ToLower()) ||
-                        x.Farmer.FarmerProfile.FirstOrDefault().CNICNumber.ToLower().Contains(req.search.ToLower()) ||
-                        x.Farmer.PhoneNumber.ToLower().Contains(req.search.ToLower())
-                    ).ToList();
+                    farms = farms.Where(f => f.Status == EFarmStatus.PendingforRSM);
                 }
+            }
+            //get farm applications
 
-                var result = query
-                    .Skip(req.skip)
-                    .Take(req.take)
-                    .ToList();
 
-                // Now, convert the result to farmApplication_List objects
-                var lst = result.Select(x => new farmApplication_List
-                {
-                    applicationID = x.ApplicationID.ToString().PadLeft(10, '0'),
-                    farmerName = $"{x.Farmer.FirstName} {x.Farmer.LastName}",
-                    farmerCNIC = x.Farmer.FarmerProfile.FirstOrDefault().CNICNumber,
-                    farmerPhone = x.Farmer.PhoneNumber
-                }).ToList();
+            #region Search by Date Range
+            if (!string.IsNullOrEmpty(req.startDate) && !string.IsNullOrEmpty(req.endDate))
+            {
+                farms = farms.Where(x =>
+                    x.CreatedOn >= DateTime.ParseExact(req.startDate, "yyyy-MM-dd", CultureInfo.InvariantCulture) &&
+                    x.CreatedOn <= DateTime.ParseExact(req.endDate, "yyyy-MM-dd", CultureInfo.InvariantCulture).AddDays(1).AddSeconds(-1)
+                );
+            }
+            else if (!string.IsNullOrEmpty(req.startDate))
+            {
+                farms = farms.Where(x => x.CreatedOn >= DateTime.ParseExact(req.startDate, "yyyy-MM-dd", CultureInfo.InvariantCulture));
+            }
+            else if (!string.IsNullOrEmpty(req.endDate))
+            {
+                farms = farms.Where(x => x.CreatedOn <= DateTime.ParseExact(req.endDate, "yyyy-MM-dd", CultureInfo.InvariantCulture));
+            }
+            #endregion
 
-                pagResp = new pagination_Resp()
-                {
-                    filteredRecord = lst.Count(),
-                    totalRecord = lst.Count(),
-                    list = lst
-                };
-                resp.response = pagResp;
+            var farmList = farms.OrderByDescending(x => x.ApplicationID).ToList();
+
+            var query = farmList
+            .GroupBy(x => x.ApplicationID)
+            .Select(group => group.First())
+            .Select(x => new
+            {
+                ApplicationID = x.ApplicationID,
+                Farmer = x.Users
+            }).ToList();
+
+            if (!string.IsNullOrEmpty(req.search))
+            {
+                query = query.Where(x =>
+                    x.ApplicationID.ToString().PadLeft(10, '0').Contains(req.search.ToLower()) ||
+                    (x.Farmer.FirstName.ToLower() + " " + x.Farmer.LastName.ToLower()).Contains(req.search.ToLower()) ||
+                    x.Farmer.FarmerProfile.FirstOrDefault().CNICNumber.ToLower().Contains(req.search.ToLower()) ||
+                    x.Farmer.PhoneNumber.ToLower().Contains(req.search.ToLower())
+                ).ToList();
+            }
+
+            var result = query
+                .Skip(req.skip)
+                .Take(req.take)
+                .ToList();
+
+            // Now, convert the result to farmApplication_List objects
+            var lst = result.Select(x => new farmApplication_List
+            {
+                applicationID = x.ApplicationID.ToString().PadLeft(10, '0'),
+                farmerName = $"{x.Farmer.FirstName} {x.Farmer.LastName}",
+                farmerCNIC = x.Farmer.FarmerProfile.FirstOrDefault().CNICNumber,
+                farmerPhone = x.Farmer.PhoneNumber
+            }).ToList();
+
+            pagResp = new pagination_Resp()
+            {
+                filteredRecord = lst.Count(),
+                totalRecord = lst.Count(),
+                list = lst
+            };
+            resp.response = pagResp;
             return resp;
         }
         //Endpoint for getFarmRegistrationRequest
@@ -456,11 +456,17 @@ namespace AmazonFarmerAPI.Controllers
                         TblUser user = farm.Users;
                         tblFarmerProfile profile = user.FarmerProfile.FirstOrDefault();
 
-                        ResponseType? wsdlResponse = await CallCreateCustomerWSDL(profile, user);
-
-                        if (wsdlResponse != null && wsdlResponse.Messages.Count() > 0 && wsdlResponse.Messages.FirstOrDefault().Message.msgTyp.ToUpper() == "S")
+                        if (profile != null)
                         {
-                            profile.SAPFarmerCode = wsdlResponse.custNum.ToString();
+                            if (string.IsNullOrEmpty(profile.SAPFarmerCode) || profile.SAPFarmerCode == "0045000116")
+                            {
+                                ResponseType? wsdlResponse = await CallCreateCustomerWSDL(profile, user);
+
+                                if (wsdlResponse != null && wsdlResponse.Messages.Count() > 0 && wsdlResponse.Messages.FirstOrDefault().Message.msgTyp.ToUpper() == "S")
+                                {
+                                    profile.SAPFarmerCode = wsdlResponse.custNum.ToString();
+                                }
+                            }
                         }
                         if (string.IsNullOrEmpty(profile.SAPFarmerCode))
                         {
@@ -566,7 +572,7 @@ namespace AmazonFarmerAPI.Controllers
                             notifications.Add(farmerDevice);
                             replacementDTO.NotificationBodyTypeID = ENotificationBody.farmApplicationSubmittedForApproval;
                         }
-                        
+
                     }
 
                     await _repoWrapper.FarmRepo.changeFarmRegistrationStatus(farm, userID); // Changing farm registration status
@@ -643,7 +649,7 @@ namespace AmazonFarmerAPI.Controllers
 
                         replacementDTO.ApplicationId = farm.ApplicationID.ToString().PadLeft(10, '0');
                         //replacementDTO.FarmName = farm.FarmName;
-                        replacementDTO.ReasonDropDownOptionId = reason.ReasonTranslation.Where(x => x.LanguageCode == "EN").FirstOrDefault() != null  ? reason.ReasonTranslation.Where(x => x.LanguageCode == "EN").FirstOrDefault().ReasonID.ToString() : string.Empty;
+                        replacementDTO.ReasonDropDownOptionId = reason.ReasonTranslation.Where(x => x.LanguageCode == "EN").FirstOrDefault() != null ? reason.ReasonTranslation.Where(x => x.LanguageCode == "EN").FirstOrDefault().ReasonID.ToString() : string.Empty;
                         replacementDTO.ReasonDropDownOption = reason.ReasonTranslation.Where(x => x.LanguageCode == "EN").FirstOrDefault().Text;
                         replacementDTO.ReasonComment = req.revertedReason;
                     }
