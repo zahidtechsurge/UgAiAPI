@@ -325,7 +325,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
             replacementDTO.WarehouseId = order.WarehouseID.ToString();
             replacementDTO.WarehouseName = order.Warehouse.Name;
             replacementDTO.GoogleMapLinkWithCoordinated = string.Format(_googleApiConfig.ApiKey, order.Warehouse.latitude, order.Warehouse.longitude);
-            replacementDTO.PickupDate = order.ExpectedDeliveryDate.Value.ToString("MM/dd/yyyy");
+            replacementDTO.PickupDate = order.ExpectedDeliveryDate.HasValue ? order.ExpectedDeliveryDate.Value.ToString("MM/dd/yyyy") : string.Empty;
 
             if (notifications != null & notifications.Count() > 0)
                 await notificationService.SendNotifications(notifications, replacementDTO);
