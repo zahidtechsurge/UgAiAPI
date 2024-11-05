@@ -15,6 +15,7 @@ namespace AmazonFarmer.Infrastructure.Services
         private readonly UserManager<TblUser> _userManager;
         private readonly RoleManager<TblRole> _roleManager;
         private AmazonFarmerContext _repoContext;
+        private IComplaintRepo _complaintRepo;
         private IUserRepo _userRepo;
         private IRoleRepo _roleRepo;
         private IAuthorityLetterRepo _authorityLetterRepo;
@@ -55,6 +56,17 @@ namespace AmazonFarmer.Infrastructure.Services
             _userManager = userManager;
             _roleManager = roleManager;
 
+        }
+        public IComplaintRepo ComplaintRepo
+        {
+            get
+            {
+                if (_complaintRepo == null)
+                {
+                    _complaintRepo = new ComplaintRepo(_repoContext);
+                }
+                return _complaintRepo;
+            }
         }
         public IReasonRepo ReasonRepo
         {

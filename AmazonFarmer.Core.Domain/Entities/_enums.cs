@@ -12,6 +12,15 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AmazonFarmer.Core.Domain.Entities
 {
+    public enum EComplaintStatus
+    {
+        [Description("Pending")]
+        Pending = 1,
+        [Description("Progress")]
+        Progress = 2,
+        [Description("Resolved")]
+        Resolved = 3
+    }
     public enum EDocumentName
     {
         [Description("Farmer Profile")]

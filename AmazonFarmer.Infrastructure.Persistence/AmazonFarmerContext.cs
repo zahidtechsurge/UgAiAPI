@@ -33,6 +33,7 @@ namespace AmazonFarmer.Infrastructure.Persistence
         {
 
         }
+        public DbSet<tblComplaint> Complaints { get; set; }
         public DbSet<TblUser> Users { get; set; }
         public DbSet<ActiveToken> ActiveTokens { get; set; }
         public DbSet<TblFarmerRole> FarmerRoles { get; set; }

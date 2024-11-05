@@ -4,6 +4,7 @@ namespace AmazonFarmer.Core.Application
 {
     public interface IRepositoryWrapper // Defining the interface for Repository Wrapper
     {
+        public IComplaintRepo ComplaintRepo { get; } // Property for Complaint repository
         public IUserRepo UserRepo { get; } // Property for User repository
         public IRoleRepo RoleRepo { get; } // Property for Role repository
         public IAuthorityLetterRepo AuthorityLetterRepo { get; } // Property for Authority Letter repository
