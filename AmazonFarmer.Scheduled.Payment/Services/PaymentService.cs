@@ -1,7 +1,7 @@
 ﻿using AmazonFarmer.Core.Application;
 using AmazonFarmer.Core.Application.DTOs;
 using AmazonFarmer.Core.Application.Exceptions;
-using AmazonFarmer.Core.Domain.Entities; 
+using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.NotificationServices.Helpers;
 using AmazonFarmer.NotificationServices.Services;
 using AmazonFarmer.WSDL;
@@ -11,7 +11,7 @@ using CreateOrder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using PaymentCustomer; 
+using PaymentCustomer;
 
 namespace AmazonFarmer.Scheduled.Payment.Services
 {
@@ -115,7 +115,9 @@ namespace AmazonFarmer.Scheduled.Payment.Services
 
 
             order.PaymentDate = DateTime.UtcNow;
-            order.PaymentDatePrice = transaction.Amount / 100;
+            //order.PaymentDatePrice = transaction.Amount / 100;
+
+            order.PaymentDatePrice = transaction.Amount;
 
             order.SAPTransactionID = wsdlResponse.DOC_NUM;
             order.FiscalYear = wsdlResponse.FISCAL_YEAR;
@@ -140,7 +142,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
 
             if (order.OrderType == EOrderType.Advance
                 || order.OrderType == EOrderType.AdvancePaymentReconcile
-                || order.OrderType == EOrderType.OrderReconcile 
+                || order.OrderType == EOrderType.OrderReconcile
                 )
             {
 

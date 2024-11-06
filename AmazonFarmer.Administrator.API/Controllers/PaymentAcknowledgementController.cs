@@ -232,7 +232,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
 
             order.PaymentDate = DateTime.UtcNow;
-            order.PaymentDatePrice = transaction.Amount / 100;
+            //order.PaymentDatePrice = transaction.Amount / 100;
+            order.PaymentDatePrice = transaction.Amount;
 
             order.SAPTransactionID = wsdlResponse.DOC_NUM;
             order.FiscalYear = wsdlResponse.FISCAL_YEAR;
