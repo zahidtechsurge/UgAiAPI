@@ -224,7 +224,7 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                     decimal amount = await GetOrderPriceByOrderID(Order);
 
                     //making amount decimal to ceiling and assing 1 rupee
-                    amount = Math.Ceiling(amount) + 1;
+                    amount = Math.Ceiling(amount) + 2;
 
                     #region Consumer Number is Expired / Blocked
                     // If Consumer Number is Expired
