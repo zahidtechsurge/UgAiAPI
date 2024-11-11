@@ -31,5 +31,6 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string desc { get; set; } = string.Empty;
         public int statusID { get; set; }
         public string status { get; set; } = string.Empty;
+        public DateTime? createdOn { get; set; }
     }
 }

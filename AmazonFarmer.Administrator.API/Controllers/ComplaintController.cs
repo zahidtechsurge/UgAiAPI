@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Ocsp;
+using System.IdentityModel.Claims;
 
 namespace AmazonFarmer.Administrator.API.Controllers
 {
@@ -113,7 +114,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
                     desc = x.ComplaintDesc,
                     statusID = (int)x.ComplaintStatus,
                     createdBy = x.CreatedBy.FirstName,
-                    status = ConfigExntension.GetEnumDescription(x.ComplaintStatus)
+                    status = ConfigExntension.GetEnumDescription(x.ComplaintStatus),
+                    createdOn = x.CreatedOn
                 })
                 .ToListAsync();
 
@@ -125,9 +127,12 @@ namespace AmazonFarmer.Administrator.API.Controllers
         public async Task<APIResponse> UpdateComplaint(UpdateComplaintRequest Request)
         {
             APIResponse Response = new APIResponse();
+            var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             tblComplaint? Complaint = await _repoWrapper.ComplaintRepo.GetComplaintByID(Request.complaintID);
             if (Complaint != null && Complaint.ComplaintStatus != EComplaintStatus.Resolved)
             {
+                Complaint.ResolvedByID = userID;
+                Complaint.ResolvedOn = DateTime.UtcNow;
                 Complaint.ComplaintStatus = (EComplaintStatus)Request.statusID;
                 _repoWrapper.ComplaintRepo.UpdateComplaint(Complaint);
                 await _repoWrapper.SaveAsync();

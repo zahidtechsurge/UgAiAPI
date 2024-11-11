@@ -36,14 +36,15 @@ namespace AmazonFarmerAPI.Controllers
                 ComplaintTitle = Request.title,
                 ComplaintDesc = Request.desc,
                 ComplaintStatus = EComplaintStatus.Pending,
-                CreatedByID = userID
+                CreatedByID = userID,
+                CreatedOn = DateTime.UtcNow
             };
             _repoWrapper.ComplaintRepo.AddComplaint(Complaint);
             await _repoWrapper.SaveAsync();
             Response.message = "Complaint added";
             return Response;
         }
-        
+
         [HttpPost("myComplaints")]
         public async Task<APIResponse> MyComplaints(GetComplaintRequest Request)
         {
@@ -66,14 +67,15 @@ namespace AmazonFarmerAPI.Controllers
             complaints = complaints.Skip(Request.skip).Take(Request.take);
             inResp.filteredRecord = complaints.Count();
             inResp.list = await complaints
-                .Select(x=> new GetComplaintsList
+                .Select(x => new GetComplaintsList
                 {
                     complaintID = x.ComplaintID,
                     title = x.ComplaintTitle,
                     desc = x.ComplaintDesc,
                     statusID = (int)x.ComplaintStatus,
                     createdBy = x.CreatedBy.FirstName,
-                    status = ConfigExntension.GetEnumDescription(x.ComplaintStatus)
+                    status = ConfigExntension.GetEnumDescription(x.ComplaintStatus),
+                    createdOn = x.CreatedOn == null ? DateTime.UtcNow : x.CreatedOn,
                 })
                 .ToListAsync();
             Response.response = inResp;

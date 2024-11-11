@@ -15,9 +15,14 @@ namespace AmazonFarmer.Core.Domain.Entities
         public string ComplaintTitle { get; set; } = string.Empty;
         public string ComplaintDesc { get; set; } = string.Empty;
         public EComplaintStatus ComplaintStatus { get; set; }
+        public DateTime? CreatedOn { get; set; }
         public string CreatedByID { get; set; } = string.Empty;
+        public DateTime? ResolvedOn { get; set; }
+        public string? ResolvedByID { get; set; } = string.Empty;
 
         [ForeignKey("CreatedByID")]
         public virtual TblUser CreatedBy { get; set; } = null!;
+        //[ForeignKey("ResolvedByID")]
+        //public virtual TblUser ResolvedBy { get; set; } = null!;
     }
 }
