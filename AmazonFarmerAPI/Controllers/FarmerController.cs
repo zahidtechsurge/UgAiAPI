@@ -1322,6 +1322,7 @@ namespace AmazonFarmerAPI.Controllers
 
                 _inResp.weather = new WeatherDTO()
                 {
+                    showWeatherWidget = locationResp.showWeatherWidget,
                     weatherText = locationResp.description,
                     weatherValue = Math.Round(locationResp.temp).ToString(),
                     weatherArea = locationResp.name,

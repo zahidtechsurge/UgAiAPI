@@ -57,17 +57,28 @@ namespace AmazonFarmerAPI.Extensions
             {
                 httpClient.DefaultRequestHeaders.Add("APIKEY", _apiKey);
                 var response = await httpClient.GetAsync(apiUrl);
-                response.EnsureSuccessStatusCode(); // Throw exception if not successful
-                string responseBody = await response.Content.ReadAsStringAsync();
-                var respObj = JsonConvert.DeserializeObject<EngroWeatherAPI>(responseBody);
-                resp = new EngroWeatherAPI_Response()
+                //response.EnsureSuccessStatusCode(); // Throw exception if not successful
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
-                    main = respObj.Weather.FirstOrDefault().Main,
-                    description = respObj.Weather.FirstOrDefault().Description,
-                    weatherIconCode = respObj.Weather.FirstOrDefault().Icon,
-                    name = string.Concat(respObj.Name,", ", respObj.Sys.Country),
-                    temp = respObj.Main.Temp
-                };
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    var respObj = JsonConvert.DeserializeObject<EngroWeatherAPI>(responseBody);
+                    resp = new EngroWeatherAPI_Response()
+                    {
+                        main = respObj.Weather.FirstOrDefault().Main,
+                        description = respObj.Weather.FirstOrDefault().Description,
+                        weatherIconCode = respObj.Weather.FirstOrDefault().Icon,
+                        name = string.Concat(respObj.Name, ", ", respObj.Sys.Country),
+                        temp = respObj.Main.Temp,
+                        showWeatherWidget = true,
+                    };
+                }
+                else
+                {
+                    resp = new EngroWeatherAPI_Response()
+                    {
+                        showWeatherWidget = false
+                    };
+                }
 
             }
             return resp;
