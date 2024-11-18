@@ -223,7 +223,7 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                     // Simulate order pricing by order ID get payable amount
                     decimal amount = await GetOrderPriceByOrderID(Order);
 
-                    //making amount decimal to ceiling and assing 1 rupee
+                    //making amount decimal to ceiling and assing 2 rupee
                     amount = Math.Ceiling(amount) + 2;
 
                     #region Consumer Number is Expired / Blocked
@@ -268,7 +268,7 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                     //double amount = await GetOrderPriceByOrderID(OrderID);
 
                     #region unpaid case where all checks are done
-                    if (amount > 0)
+                    if (amount > 2)
                     {
                         //string AmountText = "+" + ((amount * 100).ToString()).PadLeft(13, '0');
                         string AmountTextPaid = Math.Round(amount * 100).ToString().PadLeft(12, '0');

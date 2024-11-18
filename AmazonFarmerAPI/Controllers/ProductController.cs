@@ -129,13 +129,14 @@ namespace AmazonFarmerAPI.Controllers
                         productQTY = item.qty
                     };
                     ProductPrice sapResp = await GetProductPrices(sapReq);
+
                     productsResp.Add(new ProductPrices_Resp
                     {
                         productCode = product.ProductCode,
                         productID = item.productID,
                         filePath = product.ProductTranslations.FirstOrDefault().Image,
                         productName = product.ProductTranslations.FirstOrDefault().Text,
-                        productPrice = sapResp.TotalAmount,
+                        productPrice = sapResp.TotalAmount * 1.00m,
                         productUnitPrice = sapResp.UnitTotalAmount,
                         serviceIDs = req.serviceIDs,
                         //productQTY = sapReq.productQTY
@@ -146,13 +147,16 @@ namespace AmazonFarmerAPI.Controllers
                     TblProduct product = products.Where(x => x.ID == item.productID).First();
 
                     decimal newProductPrice = item.qty * planProductPrice.productUnitPrice;
+
+                    //making amount decimal to ceiling and assing 2 rupee
+                    newProductPrice = Math.Ceiling(newProductPrice) + 2;
                     productsResp.Add(new ProductPrices_Resp
                     {
                         productCode = planProductPrice.productCode,
                         productID = planProductPrice.productID,
                         filePath = product.ProductTranslations.FirstOrDefault().Image,
                         productName = product.ProductTranslations.FirstOrDefault().Text,
-                        productPrice = planProductPrice.productUnitPrice * item.qty,
+                        productPrice = newProductPrice * 1.00m,
                         productUnitPrice = planProductPrice.productUnitPrice,
                         serviceIDs = req.serviceIDs,
                         //productQTY = planProductPrice.productQTY + item.qty
@@ -213,6 +217,10 @@ namespace AmazonFarmerAPI.Controllers
                         && wsdlResponse.Messages.FirstOrDefault().Message.msgTyp.ToUpper() == "S" && !string.IsNullOrEmpty(wsdlResponse.itemNum.TrimStart('0')))
             {
                 newProductPrice = (Convert.ToDecimal(wsdlResponse.netVal) + Convert.ToDecimal(wsdlResponse.taxVal)) * req.productQTY;
+
+                //making amount decimal to ceiling and assing 2 rupee
+                newProductPrice = Math.Ceiling(newProductPrice) + 2;
+
                 ProductPrice ProductPrice = new()
                 {
                     Quantity = req.productQTY,

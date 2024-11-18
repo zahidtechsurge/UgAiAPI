@@ -104,7 +104,7 @@ namespace AmazonFarmerAPI.Controllers
                 if (order.OrderType == EOrderType.Product)
                 {
                     PlanCropProductPrice planCropProductPrice = await GetOrderPriceWSDL(order, plan, profile.SAPFarmerCode, planCropProductPrices);
-                    orderPrice = planCropProductPrice.TotalAmount;
+
                 }
                 else
                 {
@@ -459,6 +459,8 @@ namespace AmazonFarmerAPI.Controllers
                     List<PlanCropProductPrice> planCropProductPrices = new List<PlanCropProductPrice>();
                     PlanCropProductPrice planCropProductPrice = await GetOrderPriceWSDL(planOrder, plan, SAPFarmerCode, planCropProductPrices);
                     orderPrice = planCropProductPrice.TotalAmount;
+
+
                     payableAmount = orderPrice;
                     if (isLastOrder)
                     {
@@ -480,16 +482,25 @@ namespace AmazonFarmerAPI.Controllers
             else if (planOrder.OrderType == EOrderType.Advance)
             {
                 List<PlanCropProductPrice> planCropProductPrices = new List<PlanCropProductPrice>();
+
                 foreach (TblOrders po in planOrders)
                 {
                     if (po.OrderType == EOrderType.Product)
                     {
                         PlanCropProductPrice planCropProductPrice = await GetOrderPriceWSDL(po, plan, SAPFarmerCode, planCropProductPrices);
+
                         orderPrice += planCropProductPrice.TotalAmount;
                     }
                 }
                 orderPrice = (orderPrice * advancePercentValue) / 100;
+                //For advance order do the calculation again for math.ceil.
+
+                //making amount decimal to ceiling and assing 2 rupee
+                orderPrice = Math.Ceiling(orderPrice) + 2;
+                orderPrice = orderPrice * 1.00m;
+
                 payableAmount = orderPrice;
+
             }
             else if (planOrder.OrderType == EOrderType.AdvancePaymentReconcile)
             {
@@ -506,6 +517,7 @@ namespace AmazonFarmerAPI.Controllers
                 orderPrice = (orderPrice * advancePercentValue) / 100;
 
                 payableAmount = orderPrice - alreadyPaidAdvancePayment;
+
             }
             else if (planOrder.OrderType == EOrderType.OrderReconcile)
             {
@@ -528,6 +540,8 @@ namespace AmazonFarmerAPI.Controllers
              )
             {
                 customerBalance = wsdlResponse.CustomerBalance;
+                customerBalance = Math.Floor(customerBalance);
+                customerBalance = customerBalance * 1.00m;
             }
 
             if (planOrder.OrderType == EOrderType.Advance
@@ -597,6 +611,11 @@ namespace AmazonFarmerAPI.Controllers
                     int PlanCropID = await _repoWrapper.PlanRepo.getPlanCropIDByPlanProductID(orderProduct.PlanProductID);
 
                     oldProductPrice = (Convert.ToDecimal(wsdlResponse.netVal) + Convert.ToDecimal(wsdlResponse.taxVal)) * orderProduct.QTY;
+
+                    //making amount decimal to ceiling and assing 2 rupee
+                    oldProductPrice = Math.Ceiling(oldProductPrice) + 2;
+                    oldProductPrice = oldProductPrice * 1.00m;
+
                     planProductPrice = new()
                     {
                         Quantity = orderProduct.QTY,

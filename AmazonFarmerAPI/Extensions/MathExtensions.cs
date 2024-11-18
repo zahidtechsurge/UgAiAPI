@@ -9,7 +9,7 @@ namespace AmazonFarmerAPI.Extensions
         {
             // Calculating the advance amount based on the percentage of the total price
             decimal advanceAmount = (totalPrice * percent) / 100;
-
+            advanceAmount = (Math.Ceiling(advanceAmount) + 2) * 1.00m;
             return advanceAmount;
         }
 
