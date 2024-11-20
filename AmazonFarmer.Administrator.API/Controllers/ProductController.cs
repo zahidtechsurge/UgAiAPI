@@ -61,8 +61,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
                 decimal newOrderPrice = await GetOrderPriceWSDL(order, plan, SAPFarmerCode);
 
-                //making amount decimal to ceiling and assing 2 rupee
-                newOrderPrice = Math.Ceiling(newOrderPrice) + 2;
+                //making amount decimal to ceiling 
+                newOrderPrice = Math.Ceiling(newOrderPrice);
                 decimal previousUnitPrice;
 
                 //Check if the order was already reconcilled or not

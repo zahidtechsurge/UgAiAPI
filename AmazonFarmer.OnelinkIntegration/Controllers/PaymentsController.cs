@@ -55,7 +55,7 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
         }
 
         [HttpPost("BillInquiry")]
-        public async Task<BillInquiryResponse> BillInquiry(BillInquiryRequest request) 
+        public async Task<BillInquiryResponse> BillInquiry(BillInquiryRequest request)
         {
             string? username = HttpContext.Request.Headers["username"];
             string? password = HttpContext.Request.Headers["password"];
@@ -223,8 +223,8 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                     // Simulate order pricing by order ID get payable amount
                     decimal amount = await GetOrderPriceByOrderID(Order);
 
-                    //making amount decimal to ceiling and assing 2 rupee
-                    amount = Math.Ceiling(amount) + 2;
+                    //making amount decimal to ceiling 
+                    amount = Math.Ceiling(amount);
 
                     #region Consumer Number is Expired / Blocked
                     // If Consumer Number is Expired
@@ -464,11 +464,11 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                     }
                     //Kamran check this for transaction is created or not
                     #region Duplicate Payment
-                    
+
                     // if Payment already done / duplicate
                     bool DuplciatePaymentRequest = await _repoWrapper.OnlinePaymentRepo.getDuplicateBillPaymentRequest(request.consumer_number, request.tran_auth_id, request.tran_date, request.tran_time, BillPaymentRequestID);
-                    
-                    
+
+
                     if (DuplciatePaymentRequest)
                     {
                         //If order is not NON PAID then return duplicate response
@@ -486,7 +486,7 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                             int BillPaymentResponseID = await _repoWrapper.OnlinePaymentRepo.addBillPaymentResponse(resp);
                             await _repoWrapper.SaveAsync();
                             return resp;
-                        } 
+                        }
                     }
                     #endregion
 

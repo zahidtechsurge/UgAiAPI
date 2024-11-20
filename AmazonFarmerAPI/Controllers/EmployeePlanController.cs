@@ -538,7 +538,7 @@ namespace AmazonFarmerAPI.Controllers
                         decimal AdvancePaymentAmount = (newPlanTotalPrice * percentageValue) / 100;
 
                         //making amount decimal to ceiling and assing 2 rupee
-                        AdvancePaymentAmount = Math.Ceiling(AdvancePaymentAmount) + 2;
+                        AdvancePaymentAmount = Math.Ceiling(AdvancePaymentAmount);
 
                         if (planOrders == null || planOrders.Count() == 0)
                         {
@@ -1267,8 +1267,8 @@ namespace AmazonFarmerAPI.Controllers
                         PlanCropProductPrice? planProductPrice = planCropProductPrices.Where(pp => pp.ProductCode == planProduct.Product.ProductCode).FirstOrDefault();
 
                         newProductPrice = planProductPrice.UnitTotalAmount * planProduct.Qty;
-                        //making amount decimal to ceiling and assing 2 rupee
-                        newProductPrice = Math.Ceiling(newProductPrice) + 2;
+                        //making amount decimal to ceiling
+                        newProductPrice = Math.Ceiling(newProductPrice);
 
                         order = await CreateANewOrder(plan, planCrop, planProduct, newProductPrice, EOrderType.Product, planProductPrice, planProduct.Qty);
 
@@ -2083,8 +2083,8 @@ namespace AmazonFarmerAPI.Controllers
                         {
                             newProductPrice = (Convert.ToDecimal(wsdlResponse.netVal) + Convert.ToDecimal(wsdlResponse.taxVal)) * planProduct.Qty;
 
-                            //making amount decimal to ceiling and assing 2 rupee
-                            newProductPrice = Math.Ceiling(newProductPrice) + 2; 
+                            //making amount decimal to ceiling
+                            newProductPrice = Math.Ceiling(newProductPrice);
                             
                             planProductPrice = new()
                             {
@@ -2111,8 +2111,8 @@ namespace AmazonFarmerAPI.Controllers
                     else
                     {
                         newProductPrice = planProduct.Qty * planProductPrice.UnitTotalAmount;
-                        //making amount decimal to ceiling and assing 2 rupee
-                        newProductPrice = Math.Ceiling(newProductPrice) + 2;
+                        //making amount decimal to ceiling 
+                        newProductPrice = Math.Ceiling(newProductPrice);
                         planProductPrice = new()
                         {
                             Quantity = planProduct.Qty,
@@ -2187,8 +2187,8 @@ namespace AmazonFarmerAPI.Controllers
 
                             oldProductPrice = (Convert.ToDecimal(wsdlResponse.netVal) + Convert.ToDecimal(wsdlResponse.taxVal)) * orderProduct.QTY;
 
-                            //making amount decimal to ceiling and assing 2 rupee
-                            oldProductPrice = Math.Ceiling(oldProductPrice) + 2;
+                            //making amount decimal to ceiling
+                            oldProductPrice = Math.Ceiling(oldProductPrice);
                             
                             PlanCropProductPrice planProductPrice = new()
                             {
@@ -2211,8 +2211,8 @@ namespace AmazonFarmerAPI.Controllers
                     else
                     {
                         oldProductPrice = orderProduct.QTY * alreadyFetchedProductPrice.UnitTotalAmount;
-                        //making amount decimal to ceiling and assing 2 rupee
-                        oldProductPrice = Math.Ceiling(oldProductPrice) + 2;
+                        //making amount decimal to ceiling
+                        oldProductPrice = Math.Ceiling(oldProductPrice);
                         oldOrderTotalPrice += oldProductPrice;
                     }
                 }

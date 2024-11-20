@@ -495,8 +495,8 @@ namespace AmazonFarmerAPI.Controllers
                 orderPrice = (orderPrice * advancePercentValue) / 100;
                 //For advance order do the calculation again for math.ceil.
 
-                //making amount decimal to ceiling and assing 2 rupee
-                orderPrice = Math.Ceiling(orderPrice) + 2;
+                //making amount decimal to ceiling 
+                orderPrice = Math.Ceiling(orderPrice);
                 orderPrice = orderPrice * 1.00m;
 
                 payableAmount = orderPrice;
@@ -612,8 +612,8 @@ namespace AmazonFarmerAPI.Controllers
 
                     oldProductPrice = (Convert.ToDecimal(wsdlResponse.netVal) + Convert.ToDecimal(wsdlResponse.taxVal)) * orderProduct.QTY;
 
-                    //making amount decimal to ceiling and assing 2 rupee
-                    oldProductPrice = Math.Ceiling(oldProductPrice) + 2;
+                    //making amount decimal to ceiling  
+                    oldProductPrice = Math.Ceiling(oldProductPrice);
                     oldProductPrice = oldProductPrice * 1.00m;
 
                     planProductPrice = new()

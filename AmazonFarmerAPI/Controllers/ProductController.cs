@@ -148,8 +148,8 @@ namespace AmazonFarmerAPI.Controllers
 
                     decimal newProductPrice = item.qty * planProductPrice.productUnitPrice;
 
-                    //making amount decimal to ceiling and assing 2 rupee
-                    newProductPrice = Math.Ceiling(newProductPrice) + 2;
+                    //making amount decimal to ceiling  
+                    newProductPrice = Math.Ceiling(newProductPrice);
                     productsResp.Add(new ProductPrices_Resp
                     {
                         productCode = planProductPrice.productCode,
@@ -218,8 +218,8 @@ namespace AmazonFarmerAPI.Controllers
             {
                 newProductPrice = (Convert.ToDecimal(wsdlResponse.netVal) + Convert.ToDecimal(wsdlResponse.taxVal)) * req.productQTY;
 
-                //making amount decimal to ceiling and assing 2 rupee
-                newProductPrice = Math.Ceiling(newProductPrice) + 2;
+                //making amount decimal to ceiling
+                newProductPrice = Math.Ceiling(newProductPrice);
 
                 ProductPrice ProductPrice = new()
                 {
