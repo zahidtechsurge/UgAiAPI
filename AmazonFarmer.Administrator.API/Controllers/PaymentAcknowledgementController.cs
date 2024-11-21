@@ -103,10 +103,14 @@ namespace AmazonFarmer.Administrator.API.Controllers
             PaymentAcknowledgmentFile paymentAcknowledgmentFile = await _repoWrapper.PaymentAcknowledgmentFileRepo.GetPaymentAcknowledgmentFileByPaymentAcknowledgementID(PaymentAcknowledgementID);
 
             string Transaction_Auth_ID = string.Empty;
+            string ConsumerNumber = string.Empty;
             if (paymentAcknowledgmentFile != null && paymentAcknowledgmentFile.PaymentAcknowledgments != null)
+            {
                 Transaction_Auth_ID = paymentAcknowledgmentFile.PaymentAcknowledgments.Where(x => x.Id == PaymentAcknowledgementID).First().Trans_Auth_ID;
+                ConsumerNumber = paymentAcknowledgmentFile.PaymentAcknowledgments.Where(x => x.Id == PaymentAcknowledgementID).First().ConsumerNumber;
+            }
 
-            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(Transaction_Auth_ID);
+            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(Transaction_Auth_ID, ConsumerNumber);
 
             using (var scope = _serviceProvider.CreateScope())
             {

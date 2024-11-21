@@ -58,12 +58,13 @@ namespace AmazonFarmerAPI.Controllers
             return aPIResponse;
         }
 
+        //NOT BEING USED
         [HttpPost("PostTransactionAcknowledgment")]
         [AllowAnonymous]
         [Obsolete]
         public async Task<APIResponse> PostTransactionAcknowledgmentUpdate(PaymentAcknowledgmentRequest req)
         {
-            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID);
+            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID,"NOTUSED");
 
             if (transaction != null
                 && transaction.Order != null

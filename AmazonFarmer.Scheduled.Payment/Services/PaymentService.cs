@@ -32,7 +32,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
 
         public async Task PostTransactionAcknowledgmentUpdate(PaymentAcknowledgmentRequest req, IServiceScope scope, IConfiguration _configuration)
         {
-            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID);
+            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID, req.ConsumerNumber);
 
             Console.WriteLine(req.ConsumerNumber);
             Console.WriteLine(transaction.ConsumerCode);

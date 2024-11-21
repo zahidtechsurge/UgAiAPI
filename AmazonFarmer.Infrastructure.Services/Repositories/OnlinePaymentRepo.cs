@@ -147,14 +147,14 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
 
 
         // Method to retrieve a transaction by its order ID from the database
-        public async Task<tblTransaction?> getTransactionByTranAuthID(string Tran_Auth_ID)
+        public async Task<tblTransaction?> getTransactionByTranAuthID(string Tran_Auth_ID, string consumerCode)
         {
             return await _context.Transactions
                 .Include(t => t.Order).ThenInclude(o => o.User).ThenInclude(u => u.FarmerProfile)
                 .Include(t => t.Order).ThenInclude(o => o.Plan).ThenInclude(p => p.OrderServices).ThenInclude(os => os.Service)
                 .Include(t => t.Order).ThenInclude(o => o.Products).ThenInclude(op => op.Product).ThenInclude(p => p.UOM)
                 .Include(t => t.Order).ThenInclude(o => o.Warehouse)
-                .Where(x => x.Tran_Auth_ID == Tran_Auth_ID).FirstOrDefaultAsync();
+                .Where(x => x.Tran_Auth_ID == Tran_Auth_ID && x.ConsumerCode == consumerCode).FirstOrDefaultAsync();
         }
 
         public tblTransaction UpdateTransaction(tblTransaction transaction)

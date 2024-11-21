@@ -109,12 +109,14 @@ namespace AmazonFarmer.Administrator.API.Controllers
             return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", string.Concat(ConfigExntension.GetEnumDescription(EDocumentName.OrderReport), "-", DateTime.Now.ToString(), ".xlsx"));
 
         }
+
+        //NOT BEING USED
         [HttpPost("PostDoPaymentFixes")]
         [AllowAnonymous]
         [Obsolete]
         public async Task<APIResponse> DoPaymentFixes(OrderDoPaymentRequest req)
         {
-            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID);
+            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID, req.OrderID.ToString());
             if (transaction != null
             && transaction.Order != null
             && transaction.Order.OrderStatus != EOrderStatus.Deleted)
