@@ -305,7 +305,7 @@ namespace AmazonFarmerAPI.Controllers
         private void VerifySignUpRequest(farmerSignUp_Req req)
         {
             // Check if the app version is valid
-            if (req.appVersion != Convert.ToDecimal(ConfigExntension.GetConfigurationValue("appVersion")))
+            if (req.appVersion < Convert.ToDecimal(ConfigExntension.GetConfigurationValue("appVersion")))
                 throw new AmazonFarmerException(_exceptions.invalidAppVersion);
             // Check if the first name is provided
             else if (string.IsNullOrEmpty(req.firstName))
@@ -650,7 +650,7 @@ namespace AmazonFarmerAPI.Controllers
         {
             APIResponse resp = new APIResponse();
             // Check if the app version is valid
-            if (req.appVersion != Convert.ToDecimal(ConfigExntension.GetConfigurationValue("appVersion")))
+            if (req.appVersion < Convert.ToDecimal(ConfigExntension.GetConfigurationValue("appVersion")))
                 throw new AmazonFarmerException(_exceptions.invalidAppVersion);
 
             // Check if username or password is null or empty
@@ -907,7 +907,7 @@ namespace AmazonFarmerAPI.Controllers
             APIResponse resp = new APIResponse();
 
             // Check if the app version is valid
-            if (req.appVersion != Convert.ToDecimal(ConfigExntension.GetConfigurationValue("appVersion")))
+            if (req.appVersion < Convert.ToDecimal(ConfigExntension.GetConfigurationValue("appVersion")))
                 throw new AmazonFarmerException(_exceptions.invalidAppVersion);
             // Check if CNIC number is provided
             else if (string.IsNullOrEmpty(req.cnicNumber))
