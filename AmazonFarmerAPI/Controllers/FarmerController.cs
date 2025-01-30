@@ -1036,6 +1036,7 @@ namespace AmazonFarmerAPI.Controllers
         /// </summary>
         /// <returns>Returns an API response containing usernames along with OTPs.</returns>
         [AllowAnonymous]
+        [ApiExplorerSettings(IgnoreApi = true)]
         [Obsolete("This endpoint is obsolete.")]
         [HttpPost("getUsernamesWithOTP")]
         public async Task<APIResponse> getUsernamesWithOTP()
