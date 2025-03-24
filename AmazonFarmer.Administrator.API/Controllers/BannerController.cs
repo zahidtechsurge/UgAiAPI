@@ -27,6 +27,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             _azureFileShareService = azureFileShareService;
         }
 
+        #region Old Banner Logic
         [Obsolete]
         [HttpPost("getBanners")]
         public async Task<APIResponse> _GetBanners(GetBannerAdminRequest req)
@@ -128,5 +129,16 @@ namespace AmazonFarmer.Administrator.API.Controllers
             await _repoWrapper.SaveAsync();
             return resp;
         }
+        #endregion
+
+        #region New Banner
+        [HttpPost("v_addBanner")]
+        public async Task<APIResponse> AddBanner(AddBanner Request)
+        {
+            APIResponse resp = new APIResponse();
+
+            return resp;
+        }
+        #endregion
     }
 }
