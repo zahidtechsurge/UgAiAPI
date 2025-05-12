@@ -106,91 +106,107 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         /// <returns>The ID of the newly added farm change request.</returns>
         public async Task<int> addFarmRequest(FarmDTO farm, string UserID)
         {
-            try
+            // Check if the farm DTO contains a non-null application ID
+            if (farm.applicationID.HasValue)
             {
-                // Check if the farm DTO contains a non-null application ID
-                if (farm.applicationID.HasValue)
+                // Create a new tblFarmChangeRequest object with the provided farm change request details
+                tblFarmChangeRequest _req = new tblFarmChangeRequest()
                 {
-                    // Create a new tblFarmChangeRequest object with the provided farm change request details
-                    tblFarmChangeRequest _req = new tblFarmChangeRequest()
-                    {
-                        ApplicationID = farm.applicationID.Value,
-                        FarmName = farm.farmName,
-                        Address1 = farm.address1,
-                        Address2 = farm.address2,
-                        Address3 = farm.address3,
-                        CityID = farm.cityID,
-                        DistrictID = farm.districtID,
-                        TehsilID = farm.tehsilID,
-                        Acreage = farm.acreage,
-                        isLeased = farm.isLeased,
-                        isPrimary = false,
-                        isApproved = false,
-                        RequestStatus = EFarmStatus.Draft,
-                        UserID = UserID,
-                        FarmerComment = farm.farmerComment
-                    };
+                    ApplicationID = farm.applicationID.Value,
+                    FarmName = farm.farmName,
+                    Address1 = farm.address1,
+                    Address2 = farm.address2,
+                    Address3 = farm.address3,
+                    CityID = farm.cityID,
+                    DistrictID = farm.districtID,
+                    TehsilID = farm.tehsilID,
+                    Acreage = farm.acreage,
+                    isLeased = farm.isLeased,
+                    isPrimary = false,
+                    isApproved = false,
+                    RequestStatus = EFarmStatus.Draft,
+                    UpdatedOn = DateTime.UtcNow,
+                    UserID = UserID,
+                    FarmerComment = farm.farmerComment
+                };
 
-                    // Add the new farm change request to the FarmChangeRequests DbSet and save changes to the database
-                    _req = _context.FarmChangeRequests.Add(_req).Entity;
-                    _context.SaveChanges();
+                // Add the new farm change request to the FarmChangeRequests DbSet and save changes to the database
+                _req = _context.FarmChangeRequests.Add(_req).Entity;
+                _context.SaveChanges();
 
-                    // Return the ID of the newly added farm change request
-                    return _req.ID;
-                }
-                else
-                {
-                    throw new AmazonFarmerException("Application ID cannot be null.");
-                }
+                // Return the ID of the newly added farm change request
+                return _req.ID;
             }
-            catch (Exception ex)
+            else
             {
-                throw new AmazonFarmerException("Error occurred while adding farm change request.");
+                throw new AmazonFarmerException("Application ID cannot be null.");
             }
+        }
+        public void AddFarmChangeRequest(tblfarm farm,string updatedByID)
+        {
+            // Create a new tblFarmChangeRequest object with the provided farm change request details
+            tblFarmChangeRequest _req = new tblFarmChangeRequest()
+            {
+                FarmID = farm.FarmID,
+                ApplicationID = farm.ApplicationID.Value,
+                FarmName = farm.FarmName,
+                Address1 = farm.Address1,
+                Address2 = farm.Address2,
+                Address3 = farm.Address3,
+                CityID = farm.CityID,
+                DistrictID = farm.DistrictID,
+                TehsilID = farm.TehsilID,
+                Acreage = farm.Acreage,
+                isLeased = farm.isLeased,
+                isPrimary = false,
+                isApproved = false,
+                RequestStatus = farm.Status,
+                UpdatedOn = DateTime.UtcNow,
+                UserID = farm.UserID,
+                UpdatedBy = updatedByID,
+                FarmerComment = farm.FarmerComment
+            };
+
+            // Add the new farm change request to the FarmChangeRequests DbSet and save changes to the database
+            _context.FarmChangeRequests.Add(_req);
         }
         public async Task<int> updateFarmRequest(FarmDTO farm, string UserID)
         {
-            try
+            // Check if the farm DTO contains a non-null application ID
+            if (farm.applicationID.HasValue)
             {
-                // Check if the farm DTO contains a non-null application ID
-                if (farm.applicationID.HasValue)
+                // Create a new tblFarmChangeRequest object with the provided farm change request details
+                tblFarmChangeRequest _req = new tblFarmChangeRequest()
                 {
-                    // Create a new tblFarmChangeRequest object with the provided farm change request details
-                    tblFarmChangeRequest _req = new tblFarmChangeRequest()
-                    {
-                        FarmID = farm.farmID,
-                        ApplicationID = farm.applicationID.Value,
-                        FarmName = farm.farmName,
-                        Address1 = farm.address1,
-                        Address2 = farm.address2,
-                        Address3 = farm.address3,
-                        CityID = farm.cityID,
-                        DistrictID = farm.districtID,
-                        TehsilID = farm.tehsilID,
-                        Acreage = farm.acreage,
-                        isLeased = farm.isLeased,
-                        isPrimary = false,
-                        isApproved = false,
-                        RequestStatus = EFarmStatus.Draft,
-                        UserID = UserID,
-                        FarmerComment = farm.farmerComment
-                    };
+                    FarmID = farm.farmID,
+                    ApplicationID = farm.applicationID.Value,
+                    FarmName = farm.farmName,
+                    Address1 = farm.address1,
+                    Address2 = farm.address2,
+                    Address3 = farm.address3,
+                    CityID = farm.cityID,
+                    DistrictID = farm.districtID,
+                    TehsilID = farm.tehsilID,
+                    Acreage = farm.acreage,
+                    isLeased = farm.isLeased,
+                    isPrimary = false,
+                    isApproved = false,
+                    RequestStatus = EFarmStatus.Draft,
+                    UpdatedOn = DateTime.UtcNow,
+                    UserID = UserID,
+                    FarmerComment = farm.farmerComment
+                };
 
-                    // Add the new farm change request to the FarmChangeRequests DbSet and save changes to the database
-                    _req = _context.FarmChangeRequests.Update(_req).Entity;
-                    //_context.SaveChanges();
+                // Add the new farm change request to the FarmChangeRequests DbSet and save changes to the database
+                _req = _context.FarmChangeRequests.Update(_req).Entity;
+                //_context.SaveChanges();
 
-                    // Return the ID of the newly added farm change request
-                    return _req.ID;
-                }
-                else
-                {
-                    throw new AmazonFarmerException("Application ID cannot be null.");
-                }
+                // Return the ID of the newly added farm change request
+                return _req.ID;
             }
-            catch (Exception ex)
+            else
             {
-                throw new AmazonFarmerException("Error occurred while adding farm change request.");
+                throw new AmazonFarmerException("Application ID cannot be null.");
             }
         }
         public async Task<int?> getApplicationIDByFarmerID(string userID)
@@ -220,7 +236,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         /// <returns>A list of farms associated with the user ID.</returns>
         public async Task<List<tblfarm>> getFarmsByfarmerID(string farmerID)
         {
-            return await _context.Farms.Include(f => f.Users).Include(x=>x.City).Where(x => x.UserID == farmerID).ToListAsync();
+            return await _context.Farms.Include(f => f.Users).Include(x => x.City).Where(x => x.UserID == farmerID).ToListAsync();
         }
         /// <summary>
         /// Retrieves a list of farm change requests associated with the specified user ID.
@@ -357,10 +373,11 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             farm.UpdatedOn = DateTime.UtcNow;
             farm.UpdatedBy = approverID;
-
+            
             _context.Farms.Update(farm);
 
             AddFarmUpdateLogs(farm, approverID);
+            AddFarmChangeRequest(farm, approverID);
         }
 
         public void AddFarmUpdateLogs(tblfarm farm, string updatedBy)
@@ -541,6 +558,16 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             return await _context.Farms
                 .Include(f => f.Users)
                 .Where(x => x.ApplicationID == applicationID).ToListAsync();
+        }
+        public async Task<List<int>> getFarmDistrictIDsByUserID(string userID)
+        {
+            return await _context.Farms
+                .Where(x =>
+                    x.UserID == userID &&
+                    x.Status == EFarmStatus.Approved
+                )
+                .Select(x => x.DistrictID)
+                .ToListAsync();
         }
     }
 }

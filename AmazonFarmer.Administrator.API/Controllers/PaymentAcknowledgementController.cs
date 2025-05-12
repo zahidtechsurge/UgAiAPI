@@ -20,7 +20,7 @@ using CreateOrder;
 
 namespace AmazonFarmer.Administrator.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/Admin/[controller]")]
     [ApiController]
     [Authorize(AuthenticationSchemes = "Bearer")]
     public class PaymentAcknowledgementController : ControllerBase
@@ -76,6 +76,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
             var acknowledgmentDtos = pagedAcknowledgments.Items.Select(ack => new PaymentAcknowledgmentDto
             {
+                paymentAcknowledgementID = ack.Id,
                 CompanyName = ack.CompanyName,
                 ConsumerNumber = ack.ConsumerNumber,
                 Amount = ack.Amount,
@@ -102,10 +103,14 @@ namespace AmazonFarmer.Administrator.API.Controllers
             PaymentAcknowledgmentFile paymentAcknowledgmentFile = await _repoWrapper.PaymentAcknowledgmentFileRepo.GetPaymentAcknowledgmentFileByPaymentAcknowledgementID(PaymentAcknowledgementID);
 
             string Transaction_Auth_ID = string.Empty;
+            string ConsumerNumber = string.Empty;
             if (paymentAcknowledgmentFile != null && paymentAcknowledgmentFile.PaymentAcknowledgments != null)
+            {
                 Transaction_Auth_ID = paymentAcknowledgmentFile.PaymentAcknowledgments.Where(x => x.Id == PaymentAcknowledgementID).First().Trans_Auth_ID;
+                ConsumerNumber = paymentAcknowledgmentFile.PaymentAcknowledgments.Where(x => x.Id == PaymentAcknowledgementID).First().ConsumerNumber;
+            }
 
-            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(Transaction_Auth_ID);
+            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(Transaction_Auth_ID, ConsumerNumber);
 
             using (var scope = _serviceProvider.CreateScope())
             {
@@ -231,7 +236,8 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
 
             order.PaymentDate = DateTime.UtcNow;
-            order.PaymentDatePrice = transaction.Amount / 100;
+            //order.PaymentDatePrice = transaction.Amount / 100;
+            order.PaymentDatePrice = transaction.Amount;
 
             order.SAPTransactionID = wsdlResponse.DOC_NUM;
             order.FiscalYear = wsdlResponse.FISCAL_YEAR;
@@ -314,6 +320,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
                     replacementDTO.PKRAmount = "Rs" + transaction.Amount.ToString("N2");
                     replacementDTO.ConsumerNumber = transaction.ConsumerCode;
+                    replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
 
                     await _notificationService.SendNotifications(notifications, replacementDTO);
                 }
@@ -432,6 +439,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             replacementDTO.NotificationBodyTypeID = ENotificationBody.OrderPaymentProcessCompleted;
             replacementDTO.ConsumerNumber = transaction.ConsumerCode;
             replacementDTO.OrderID = order.OrderID.ToString().PadLeft(10, '0');
+            replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
             replacementDTO.WarehouseId = order.WarehouseID.ToString();
             replacementDTO.WarehouseName = order.Warehouse.Name;
             replacementDTO.PickupDate = order.ExpectedDeliveryDate.Value.ToString("MM/dd/yyyy");

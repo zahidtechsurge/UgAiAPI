@@ -40,8 +40,6 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
         public async Task<APIResponse> getFarms(farms_Request request)
         {
             APIResponse resp = new APIResponse(); // Initializing API response object
-            try
-            {
                 var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Extracting user ID from claims
                 if (!string.IsNullOrEmpty(userID)) // Checking if user ID is not null or empty
                 {
@@ -100,12 +98,6 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                     }
                     resp.response = farmsResponse; // Retrieving farms by user ID
                 }
-            }
-            catch (Exception ex) // Catching exceptions
-            {
-                resp.isError = true; // Setting error flag in response
-                resp.message = $"{ex.Message}"; // Setting error message in response
-            }
             return resp; // Returning the API response
         }
 
@@ -154,6 +146,10 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
 
                 }
                 _resp.planID = planEntity.ID.ToString().PadLeft(10, '0');
+                if (planEntity.Status == EPlanStatus.TSOProcessing)
+                    resp.message = "Your plan has been sent for approval";
+                else if (planEntity.Status == EPlanStatus.Draft)
+                    resp.message = "Your plan has been saved";
                 resp.response = _resp; // Setting response
             }
             else
@@ -382,6 +378,10 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
 
                     }
                     _resp.planID = plan.ID.ToString();
+                    if (plan.Status == EPlanStatus.TSOProcessing)
+                        resp.message = "Your plan has been sent for approval";
+                    else if (plan.Status == EPlanStatus.Draft)
+                        resp.message = "Your plan has been saved";
                     resp.response = _resp;
                 }
                 else
@@ -636,8 +636,6 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
         {
             APIResponse resp = new APIResponse(); // Initializing API response object
             pagination_Resp inResp = new();
-            try
-            {
                 var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Extracting user ID from claims
                 var languageCode = User.FindFirst("languageCode")?.Value; // Extracting language code from claims
                 if (!string.IsNullOrEmpty(userID) && !string.IsNullOrEmpty(languageCode)) // Checking if both user ID and language code are provided
@@ -715,12 +713,6 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                 {
                     throw new AmazonFarmerException(_exceptions.userIDorLanguageCodeNotFound); // Throws exception if either user ID or language code is not found
                 }
-            }
-            catch (Exception ex) // Handling exceptions
-            {
-                resp.isError = true; // Setting error flag in response
-                resp.message = ex.Message; // Setting error message in response
-            }
             return resp; // Returning the API response
         }
 
@@ -1007,7 +999,7 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                 else
                 {
 
-                    var imageBase = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL");
+                    var imageBase = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL");
 
                     resp.response = new getPlanDetail_Resp()
                     {
@@ -1048,6 +1040,7 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                                 productID = p.ProductID,
                                 product = p.Product.ProductTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault() != null ? p.Product.ProductTranslations.Where(x => x.LanguageCode == languageCode).First().Text : string.Empty,
                                 qty = p.Qty,
+                                uom = p.Product.UOM.UnitOfMeasureTranslation.Where(x => x.LanguageCode == languageCode).FirstOrDefault() != null ? p.Product.UOM.UnitOfMeasureTranslation.Where(x => x.LanguageCode == languageCode).First().Text : string.Empty,
                                 date = p.Date//.ToString("yyyy-MM-dd")
                             }).ToList(),
                             services = x.PlanServices.Where(x => x.Status == EActivityStatus.Active).Select(s => new cropService_planCrops_getPlanDetail
@@ -1110,7 +1103,7 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                     };
                     getDistance = await _googleLocationExtension.GetDistanceBetweenLocations(getDistance); // Getting distance between locations using Google location extension
 
-                    var imageBase = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL");
+                    var imageBase = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL");
 
                     resp.response = new getPlanDetail_Resp()
                     {
@@ -1155,6 +1148,7 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                                 productID = p.ProductID,
                                 product = p.Product.ProductTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault() != null ? p.Product.ProductTranslations.Where(x => x.LanguageCode == languageCode).First().Text : string.Empty,
                                 qty = p.Qty - p.DeliveredQty,
+                                uom = p.Product.UOM.UnitOfMeasureTranslation.Where(x => x.LanguageCode == languageCode).FirstOrDefault() != null ? p.Product.UOM.UnitOfMeasureTranslation.Where(x => x.LanguageCode == languageCode).First().Text : string.Empty,
                                 date = p.Date//.ToString("yyyy-MM-dd")
                             }).ToList(),
                             services = x.PlanServices.Where(x => x.Status == EActivityStatus.Active).Select(s => new cropService_planCrops_getPlanDetail

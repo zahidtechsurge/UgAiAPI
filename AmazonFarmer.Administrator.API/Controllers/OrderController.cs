@@ -1,4 +1,5 @@
-﻿using AmazonFarmer.Core.Application;
+﻿using AmazonFarmer.Administrator.API.Extensions;
+using AmazonFarmer.Core.Application;
 using AmazonFarmer.Core.Application.DTOs;
 using AmazonFarmer.Core.Application.Exceptions;
 using AmazonFarmer.Core.Domain.Entities;
@@ -9,13 +10,18 @@ using ChangeCustomerPayment;
 using CreateOrder;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using OfficeOpenXml;
+using Org.BouncyCastle.Ocsp;
 using PaymentCustomer;
+using System.Collections.Generic;
+using System.Numerics;
 
 namespace AmazonFarmer.Administrator.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/Admin/[controller]")]
     [ApiController]
     [Authorize(AuthenticationSchemes = "Bearer")]
     public class OrderController : ControllerBase
@@ -30,17 +36,90 @@ namespace AmazonFarmer.Administrator.API.Controllers
             _notificationService = notificationService;
             _wsdlConfig = wsdlConfig.Value;
         }
+        [AllowAnonymous]
+        [HttpPost("getOrders")]
+        public async Task<APIResponse> GetOrders(ReportPagination_Req req)
+        {
+            APIResponse resp = new APIResponse();
+            pagination_Resp InResp = new pagination_Resp();
+            List<SP_OrderDetailsResult> report = await _repoWrapper.OrderRepo.Get_OrderDetailsResults(req.pageNumber, req.pageSize, req.sortColumn, req.sortOrder, req.search,0);
+            if (report != null && report.Count() > 0)
+            {
+                InResp.totalRecord = report.Count > 0 ? report.First().totalRows : 0;
+                InResp.filteredRecord = report.Count();
+                InResp.list = report.Select(x=> new GetOrdersReponse
+                {
+                    orderID = x.orderID.ToString().PadLeft(10,'0'),
+                    sapOrderID = x.sapOrderID ?? string.Empty,
+                    sapTransactionID = x.sapTransactionID ?? string.Empty,
+                    orderType = ConfigExntension.GetEnumDescription((EOrderType)x.orderType),
+                    orderStatus = ConfigExntension.GetEnumDescription((EOrderStatus)x.orderStatus),
+                    orderAmount = x.orderAmount,
+                    createdOn = x.createdOn,
+                    priceOnPayment = x.priceOnPayment ?? decimal.Zero,
+                    paymentStatus = ConfigExntension.GetEnumDescription((EOrderPaymentStatus)x.paymentStatus),
+                    deliveryStatus = ConfigExntension.GetEnumDescription((EDeliveryStatus)x.deliveryStatus),
+                    planID = x.planID.ToString().PadLeft(10,'0'),
+                    seasonName = x.seasonName ?? string.Empty,
+                    warehouseName = x.warehouseName ?? string.Empty,
+                    warehouseIncharge = x.warehouseIncharge ?? string.Empty,
+                    farmerName = x.farmerName ?? string.Empty,
+                    farmName = x.farmName ?? string.Empty,
+                    address1 = x.address1 ?? string.Empty
+                }).ToList();
+            }
+            else
+            {
+                InResp.list = new List<GetOrdersReponse>();
+            }
+            resp.response = InResp;
+            return resp;
+        }
+        [AllowAnonymous]
+        [HttpGet("downloadOrders")]
+        public async Task<dynamic> DownloadOrders()
+        {
+            List<SP_OrderDetailsResult> report = await _repoWrapper.OrderRepo.Get_OrderDetailsResults(0, 0, "", "", "",1);
+            var lst = report.Select(x => new GetOrdersReponse
+            {
+                orderID = x.orderID.ToString().PadLeft(10, '0'),
+                sapOrderID = x.sapOrderID ?? string.Empty,
+                sapTransactionID = x.sapTransactionID ?? string.Empty,
+                orderType = ConfigExntension.GetEnumDescription((EOrderType)x.orderType),
+                orderStatus = ConfigExntension.GetEnumDescription((EOrderStatus)x.orderStatus),
+                orderAmount = x.orderAmount,
+                createdOn = x.createdOn,
+                priceOnPayment = x.priceOnPayment ?? decimal.Zero,
+                paymentStatus = ConfigExntension.GetEnumDescription((EOrderPaymentStatus)x.paymentStatus),
+                deliveryStatus = ConfigExntension.GetEnumDescription((EDeliveryStatus)x.deliveryStatus),
+                planID = x.planID.ToString().PadLeft(10, '0'),
+                seasonName = x.seasonName ?? string.Empty,
+                warehouseName = x.warehouseName ?? string.Empty,
+                warehouseIncharge = x.warehouseIncharge ?? string.Empty,
+                farmerName = x.farmerName ?? string.Empty,
+                farmName = x.farmName ?? string.Empty,
+                address1 = x.address1 ?? string.Empty
+            }).ToList();
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            var package = new OfficeOpenXml.ExcelPackage();
+            //ExcelExtension excelExt = new ExcelExtension();
+            package = ExcelExtension.generateTable(lst.Cast<dynamic>().ToList(), package, ConfigExntension.GetEnumDescription(EDocumentName.OrderReport));
+            Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            Response.Headers.Add("content-disposition", "attachment: filename=Report.xlsx");
+            return File(package.GetAsByteArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", string.Concat(ConfigExntension.GetEnumDescription(EDocumentName.OrderReport), "-", DateTime.Now.ToString(), ".xlsx"));
 
+        }
+
+        //NOT BEING USED
         [HttpPost("PostDoPaymentFixes")]
         [AllowAnonymous]
         [Obsolete]
         public async Task<APIResponse> DoPaymentFixes(OrderDoPaymentRequest req)
         {
-            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID);
-
+            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID, req.OrderID.ToString());
             if (transaction != null
-                && transaction.Order != null
-                && transaction.Order.OrderStatus != EOrderStatus.Deleted)
+            && transaction.Order != null
+            && transaction.Order.OrderStatus != EOrderStatus.Deleted)
             {
                 if (transaction.TransactionStatus == ETransactionStatus.Acknowledged)
                 {

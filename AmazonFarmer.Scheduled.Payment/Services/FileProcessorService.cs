@@ -1,4 +1,4 @@
-﻿using ClosedXML.Excel; 
+﻿using ClosedXML.Excel;
 
 namespace AmazonFarmer.Scheduled.Payment.Services
 {
@@ -50,7 +50,8 @@ namespace AmazonFarmer.Scheduled.Payment.Services
             var password = _configuration["FileSettings:password"];
             var remoteDirectory = _configuration["FileSettings:ServerPath"];
             var remoteArchiveDirectory = _configuration["FileSettings:ServerArchive"];
-
+            var companyFileName = _configuration["FileSettings:CompanyFileName"];
+            var extractedMISFileName = _configuration["FileSettings:ExtractedMISFileName"];
 
             using (var sftp = new SftpClient(host, Convert.ToInt32(port), username, password))
             {
@@ -60,27 +61,32 @@ namespace AmazonFarmer.Scheduled.Payment.Services
                     sftp.Connect();
                     // Download a file
                     var remoteFiles = sftp.ListDirectory(remoteDirectory)
-                                .Where(file => file.IsRegularFile && file.Name.EndsWith(".pdf"))
+                                .Where(file => file.IsRegularFile && file.Name.StartsWith(companyFileName) && file.Name.EndsWith(".zip"))
                                 .ToList();
 
                     foreach (var file in remoteFiles)
                     {
                         string remoteFilePath = $"{remoteDirectory}/{file.Name}";
-                        string dateTimeFileName = file.Name.Replace(".txt", "_" + DateTime.Now.ToString("yyyyMMddhhmmss") + ".txt");
-                        string remoteArchiveFilePath = $"{remoteArchiveDirectory}/{dateTimeFileName}";
+                        string remoteArchiveFilePath = $"{remoteArchiveDirectory}/{file.Name}";
                         string localFilePath = Path.Combine(inputDirectory, file.Name);
-
-                        // Ensure the local directory exists
-                        Directory.CreateDirectory(inputDirectory);
+                        string extractDirectory = Path.Combine(inputDirectory, Path.GetFileNameWithoutExtension(file.Name));
 
                         // Download the file
                         using (var fileStream = new FileStream(localFilePath, FileMode.Create))
                         {
                             sftp.DownloadFile(remoteFilePath, fileStream);
-                            // Move the file to the archive directory
-                            sftp.RenameFile(remoteFilePath, remoteArchiveFilePath);
-                            //Console.WriteLine($"Downloaded {file.Name} to {localFilePath}");
                         }
+
+                        // Move the file to the archive directory
+                        sftp.RenameFile(remoteFilePath, remoteArchiveFilePath);
+                        //Console.WriteLine($"Downloaded {file.Name} to {localFilePath}");
+
+                        // Extract the file to a directory with the same name as the file
+                        Directory.CreateDirectory(extractDirectory);
+                        System.IO.Compression.ZipFile.ExtractToDirectory(localFilePath, extractDirectory);
+
+                        //Move ZIp file into local archive directory
+                        MoveFileToArchive(localFilePath, archiveDirectory);
                     }
 
                 }
@@ -94,12 +100,25 @@ namespace AmazonFarmer.Scheduled.Payment.Services
                 }
             }
 
-            var localFiles = Directory.GetFiles(inputDirectory, "*.txt");
 
-            foreach (var file in localFiles)
+            var localDirectories = Directory.GetDirectories(inputDirectory);
+
+            foreach (var directory in localDirectories)
             {
-                await ProcessFileAsync(file);
-                MoveFileToArchive(file, archiveDirectory);
+                string extractedDirectoryName = Path.GetFileName(directory);
+                if (extractedDirectoryName != null && extractedDirectoryName.StartsWith(companyFileName))
+                {
+                    var txtFiles = Directory.GetFiles(directory, extractedMISFileName, SearchOption.AllDirectories);
+
+                    foreach (var txtFile in txtFiles)
+                    {
+                        await ProcessFileAsync(txtFile);
+                    }
+
+                    //Move extracted directories in to archive folder
+                    Directory.Move(directory, Path.Combine(archiveDirectory, extractedDirectoryName));
+                }
+
             }
         }
 
@@ -269,7 +288,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
         private void MoveFileToArchive(string filePath, string archiveDirectory)
         {
             var fileName = Path.GetFileName(filePath);
-            var archivePath = Path.Combine(archiveDirectory, fileName.Replace(".txt", DateTime.UtcNow.ToString("yyyyMMddhhmmss") + ".txt"));
+            var archivePath = Path.Combine(archiveDirectory, fileName);
             File.Move(filePath, archivePath);
         }
 

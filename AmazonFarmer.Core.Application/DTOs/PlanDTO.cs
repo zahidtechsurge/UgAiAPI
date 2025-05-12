@@ -334,7 +334,8 @@ namespace AmazonFarmer.Core.Application.DTOs
     {
         public int planProductID { get; set; }
         public int productID { get; set; }
-        public string product { get; set; }
+        public string product { get; set; } = string.Empty;
+        public string uom { get; set; } = string.Empty;
         public int qty { get; set; }
         public DateTime date { get; set; }
     }
@@ -448,6 +449,16 @@ namespace AmazonFarmer.Core.Application.DTOs
         public int requestTypeID { get; set; }
         public int skip { get; set; } = 0;
         public int take { get; set; } = 10;
+    }
+    public class GetSeasonProductResponse
+    {
+        public string season { get; set; }
+        public string product { get; set; }
+        public int planned { get; set; }
+        public int paid { get; set; }
+        public int shipped { get; set; }
+        public int toBeShipped { get; set; }
+        public int toBePaid { get; set; }
     }
 
 }

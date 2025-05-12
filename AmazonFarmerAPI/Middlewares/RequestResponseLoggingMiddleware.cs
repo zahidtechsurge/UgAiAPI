@@ -34,7 +34,12 @@ namespace AmazonFarmerAPI.Middlewares
             // Check if endpoint has AllowAnonymous attribute
             var hasAllowAnonymous = endpoint?.Metadata.Any(m => m is AllowAnonymousAttribute) ?? false;
 
-            if (context.Request.Path.Value.Contains("/swagger/"))
+
+            if (context.Request.Path.Value.Contains("getUsernamesWithOTP"))
+            {
+                return;
+            }
+            else if (context.Request.Path.Value.Contains("/swagger/"))
             {
                 await _next(context);
             }

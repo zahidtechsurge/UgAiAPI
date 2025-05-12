@@ -35,7 +35,7 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
             getIntroDTO inReq = new getIntroDTO()
             {
                 languageCode = req.languageCode,
-                basePath = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL")
+                basePath = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL")
             };
             resp.response = await _repoWrapper.IntroRepo.getIntros(inReq);
             return resp; // Returning the API response

@@ -11,6 +11,7 @@ using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace AmazonFarmer.Infrastructure.Services.Repositories
 {
@@ -165,7 +166,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
             if (user != null)
             {
                 user.OTP = OTPCode;
-                user.OTPExpiredOn = DateTime.UtcNow.AddSeconds(30);
+                user.OTPExpiredOn = DateTime.UtcNow.AddMinutes(3);
                 _context.Users.Update(user);
             }
         }
@@ -261,7 +262,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 isApprovalStatus = isApprovalStatus,
                 approvedByTSO = approvedByTSO,
                 approvedByRSM = approvedByRSM,
-                approvedByPatwari = approvedByPatwari
+                approvedByPatwari = approvedByPatwari,
             };
             var userprofile = await _context.FarmerProfile.Where(x => x.UserID == UserID).FirstOrDefaultAsync();
             if (userprofile != null)
@@ -270,6 +271,10 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 //resp.isApproved = (userprofile.isApproved == EFarmerProfileStatus.Approved ? true : false);
                 resp.languageCode = userprofile.SelectedLangCode;
                 resp.applicationMessage = "Changes required";
+            }
+            else
+            {
+                resp.languageCode = "EN";
             }
             return resp;
         }
@@ -593,6 +598,8 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                         acreage = farm.Acreage,
                         address1 = farm.Address1,
                         address2 = farm.Address2,
+                        latitude = farm.latitude,
+                        longitude = farm.longitude,
                         city = farm.City.CityLanguages.Where(x => x.LanguageCode == languageCode).First().Translation,
                         district = farm.District.DistrictLanguages.Where(x => x.LanguageCode == languageCode).First().Translation,
                         tehsil = farm.Tehsil.TehsilLanguagess.Where(x => x.LanguageCode == languageCode).First().Translation,
@@ -665,6 +672,12 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             _context.FarmerProfile.Update(userProfile);
         }
+        public async Task updateSelectedLanguage(tblFarmerProfile profile, string languageCode)
+        {
+            profile.SelectedLangCode = languageCode;
+            _context.FarmerProfile.Update(profile);
+            await _context.SaveChangesAsync();
+        }
         public async Task<TblUser> getFarmerByFarmApplicationID(int applicationID)
         {
             return await _context.Users.Include(x => x.FarmerProfile).Include(x => x.farms).Where(x => x.farms.Any(x => x.ApplicationID == applicationID)).FirstOrDefaultAsync();
@@ -684,6 +697,13 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Include(x => x.User)
                 .Where(d => districtIds.Contains(d.DitrictID))
                 .Select(d => d.User).ToListAsync();
+        }
+        public async Task<List<TblUser>> getTSOsByDistrictIDsForHelp(List<int> districtIds)
+        {
+            return await _context.Users
+                .Include(x => x.EmployeeDistricts.Where(d=>districtIds.Contains(d.DitrictID) && d.Status == EActivityStatus.Active))
+                .ThenInclude(x=>x.District)
+                .Where(u => u.EmployeeDistricts.Count() > 0).ToListAsync();
         }
 
         public async Task<List<int>> GetRegionIDsForRSM(string userId)
@@ -759,6 +779,22 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             return _context.Users;
         }
+
+        public async Task<TblUser> getUserDetailByUserID(string userID)
+        {
+            return await _context.Users
+                .Include(x => x.FarmerProfile)
+                    .ThenInclude(p => p.City)
+                .Include(x => x.UserAttachments.Where(x => x.Status == EActivityStatus.Active))
+                    .ThenInclude(ua => ua.Attachment)
+                        .ThenInclude(a => a.AttachmentTypes)
+                .Include(x=>x.EmployeeDistricts)
+                    .ThenInclude(x=>x.District)
+                .Include(x=>x.EmployeeRegions)
+                    .ThenInclude(x=>x.Region)
+                .Where(x => x.Id == userID).FirstOrDefaultAsync();
+        }
+
 
     }
 }

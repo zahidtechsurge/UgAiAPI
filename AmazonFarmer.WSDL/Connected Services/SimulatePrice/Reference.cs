@@ -546,7 +546,7 @@ namespace SimulatePrice
             this.Endpoint.Name = endpointConfiguration.ToString();
             ConfigureEndpoint(this.Endpoint, this.ClientCredentials);
         }
-        
+
         public PriceSimulateClient(EndpointConfiguration endpointConfiguration, string remoteAddress) : 
                 base(PriceSimulateClient.GetBindingForEndpoint(endpointConfiguration), new System.ServiceModel.EndpointAddress(remoteAddress))
         {

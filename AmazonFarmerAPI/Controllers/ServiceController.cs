@@ -41,25 +41,16 @@ namespace AmazonFarmerAPI.Controllers
         public async Task<APIResponse> getServices()
         {
             APIResponse resp = new APIResponse();
-            try
-            {
                 // Create LanguageReq object with language code obtained from User's claims
                 //LanguageReq req = new LanguageReq() { languageCode = User.FindFirst("languageCode")?.Value };
                 getServicesRequestDTO req = new getServicesRequestDTO()
                 {
                     languageCode = User.FindFirst("languageCode")?.Value,
-                    basePath = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL")
+                    basePath = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL")
                 };
 
                 // Call repository method to get services by language ID and specified configuration value
                 resp.response = await _repoWrapper.ServiceRepo.getServicesByLanguageID(req, Convert.ToInt32(ConfigExntension.GetConfigurationValue("productSettings:ServicePostDeliveryIn")));
-            }
-            catch (Exception ex)
-            {
-                // Handle exception
-                resp.isError = true;
-                resp.message = ex.Message;
-            }
             return resp;
         }
 
@@ -97,9 +88,9 @@ namespace AmazonFarmerAPI.Controllers
                         service = os.First().Service.ServiceTranslations
                             .Where(x => x.LanguageCode == languageCode)
                             .FirstOrDefault()?.Text,
-                        filePath = string.Concat(ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL"), os.First().Service.ServiceTranslations
+                        filePath = string.Concat(ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL"), os.First().Service.ServiceTranslations
                             .Where(x => x.LanguageCode == languageCode)
-                            .FirstOrDefault()?.Image),
+                            .FirstOrDefault()?.Image.Replace("/", "%2F").Replace(" ", "%20")),
                         completeDate = os.Max(g => g.CompletedDate),          // Service completion date
                         scheduleDate = os.Max(g => g.ScehduledDate),          // Service scheduled date
                         remarks = os.Max(g => g.Remarks) ?? string.Empty,     // Service remarks, defaulting to empty string if null
@@ -172,6 +163,7 @@ namespace AmazonFarmerAPI.Controllers
             resp.response = inResp;
             return resp;
         }
+        [AllowAnonymous]
         [HttpGet("getSoilSampleReportByPlanID/{planID}")]
         public async Task<APIResponse> getSoilSampleReportByPlanID(string planID)
         {
@@ -294,21 +286,21 @@ namespace AmazonFarmerAPI.Controllers
         /// <param name="take">Number of files to take for pagination.</param>
         /// <returns>Paginated response <see cref="pagination_Resp"/> containing a list of soil sample files.</returns>
         private async Task<pagination_Resp> getServiceReportListing(string startsWith)
-        {
+         {
             // Initialize the pagination response object
             pagination_Resp pagResp = new pagination_Resp();
             List<getSoilSampleList> lst = new List<getSoilSampleList>();
             // Retrieve SFTP connection details from configuration
-            //var connectionString = ConfigExntension.GetConfigurationValue("AzureFileStorage:ConnectionString");
-            //var shareName = ConfigExntension.GetConfigurationValue("AzureFileStorage:ShareName");
-            //var directoryName = ConfigExntension.GetConfigurationValue("AzureFileStorage:ServiceReportDirectory");
+            var connectionString = ConfigExntension.GetConfigurationValue("AzureFileStorage:ConnectionString");
+            var shareName = ConfigExntension.GetConfigurationValue("AzureFileStorage:ShareName");
+            var directoryName = ConfigExntension.GetConfigurationValue("AzureFileStorage:ServiceReportDirectory");
             try
             {
-                //ShareClient shareClient = new ShareClient(connectionString, shareName);
-                //ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(directoryName);
+                ShareClient shareClient = new ShareClient(connectionString, shareName);
+                ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(directoryName);
 
-                //lst = await ListFilesAndDirectoriesAsync(directoryClient, startsWith, directoryName);
-                lst = ListFilesAndDirectoriesFromFTP(startsWith);
+                lst = await ListFilesAndDirectoriesAsync(directoryClient, startsWith, directoryName);
+                //lst = ListFilesAndDirectoriesFromFTP(startsWith);
 
                 pagResp.list = lst;
                 pagResp.totalRecord = lst.Count();
@@ -341,7 +333,7 @@ namespace AmazonFarmerAPI.Controllers
                 // Connect to the SFTP server
                 sftp.Connect();
                 // Download a file
-                var remoteFiles = sftp.ListDirectory(remoteDirectory)
+                 var remoteFiles = sftp.ListDirectory(remoteDirectory)
                             .Where(file => file.IsRegularFile && file.Name.EndsWith(".pdf"))
                             .ToList();
                 foreach (var file in remoteFiles)
@@ -371,7 +363,7 @@ namespace AmazonFarmerAPI.Controllers
             await foreach (ShareFileItem item in directoryClient.GetFilesAndDirectoriesAsync())
             {
 
-                if (!item.IsDirectory)
+                if (!item.IsDirectory)   
                 {
                     if (item.Name.ToLower().StartsWith(startsWith.ToLower()) && item.Name.ToLower().EndsWith(".pdf"))
                     {

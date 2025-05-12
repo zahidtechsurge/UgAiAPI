@@ -22,6 +22,282 @@ namespace AmazonFarmer.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("AmazonFarmer.Core.Application.DTOs.PlanSeasonCropResult", b =>
+                {
+                    b.Property<double>("Acre")
+                        .HasColumnType("float");
+
+                    b.Property<int>("Bags")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CropName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DeliveryMonth")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FarmName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SeasonName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TotalRows")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("View_PlanSeasonCropResult", (string)null);
+                });
+
+            modelBuilder.Entity("AmazonFarmer.Core.Application.DTOs.PlanStatusResult", b =>
+                {
+                    b.Property<int>("PaidPlan")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PlannedPlan")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Product")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Season")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ShippedPlan")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ToBePaidPlan")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ToBeShippedPlan")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalRows")
+                        .HasColumnType("int");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("View_PlanStatusResult", (string)null);
+                });
+
+            modelBuilder.Entity("AmazonFarmer.Core.Application.DTOs.SP_FarmerDetailsResult", b =>
+                {
+                    b.Property<string>("Address1")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Address2")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ApplicationStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ApplicationSubmitDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FarmAcres")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FarmCity")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FarmID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FarmName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FarmRegion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FarmTehsil")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FarmTerritory")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FarmerCNIC")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FarmerCity")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FarmerCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FarmerEmail")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FarmerName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FarmerRegion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FarmerTehsil")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FarmerTerritory")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FarmerUsername")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LeasedLand")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("NoofFarmsAdded")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OwnedLand")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RSM")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RSMApprovalDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TSO")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("TSOApprovalDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TotalLand")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalRows")
+                        .HasColumnType("int");
+
+                    b.Property<string>("latitude")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("longitude")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("View_FarmerDetailsResult", (string)null);
+                });
+
+            modelBuilder.Entity("AmazonFarmer.Core.Application.DTOs.SP_LogEntryResult", b =>
+                {
+                    b.Property<string>("requestBody")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("requestHttpMethod")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("requestId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("requestTimestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("requestURL")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("responseBody")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("responseStatusCode")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("responseTimestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("totalRows")
+                        .HasColumnType("int");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("View_LogEntryResult", (string)null);
+                });
+
+            modelBuilder.Entity("AmazonFarmer.Core.Application.DTOs.SP_OrderDetailsResult", b =>
+                {
+                    b.Property<string>("address1")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("createdOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("deliveryStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("farmName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("farmerName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("orderAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<long>("orderID")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("orderStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("orderType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("paymentStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("planID")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("priceOnPayment")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("sapOrderID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("sapTransactionID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("seasonName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("totalRows")
+                        .HasColumnType("int");
+
+                    b.Property<string>("warehouseIncharge")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("warehouseName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("View_OrderDetailsResult", (string)null);
+                });
+
             modelBuilder.Entity("AmazonFarmer.Core.Domain.Entities.ActiveToken", b =>
                 {
                     b.Property<int>("Id")
@@ -1571,6 +1847,45 @@ namespace AmazonFarmer.Infrastructure.Persistence.Migrations
                     b.HasIndex("LanguageCode");
 
                     b.ToTable("CityLanguages");
+                });
+
+            modelBuilder.Entity("AmazonFarmer.Core.Domain.Entities.tblComplaint", b =>
+                {
+                    b.Property<int>("ComplaintID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ComplaintID"));
+
+                    b.Property<string>("ComplaintDesc")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ComplaintStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ComplaintTitle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CreatedByID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResolvedByID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ResolvedOn")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ComplaintID");
+
+                    b.HasIndex("CreatedByID");
+
+                    b.ToTable("Complaints");
                 });
 
             modelBuilder.Entity("AmazonFarmer.Core.Domain.Entities.tblConfig", b =>
@@ -3424,7 +3739,7 @@ namespace AmazonFarmer.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("LanguageCode")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Text")
                         .IsRequired()
@@ -3434,6 +3749,8 @@ namespace AmazonFarmer.Infrastructure.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("LanguageCode");
 
                     b.HasIndex("WarehouseID");
 
@@ -3888,6 +4205,17 @@ namespace AmazonFarmer.Infrastructure.Persistence.Migrations
                     b.Navigation("Language");
                 });
 
+            modelBuilder.Entity("AmazonFarmer.Core.Domain.Entities.tblComplaint", b =>
+                {
+                    b.HasOne("AmazonFarmer.Core.Domain.Entities.TblUser", "CreatedBy")
+                        .WithMany("Complaints")
+                        .HasForeignKey("CreatedByID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+                });
+
             modelBuilder.Entity("AmazonFarmer.Core.Domain.Entities.tblCropGroupCrops", b =>
                 {
                     b.HasOne("AmazonFarmer.Core.Domain.Entities.tblCropGroup", "CropGroup")
@@ -4152,7 +4480,7 @@ namespace AmazonFarmer.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AmazonFarmer.Core.Domain.Entities.tblLanguages", "Languages")
+                    b.HasOne("AmazonFarmer.Core.Domain.Entities.tblLanguages", "Language")
                         .WithMany("IntroLanguages")
                         .HasForeignKey("LanguageCode")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -4160,7 +4488,7 @@ namespace AmazonFarmer.Infrastructure.Persistence.Migrations
 
                     b.Navigation("Intro");
 
-                    b.Navigation("Languages");
+                    b.Navigation("Language");
                 });
 
             modelBuilder.Entity("AmazonFarmer.Core.Domain.Entities.tblMonth", b =>
@@ -4690,11 +5018,19 @@ namespace AmazonFarmer.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("AmazonFarmer.Core.Domain.Entities.tblwarehouseTranslation", b =>
                 {
+                    b.HasOne("AmazonFarmer.Core.Domain.Entities.tblLanguages", "Language")
+                        .WithMany("WarehouseTranslations")
+                        .HasForeignKey("LanguageCode")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AmazonFarmer.Core.Domain.Entities.tblwarehouse", "Warehouse")
                         .WithMany("WarehouseTranslation")
                         .HasForeignKey("WarehouseID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Language");
 
                     b.Navigation("Warehouse");
                 });
@@ -4765,6 +5101,8 @@ namespace AmazonFarmer.Infrastructure.Persistence.Migrations
                     b.Navigation("AuthorityLetters");
 
                     b.Navigation("Claims");
+
+                    b.Navigation("Complaints");
 
                     b.Navigation("EmployeeDistricts");
 
@@ -4950,6 +5288,8 @@ namespace AmazonFarmer.Infrastructure.Persistence.Migrations
                     b.Navigation("TehsilLanguages");
 
                     b.Navigation("UnitOfMeasureTranslations");
+
+                    b.Navigation("WarehouseTranslations");
 
                     b.Navigation("WeatherIconTranslations");
                 });

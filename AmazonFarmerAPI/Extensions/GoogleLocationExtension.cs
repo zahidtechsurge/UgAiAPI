@@ -17,12 +17,14 @@ namespace AmazonFarmerAPI.Extensions
         private readonly string _apiKey;
         private readonly string _distanceURL;
         private readonly string _geocodeURL;
+        private readonly string _directionURL;
         public GoogleLocationExtension(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
             _apiKey = ConfigExntension.GetConfigurationValue("GoogleMaps:ApiKey");
             _distanceURL = ConfigExntension.GetConfigurationValue("GoogleMaps:DistanceURL");
             _geocodeURL = ConfigExntension.GetConfigurationValue("GoogleMaps:GeocodeURL");
+            _directionURL = ConfigExntension.GetConfigurationValue("GoogleMaps:DirectionURL");
         }
         private static string? removeLastChar(string s)
         {
@@ -68,6 +70,22 @@ namespace AmazonFarmerAPI.Extensions
                 }
             }
         }
+
+        public async Task<dynamic> GetDestination(string origin, string destination)
+        {
+            var apiUrl = $"{_directionURL}".Replace("[origin]", origin)
+                                    .Replace("[destination]", destination)
+                                    .Replace("[apiKey]", _apiKey);
+
+            var response = await _httpClient.GetAsync(apiUrl).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception("Failed to retrieve distance from Google Maps API.");
+            }
+            var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            return content;
+        }
+
         public async Task<getDistance> GetDistanceBetweenLocations(getDistance req)
         {
             List<Root?> deserializedAPIResponse = new();

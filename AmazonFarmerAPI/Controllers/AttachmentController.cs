@@ -78,53 +78,66 @@ namespace AmazonFarmerAPI.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("getPublicFile/{filePath}")]
-        public dynamic GetPublicFile(string filePath)
+        [HttpGet("getPublicAttachment/{filePath}")]
+        public async Task<dynamic> GetPublicAttachment(string filePath)
         {
-            //var connectionString = ConfigExntension.GetConfigurationValue("AzureFileStorage:ConnectionString");
-            //var shareName = ConfigExntension.GetConfigurationValue("AzureFileStorage:ShareName");
-            //var directoryName = ConfigExntension.GetConfigurationValue("AzureFileStorage:ServiceReportDirectory");
-            //ShareClient shareClient = new ShareClient(connectionString, shareName);
-            //ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(directoryName);
-            //return await getSoilSampleFileByFileName(directoryClient,filePath);
+            Stream? imageOutput = await _azureFileShareService.GetFileAsync(filePath);
+            return base.File(imageOutput, GetContentType(filePath), "");
+        }
 
-            string currentDirectory = Directory.GetCurrentDirectory();
-            var inputDirectory = currentDirectory + ConfigExntension.GetConfigurationValue("FTPFileStorage:tempFolder");
-            var archiveDirectory = currentDirectory + ConfigExntension.GetConfigurationValue("FTPFileStorage:ArchiveDirectory");
+        [AllowAnonymous]
+        [HttpGet("getPublicFile/{filePath}")]
+        public async Task<dynamic> GetPublicFile(string filePath)
+        {
+            #region Using Azure File Storage
+            var connectionString = ConfigExntension.GetConfigurationValue("AzureFileStorage:ConnectionString");
+            var shareName = ConfigExntension.GetConfigurationValue("AzureFileStorage:ShareName");
+            var directoryName = ConfigExntension.GetConfigurationValue("AzureFileStorage:ServiceReportDirectory");
+            ShareClient shareClient = new ShareClient(connectionString, shareName);
+            ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(directoryName);
+            return await getSoilSampleFileByFileName(directoryClient, filePath);
+            #endregion
 
-            var host = ConfigExntension.GetConfigurationValue("FTPFileStorage:host");
-            var port = ConfigExntension.GetConfigurationValue("FTPFileStorage:port");
-            var username = ConfigExntension.GetConfigurationValue("FTPFileStorage:username");
-            var password = ConfigExntension.GetConfigurationValue("FTPFileStorage:password");
-            var remoteDirectory = ConfigExntension.GetConfigurationValue("FTPFileStorage:ServerPath");
-            var remoteArchiveDirectory = ConfigExntension.GetConfigurationValue("FTPFileStorage:ServerArchive");
+            #region Using FTP
+            //string currentDirectory = Directory.GetCurrentDirectory();
+            //var inputDirectory = currentDirectory + ConfigExntension.GetConfigurationValue("FTPFileStorage:tempFolder");
+            //var archiveDirectory = currentDirectory + ConfigExntension.GetConfigurationValue("FTPFileStorage:ArchiveDirectory");
 
-            using (var sftp = new SftpClient(host, Convert.ToInt32(port), username, password))
-            {
-                // Connect to the SFTP server
-                sftp.Connect();
-                // Download a file
-                var remoteFiles = sftp.ListDirectory(remoteDirectory)
-                            .Where(file => file.IsRegularFile && file.Name.ToLower().StartsWith(filePath.ToLower()) && file.Name.EndsWith(".pdf"))
-                            .FirstOrDefault();
-                if (remoteFiles != null)
-                {
-                    string remoteFilePath = $"{remoteDirectory}/{remoteFiles.Name}";
-                    string dateTimeFileName = remoteFiles.Name.Replace(".pdf", "_" + DateTime.Now.ToString("yyyyMMddhhmmss") + ".pdf");
-                    string localFilePath = Path.Combine(inputDirectory, remoteFiles.Name);
-                    string remoteArchiveFilePath = $"{remoteArchiveDirectory}/{dateTimeFileName}";
-                    // Ensure the local directory exists
-                    Directory.CreateDirectory(inputDirectory);
-                    // Download the file
-                    using (var fileStream = new FileStream(localFilePath, FileMode.Create))
-                    {
-                        sftp.DownloadFile(remoteFilePath, fileStream);
-                    }
-                    // Disconnect from the SFTP server
-                    sftp.Disconnect();
-                    return ReadPDFFromTemp(localFilePath);
-                }
-            }
+            //var host = ConfigExntension.GetConfigurationValue("FTPFileStorage:host");
+            //var port = ConfigExntension.GetConfigurationValue("FTPFileStorage:port");
+            //var username = ConfigExntension.GetConfigurationValue("FTPFileStorage:username");
+            //var password = ConfigExntension.GetConfigurationValue("FTPFileStorage:password");
+            //var remoteDirectory = ConfigExntension.GetConfigurationValue("FTPFileStorage:ServerPath");
+            //var remoteArchiveDirectory = ConfigExntension.GetConfigurationValue("FTPFileStorage:ServerArchive");
+
+            //using (var sftp = new SftpClient(host, Convert.ToInt32(port), username, password))
+            //{
+            //    // Connect to the SFTP server
+            //    sftp.Connect();
+            //    // Download a file
+            //    var remoteFiles = sftp.ListDirectory(remoteDirectory)
+            //                .Where(file => file.IsRegularFile && file.Name.ToLower().StartsWith(filePath.ToLower()) && file.Name.EndsWith(".pdf"))
+            //                .FirstOrDefault();
+            //    if (remoteFiles != null)
+            //    {
+            //        string remoteFilePath = $"{remoteDirectory}/{remoteFiles.Name}";
+            //        string dateTimeFileName = remoteFiles.Name.Replace(".pdf", "_" + DateTime.Now.ToString("yyyyMMddhhmmss") + ".pdf");
+            //        string localFilePath = Path.Combine(inputDirectory, remoteFiles.Name);
+            //        string remoteArchiveFilePath = $"{remoteArchiveDirectory}/{dateTimeFileName}";
+            //        // Ensure the local directory exists
+            //        Directory.CreateDirectory(inputDirectory);
+            //        // Download the file
+            //        using (var fileStream = new FileStream(localFilePath, FileMode.Create))
+            //        {
+            //            sftp.DownloadFile(remoteFilePath, fileStream);
+            //        }
+            //        // Disconnect from the SFTP server
+            //        sftp.Disconnect();
+            //        return ReadPDFFromTemp(localFilePath);
+            //    }
+            //}
+            #endregion
+
             return NotFound();
         }
 
@@ -135,6 +148,21 @@ namespace AmazonFarmerAPI.Controllers
 
         }
 
+
+        private string GetContentType(string filename)
+        {
+            var contentTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "jpg", "image/jpeg" },
+                { "jpeg", "image/jpeg" },
+                { "png", "image/png" },
+                { "svg", "image/svg+xml" }
+            };
+
+            string extension = Path.GetExtension(filename).TrimStart('.');
+
+            return contentTypes.TryGetValue(extension, out string contentType) ? contentType : null;
+        }
         private async Task<dynamic> getSoilSampleFileByFileName(ShareDirectoryClient directoryClient, string filename)
         {
             ShareFileClient fileClient = directoryClient.GetFileClient(filename);

@@ -74,11 +74,13 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
             try
             {
                 bool validOrder = true;
-                string Prefix = _configuration["Transaction:Prefix"].ToString();
-                request.prefix = Prefix;
+                request.prefix = "111061";
+                //string Prefix = _configuration["Transaction:Prefix"].ToString();
+                //request.prefix = Prefix;
                 //if (request.consumer_number.StartsWith(Prefix))
                 //{
                 //    request.prefix = Prefix;
+                //    request.consumer_number = request.consumer_number.Replace(Prefix, "");
                 //    validOrder = true;
                 //}
 
@@ -113,11 +115,17 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                 {
                     throw new AmazonFarmerException("Invalid Order");
                 }
-                if (request.order_id.Contains('-'))
+                if (request.order_id.Length > 7)
                 {
-                    OrderID = Convert.ToInt64(request.order_id.Split("-")[0]);
-                    OrderRandomNumber = Convert.ToInt32(request.order_id.Split("-")[1]);
-                    request.order_id = request.order_id.Split("-")[0];
+
+                    OrderID = Convert.ToInt64(request.order_id.Substring(0, request.order_id.Length - 4));
+                    OrderRandomNumber = Convert.ToInt32(request.order_id.Substring(request.order_id.Length - 4));
+                    request.order_id = OrderID.ToString();
+
+                    //No Hyphen in cosumer number
+                    //OrderID = Convert.ToInt64(request.order_id.Split("-")[0]);
+                    //OrderRandomNumber = Convert.ToInt32(request.order_id.Split("-")[1]);
+                    //request.order_id = request.order_id.Split("-")[0];
                 }
                 else
                 {
@@ -215,6 +223,9 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                     // Simulate order pricing by order ID get payable amount
                     decimal amount = await GetOrderPriceByOrderID(Order);
 
+                    //making amount decimal to ceiling 
+                    amount = Math.Ceiling(amount);
+
                     #region Consumer Number is Expired / Blocked
                     // If Consumer Number is Expired
                     // If Order is locked or not active
@@ -257,7 +268,7 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                     //double amount = await GetOrderPriceByOrderID(OrderID);
 
                     #region unpaid case where all checks are done
-                    if (amount > 0)
+                    if (amount > 2)
                     {
                         //string AmountText = "+" + ((amount * 100).ToString()).PadLeft(13, '0');
                         string AmountTextPaid = Math.Round(amount * 100).ToString().PadLeft(12, '0');
@@ -368,8 +379,11 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
             try
             {
                 bool validOrder = true;
-                string Prefix = _configuration["Transaction:Prefix"].ToString();
-                request.prefix = Prefix;
+                //string Prefix = _configuration["Transaction:Prefix"].ToString();
+                //request.prefix = Prefix;
+
+                request.prefix = "111061";
+
                 //if (request.consumer_number.StartsWith(Prefix))
                 //{
                 //    request.prefix = Prefix;
@@ -397,11 +411,17 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                     BillPaymentRequestID = BillPaymentRequestID
                 };
 
-                if (request.orderid.Contains("-"))
+                if (request.orderid.Length > 7)
                 {
-                    OrderID = Convert.ToInt64(request.orderid.Split("-")[0]);
-                    OrderRandomNumber = Convert.ToInt32(request.orderid.Split("-")[1]);
-                    request.orderid = request.orderid.Split("-")[0];
+
+                    OrderID = Convert.ToInt64(request.orderid.Substring(0, request.orderid.Length - 4));
+                    OrderRandomNumber = Convert.ToInt32(request.orderid.Substring(request.orderid.Length - 4));
+                    request.orderid = OrderID.ToString();
+
+                    //No Hyphen in cosumer number
+                    //OrderID = Convert.ToInt64(request.order_id.Split("-")[0]);
+                    //OrderRandomNumber = Convert.ToInt32(request.order_id.Split("-")[1]);
+                    //request.order_id = request.order_id.Split("-")[0];
                 }
                 else
                 {
@@ -442,24 +462,31 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                     {
                         CustomerName = Order.User.FirstName + " " + Order.User.LastName;
                     }
-
+                    //Kamran check this for transaction is created or not
                     #region Duplicate Payment
+
                     // if Payment already done / duplicate
                     bool DuplciatePaymentRequest = await _repoWrapper.OnlinePaymentRepo.getDuplicateBillPaymentRequest(request.consumer_number, request.tran_auth_id, request.tran_date, request.tran_time, BillPaymentRequestID);
+
+
                     if (DuplciatePaymentRequest)
                     {
-                        resp = new BillPaymentResponse
+                        //If order is not NON PAID then return duplicate response
+                        if (Order.PaymentStatus != EOrderPaymentStatus.NonPaid)
                         {
-                            reserved = "Duplicate Transaction",
-                            Identification_parameter = new string(' ', 20), // Customer name in Order
-                            response_Code = "03",
-                            BillPaymentRequestID = BillPaymentRequestID
-                        };
+                            resp = new BillPaymentResponse
+                            {
+                                reserved = "Duplicate Transaction",
+                                Identification_parameter = new string(' ', 20), // Customer name in Order
+                                response_Code = "03",
+                                BillPaymentRequestID = BillPaymentRequestID
+                            };
 
-                        // save response in database
-                        int BillPaymentResponseID = await _repoWrapper.OnlinePaymentRepo.addBillPaymentResponse(resp);
-                        await _repoWrapper.SaveAsync();
-                        return resp;
+                            // save response in database
+                            int BillPaymentResponseID = await _repoWrapper.OnlinePaymentRepo.addBillPaymentResponse(resp);
+                            await _repoWrapper.SaveAsync();
+                            return resp;
+                        }
                     }
                     #endregion
 
@@ -493,7 +520,7 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                     }
                     #endregion
 
-                    //Getting the latest bill inquery response order amount for particular consumber number
+                    //Getting the latest bill inquery response order amount (AmountWithInDueDate) for particular consumber number 
                     decimal orderAmount = await _repoWrapper.OnlinePaymentRepo.getOrderPriceByComsumerNumber(request.consumer_number);
 
                     #region Amount mismatch from SAP
@@ -561,7 +588,7 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                     {
                         #region Success Payment
                         //string AmountText = "+" + ((amount * 100).ToString()).PadLeft(13, '0');
-                        string AmountText = Math.Round(amount * 100).ToString().PadLeft(12, '0');
+                        //string AmountText = Math.Round(amount * 100).ToString().PadLeft(12, '0');
 
                         //successful transaction
                         resp = new BillPaymentResponse
@@ -575,7 +602,7 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                         };
                         // update order amount and status
                         Order.PaymentDate = DateTime.UtcNow;
-                        Order.PaymentDatePrice = Convert.ToDecimal(request.Transaction_amount);
+                        Order.PaymentDatePrice = RequestAmount;
                         Order.PaymentStatus = EOrderPaymentStatus.PaymentProcessing;
 
                         await _repoWrapper.OrderRepo.UpdateOrder(Order);
@@ -652,6 +679,7 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
 
                         NotificationReplacementDTO replacementDTO = new NotificationReplacementDTO();
                         replacementDTO.ConsumerNumber = request.consumer_number;
+                        replacementDTO.PlanID = Order.PlanID.ToString().PadLeft(10, '0');
                         replacementDTO.NotificationBodyTypeID = ENotificationBody.PaymentProcessing;
 
                         if (notifications != null && notifications.Count() > 0)

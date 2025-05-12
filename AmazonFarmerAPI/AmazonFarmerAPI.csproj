@@ -7,13 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="attachments\**" />
-    <Content Remove="attachments\**" />
-    <EmbeddedResource Remove="attachments\**" />
-    <None Remove="attachments\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Remove="appsettings.Development.json" />
   </ItemGroup>
 
@@ -50,6 +43,7 @@
 
   <ItemGroup>
     <Folder Include="logs\Exceptions\" />
+    <Folder Include="attachments\" />
     <Folder Include="private-documents\CNIC\" />
     <Folder Include="private-documents\Farm-Document\" />
     <Folder Include="private-documents\AuthorityLetter-CNIC\" />

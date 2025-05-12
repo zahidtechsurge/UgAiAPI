@@ -1,3 +1,4 @@
+using AmazonFarmer.Administrator.API.Extensions;
 using AmazonFarmer.Administrator.API.Middlewares;
 using AmazonFarmer.Core.Application;
 using AmazonFarmer.Core.Domain.Entities;
@@ -43,6 +44,15 @@ builder.Services.AddCors(policy => policy.AddPolicy("corsPolicy", build =>
     build.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
 }));
 
+string connectionString = builder.Configuration["AzureFileStorage:ConnectionString"];
+string shareName = builder.Configuration["AzureFileStorage:ShareName"];
+string directoryName = builder.Configuration["AzureFileStorage:DirectoryName"];
+
+//builder.Services.AddSingleton(new BlobStorageService(connectionString, containerName));
+builder.Services.AddSingleton<IAzureFileShareService>(provider =>
+{
+    return new AzureFileShareService(connectionString, shareName, directoryName);
+});
 builder.Services.AddTransient<IRepositoryWrapper, RepositoryWrapper>();
 builder.Services.Configure<WsdlConfig>(builder.Configuration.GetSection("WsdlConfig"));
 

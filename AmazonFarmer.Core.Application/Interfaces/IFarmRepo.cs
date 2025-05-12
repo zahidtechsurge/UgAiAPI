@@ -33,7 +33,7 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         Task<List<DraftedFarmDTO>> getDraftedFarmsByFarmerID(string userID, string languageCode); // Method signature for fetching the drafted farms list by farmer ID and language code
         Task<List<tblfarm>> getFarmerAllFarmsByApplicationID(int applicationID); // Method signature for fetching farms list by application ID 
         void AddFarmUpdateLogs(tblfarm farm, string updatedBy);
-
+        Task<List<int>> getFarmDistrictIDsByUserID(string userID);
 
         //For Employee
         Task<tblfarm> getFarmByFarmIDForEmployee(int farmID, List<int> territoryIds);

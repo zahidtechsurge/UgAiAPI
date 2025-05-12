@@ -25,17 +25,8 @@ namespace AmazonFarmerAPI.Controllers
         public async Task<APIResponse> GetRoles(getRoles req)
         {
             APIResponse resp = new APIResponse();
-            try
-            {
                 // Call repository method to get roles
                 resp.response = await _repoWrapper.RoleRepo.GetRoles(req.search, req.skip, req.take);
-            }
-            catch (Exception ex)
-            {
-                // Handle exception
-                resp.isError = true;
-                resp.message = ex.Message;
-            }
             return resp;
         }
 
@@ -45,17 +36,8 @@ namespace AmazonFarmerAPI.Controllers
         public async Task<APIResponse> GetPermissionByRoleID(getPermission req)
         {
             APIResponse resp = new APIResponse();
-            try
-            {
                 // Call repository method to get permissions by role ID
                 resp.response = await _repoWrapper.RoleRepo.getModules(req.roleID);
-            }
-            catch (Exception ex)
-            {
-                // Handle exception
-                resp.isError = true;
-                resp.message = ex.Message;
-            }
             return resp;
         }
     }

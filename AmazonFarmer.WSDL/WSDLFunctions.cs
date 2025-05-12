@@ -44,11 +44,13 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "CreateCustomerWSDLAsync").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
-            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.AbsolutePath, "SOAP");
+            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.ToString(), "SOAP");
 
             using (OperationContextScope scope = new OperationContextScope(OutClient.InnerChannel))
             {
@@ -96,11 +98,13 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "ChangeCustomerWSDLAsync").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
-            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.AbsolutePath, "SOAP");
+            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.ToString(), "SOAP");
             using (OperationContextScope scope = new OperationContextScope(OutClient.InnerChannel))
             {
                 HttpRequestMessageProperty httpRequestProperty = new HttpRequestMessageProperty();
@@ -143,14 +147,16 @@ namespace AmazonFarmer.WSDL
 
             PriceSimulateClient OutClient = new PriceSimulateClient(PriceSimulateClient.EndpointConfiguration.PriceSimulateSOAP);
 
-
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "PriceSimluate").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl+ WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
-            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.AbsolutePath, "SOAP");
+            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.ToString(), "SOAP");
+            //WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.AbsolutePath, "SOAP");
             using (OperationContextScope scope = new OperationContextScope(OutClient.InnerChannel))
             {
                 HttpRequestMessageProperty httpRequestProperty = new HttpRequestMessageProperty();
@@ -205,11 +211,13 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "CustomerBalance").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
-            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.AbsolutePath, "SOAP");
+            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.ToString(), "SOAP");
             using (OperationContextScope scope = new OperationContextScope(OutClient.InnerChannel))
             {
                 HttpRequestMessageProperty httpRequestProperty = new HttpRequestMessageProperty();
@@ -272,11 +280,13 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "CustomerPayment").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
-            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.AbsolutePath, "SOAP");
+            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.ToString(), "SOAP");
             using (OperationContextScope scope = new OperationContextScope(OutClient.InnerChannel))
             {
                 HttpRequestMessageProperty httpRequestProperty = new HttpRequestMessageProperty();
@@ -323,11 +333,13 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "CreateOrder").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
-            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.AbsolutePath, "SOAP");
+            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.ToString(), "SOAP");
             using (OperationContextScope scope = new OperationContextScope(OutClient.InnerChannel))
             {
                 HttpRequestMessageProperty httpRequestProperty = new HttpRequestMessageProperty();
@@ -371,11 +383,13 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "ChangeCustomerPaymentRequest").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
-            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.AbsolutePath, "SOAP");
+            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.ToString(), "SOAP");
             using (OperationContextScope scope = new OperationContextScope(OutClient.InnerChannel))
             {
                 HttpRequestMessageProperty httpRequestProperty = new HttpRequestMessageProperty();
@@ -425,11 +439,13 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "ChangeSaleOrderRequest").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
-            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.AbsolutePath, "SOAP");
+            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.ToString(), "SOAP");
             using (OperationContextScope scope = new OperationContextScope(OutClient.InnerChannel))
             {
                 HttpRequestMessageProperty httpRequestProperty = new HttpRequestMessageProperty();
@@ -470,11 +486,13 @@ namespace AmazonFarmer.WSDL
 
             string WSDLUserName = _wsdlConfig.UserName;
             string WSDLPassword = _wsdlConfig.Password;
+            string WSDLEndPoint = _wsdlConfig.EndPoints.Where(x => x.EndpointConfiguration == "InvoiceDetailsRequest").First().Url;
 
+            OutClient.Endpoint.Address = new System.ServiceModel.EndpointAddress(_wsdlConfig.BaseUrl + WSDLEndPoint);
             OutClient.ClientCredentials.UserName.UserName = WSDLUserName;
             OutClient.ClientCredentials.UserName.Password = WSDLPassword;
 
-            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.AbsolutePath, "SOAP");
+            WSDLLog log = await LogRequestWsdl(request, OutClient.Endpoint.Address.Uri.ToString(), "SOAP");
             using (OperationContextScope scope = new OperationContextScope(OutClient.InnerChannel))
             {
                 HttpRequestMessageProperty httpRequestProperty = new HttpRequestMessageProperty();

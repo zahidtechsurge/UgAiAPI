@@ -37,5 +37,9 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         Task<List<planCropGroup_get>> getCropInformationByCropGroupID(int cropGroupID, string languageCode, string baseFile);
         Task<int> getPlanCropIDByPlanProductID(int? planProductID);
         Task<IQueryable<tblPlan>> getPlanOrderServices(string userID);
+        IQueryable<tblSeason> getSeasonProductReport();
+        Task<List<PlanStatusResult>> GetPlanStatusPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm, string userId);
+        Task<List<PlanSeasonCropResult>> GetPlanSeasonCropPagedAsync(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm, string userId);
+        Task<List<SP_FarmerDetailsResult>> GetSP_FarmerDetailsResult(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm, int isDownload);
     }
 }

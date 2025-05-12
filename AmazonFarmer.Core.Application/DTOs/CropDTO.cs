@@ -46,5 +46,57 @@ namespace AmazonFarmer.Core.Application.DTOs
         public List<addCropPlan_Req> products { get; set; } = []; // Property for products list
         public List<Server_Req> services { get; set; } = []; // Property for services list
     }
-    
+    public class AddCropRequest
+    {
+        public string cropName { get; set; } = string.Empty;
+        public int status { get; set; }
+    }
+    public class UpdateCropRequest: AddCropRequest
+    {
+        public int cropID { get; set; }
+    }
+    public class GetCropTranslationsResponse : UpdateCropTranslationRequest
+    {
+        public string language { get; set; } = string.Empty;
+    }
+    public class AddCropTranslationRequest
+    {
+        public int cropID { get; set; }
+        public string languageCode { get; set; } = string.Empty;
+        public string filePath { get; set; } = string.Empty;
+        public string? fileName { get; set; } = string.Empty;
+        public string? content { get; set; } = string.Empty;
+        public string text { get; set; } = string.Empty;
+    }
+    public class UpdateCropTranslationRequest : AddCropTranslationRequest
+    {
+        public int translationID { get; set; }
+    }
+    public class GetCropTimingsResponse : UpdateCropTiming
+    {
+        public string cropName { get; set; } = string.Empty;
+        public string seasonName { get; set; } = string.Empty;
+        public string districtName { get; set; } = string.Empty;
+        public string fromDate_String { get; set; } = string.Empty;
+        public string toDate_String { get; set; } = string.Empty;
+    }
+    public class AddCropTiming : CropTimingValues
+    {
+        public int seasonID { get; set; }
+        public int districtID { get; set; }
+    }
+    public class UpdateCropTiming : AddCropTiming
+    {
+        public int recID { get; set; }
+        public int statusID { get; set; }
+    }
+    public class CropTimingValues
+    {
+        public int cropID { get; set; }
+        public int fromMonth { get; set; }
+        public int toMonth { get; set; }
+
+    }
+
+
 }

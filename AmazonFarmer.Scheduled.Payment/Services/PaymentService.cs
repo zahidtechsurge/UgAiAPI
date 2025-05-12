@@ -1,7 +1,7 @@
 ﻿using AmazonFarmer.Core.Application;
 using AmazonFarmer.Core.Application.DTOs;
 using AmazonFarmer.Core.Application.Exceptions;
-using AmazonFarmer.Core.Domain.Entities; 
+using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.NotificationServices.Helpers;
 using AmazonFarmer.NotificationServices.Services;
 using AmazonFarmer.WSDL;
@@ -11,7 +11,7 @@ using CreateOrder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using PaymentCustomer; 
+using PaymentCustomer;
 
 namespace AmazonFarmer.Scheduled.Payment.Services
 {
@@ -32,7 +32,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
 
         public async Task PostTransactionAcknowledgmentUpdate(PaymentAcknowledgmentRequest req, IServiceScope scope, IConfiguration _configuration)
         {
-            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID);
+            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID, req.ConsumerNumber);
 
             Console.WriteLine(req.ConsumerNumber);
             Console.WriteLine(transaction.ConsumerCode);
@@ -115,7 +115,9 @@ namespace AmazonFarmer.Scheduled.Payment.Services
 
 
             order.PaymentDate = DateTime.UtcNow;
-            order.PaymentDatePrice = transaction.Amount / 100;
+            //order.PaymentDatePrice = transaction.Amount / 100;
+
+            order.PaymentDatePrice = transaction.Amount;
 
             order.SAPTransactionID = wsdlResponse.DOC_NUM;
             order.FiscalYear = wsdlResponse.FISCAL_YEAR;
@@ -143,9 +145,12 @@ namespace AmazonFarmer.Scheduled.Payment.Services
                 || order.OrderType == EOrderType.OrderReconcile
                 )
             {
+
                 List<NotificationRequest> notifications = new();
                 NotificationReplacementDTO replacementDTO = new NotificationReplacementDTO();
+                replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
                 NotificationDTO notificationDTO = null;
+
                 if (order.OrderType == EOrderType.Advance
                 || order.OrderType == EOrderType.AdvancePaymentReconcile)
                 {
@@ -197,6 +202,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
                     notifications.Add(farmerDevice);
 
                     replacementDTO.PKRAmount = "Rs" + transaction.Amount.ToString("N2");
+                    replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
                     replacementDTO.ConsumerNumber = transaction.ConsumerCode;
 
                     await _notificationService.SendNotifications(notifications, replacementDTO);
@@ -246,6 +252,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
                             }
                         }
                     }
+                    //TO BE UNCOMMENTED 
                     salesOrderNumber = await CreateOrderWSDL(profile.SAPFarmerCode, plan, orderProduct);
                 }
                 catch (Exception ex)
@@ -317,10 +324,11 @@ namespace AmazonFarmer.Scheduled.Payment.Services
             replacementDTO.NotificationBodyTypeID = ENotificationBody.OrderPaymentProcessCompleted;
             replacementDTO.ConsumerNumber = transaction.ConsumerCode;
             replacementDTO.OrderID = order.OrderID.ToString().PadLeft(10, '0');
+            replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
             replacementDTO.WarehouseId = order.WarehouseID.ToString();
             replacementDTO.WarehouseName = order.Warehouse.Name;
             replacementDTO.GoogleMapLinkWithCoordinated = string.Format(_googleApiConfig.ApiKey, order.Warehouse.latitude, order.Warehouse.longitude);
-            replacementDTO.PickupDate = order.ExpectedDeliveryDate.Value.ToString("MM/dd/yyyy");
+            replacementDTO.PickupDate = order.ExpectedDeliveryDate.HasValue ? order.ExpectedDeliveryDate.Value.ToString("MM/dd/yyyy") : string.Empty;
 
             if (notifications != null & notifications.Count() > 0)
                 await notificationService.SendNotifications(notifications, replacementDTO);

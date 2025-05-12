@@ -42,7 +42,7 @@ namespace AmazonFarmerAPI.Extensions
 
 
             // Write the image bytes to the file
-            System.IO.File.WriteAllBytes(filePath, imageBytes);
+            //System.IO.File.WriteAllBytes(filePath, imageBytes);
 
             // Return the URL of the saved image
             string attachmentPath = $"{filePath}"; // Adjust the URL path as needed

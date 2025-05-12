@@ -147,6 +147,7 @@ namespace AmazonFarmer.Core.Application.DTOs
         public decimal appVersion { get; set; }
         public string deviceToken { get; set; }
         public string platform { get; set; }
+        public string languageCode { get; set; } = "EN";
     }
     public class approveFarmer_Req
     {
@@ -217,7 +218,10 @@ namespace AmazonFarmer.Core.Application.DTOs
         public required string userName { get; set; }
         public required string emailAddress { get; set; }
         public required string phoneNumber { get; set; }
+        public required string cnicNumber { get; set; }
         public required int designationID { get; set; }
+        public int[]? districtIDs { get; set; } = [];
+        public int[]? regionIDs { get; set; } = [];
         public bool status { get; set; }
         public bool isLocked { get; set; }
     }
@@ -226,4 +230,14 @@ namespace AmazonFarmer.Core.Application.DTOs
         public required string userID { get; set; }
     }
 
+    public class updateFarmerDTO
+    {
+        public required string userID { get; set; }
+        public required bool isLocked { get; set; }
+        public required bool status { get; set; }
+        public required string phoneNumber { get; set; }
+        public required string emailAddress { get; set; }
+        public string address1 { get; set; } = string.Empty;
+        public string address2 { get; set; } = string.Empty;
+    }
 }

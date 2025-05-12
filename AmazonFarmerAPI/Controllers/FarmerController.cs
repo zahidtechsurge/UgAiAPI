@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Ocsp;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
@@ -273,15 +274,26 @@ namespace AmazonFarmerAPI.Controllers
             APIResponse resp = new APIResponse();
             // Get the user ID from claims
             var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            tblFarmerProfile farmer = await _repoWrapper.UserRepo.getFarmerProfileByUserID(userID);
-            List<TblUser> employees = await _repoWrapper.UserRepo.getTSOsByDistrictIDs([farmer.DistrictID]);
-            resp.response = employees.Select(e => new HelpDTO_Resp
+            tblFarmerProfile? farmer = await _repoWrapper.UserRepo.getFarmerProfileByUserID(userID);
+            List<int> farmDistrictIDs = await _repoWrapper.FarmRepo.getFarmDistrictIDsByUserID(userID);
+            if (farmer != null)
             {
-                name = string.Concat(e.FirstName, ' ', e.LastName),
-                email = e.Email,
-                phone = e.PhoneNumber,
-                designation = ConfigExntension.GetEnumDescription(e.Designation.Value)
-            }).ToList();
+                farmDistrictIDs.Add(farmer.DistrictID);
+
+                List<TblUser> employees = await _repoWrapper.UserRepo.getTSOsByDistrictIDsForHelp(farmDistrictIDs);
+
+                resp.response = employees
+                    .Where(x => x.Active == EActivityStatus.Active && x.EmployeeDistricts.Count() > 0)
+                    .DistinctBy(x => x.Id)
+                    .Select(e => new HelpDTO_Resp
+                    {
+                        name = string.Concat(e.FirstName, ' ', e.LastName),
+                        email = e.Email ?? string.Empty,
+                        phone = e.PhoneNumber ?? string.Empty,
+                        designation = ConfigExntension.GetEnumDescription(e.Designation.Value),
+                        district = string.Join(", ", e.EmployeeDistricts.Select(ed => ed.District.Name)),
+                    }).ToList();
+            }
             return resp;
         }
 
@@ -293,7 +305,7 @@ namespace AmazonFarmerAPI.Controllers
         private void VerifySignUpRequest(farmerSignUp_Req req)
         {
             // Check if the app version is valid
-            if (req.appVersion != Convert.ToDecimal(ConfigExntension.GetConfigurationValue("appVersion")))
+            if (req.appVersion < Convert.ToDecimal(ConfigExntension.GetConfigurationValue("appVersion")))
                 throw new AmazonFarmerException(_exceptions.invalidAppVersion);
             // Check if the first name is provided
             else if (string.IsNullOrEmpty(req.firstName))
@@ -378,9 +390,9 @@ namespace AmazonFarmerAPI.Controllers
                 throw new AmazonFarmerException(_exceptions.nameLengthExteed_SAPValidation);
             else if (req.emailAddress.Length >= 242)
                 throw new AmazonFarmerException(_exceptions.emailAddressLengthExteed_SAPValidation);
-            else if (req.address1.Length >= 61)
+            else if (req.address1.Length >= 31)
                 throw new AmazonFarmerException(_exceptions.address1LengthExteed_SAPValidation);
-            else if (req.address2.Length >= 61)
+            else if (req.address2.Length >= 31)
                 throw new AmazonFarmerException(_exceptions.address2LengthExteed_SAPValidation);
         }
 
@@ -558,7 +570,7 @@ namespace AmazonFarmerAPI.Controllers
                     throw new AmazonFarmerException(_exceptions.expiredOTP);
                 }
                 //user.User.OTP = "";
-                user.OTPExpiredOn = DateTime.UtcNow.AddMinutes(15);
+                user.OTPExpiredOn = DateTime.UtcNow.AddMinutes(3);
                 await _repoWrapper.UserRepo.emptyPasswordAttempts(user);
                 await _repoWrapper.SaveAsync();
                 isExist = true;
@@ -571,7 +583,7 @@ namespace AmazonFarmerAPI.Controllers
             if (isExist)
             {
                 // If OTP is verified, set the response message
-                resp.message = "OTP Verified";
+                resp.message = "Your OTP has been successfully verified";
             }
             return resp;
         }
@@ -601,7 +613,10 @@ namespace AmazonFarmerAPI.Controllers
             // Check if the new password matches the confirm password
             else if (req.password != req.confirmPassword)
                 throw new AmazonFarmerException(_exceptions.confirmPasswordNotMatch);
+            if (!matchPasswordCriteria(req.password))
+            {
 
+            }
             else
             {
                 // Change the user password
@@ -635,7 +650,7 @@ namespace AmazonFarmerAPI.Controllers
         {
             APIResponse resp = new APIResponse();
             // Check if the app version is valid
-            if (req.appVersion != Convert.ToDecimal(ConfigExntension.GetConfigurationValue("appVersion")))
+            if (req.appVersion < Convert.ToDecimal(ConfigExntension.GetConfigurationValue("appVersion")))
                 throw new AmazonFarmerException(_exceptions.invalidAppVersion);
 
             // Check if username or password is null or empty
@@ -658,13 +673,20 @@ namespace AmazonFarmerAPI.Controllers
 
                 tblFarmerProfile _req = new tblFarmerProfile();
 
-                if (User.IsInRole("Farmer"))
+                //if (User.IsInRole("Farmer"))
+                if (user.FarmerRoles.Any(x => x.Role.eRole == ERoles.Farmer))
                 {
                     _req = await _repoWrapper.UserRepo.getFarmerProfileByUserID(user.Id);
                     if (_req == null)
                     {
                         throw new AmazonFarmerException(_exceptions.userNotAuthorized);
                     }
+                    else
+                    {
+                        _req.SelectedLangCode = req.languageCode;
+                    }
+
+
                 }
 
 
@@ -687,9 +709,15 @@ namespace AmazonFarmerAPI.Controllers
                 {
                     throw new AmazonFarmerException(_exceptions.deactiveUser);
                 }
+
+
                 await _repoWrapper.UserRepo.emptyPasswordAttempts(user);
 
                 await _repoWrapper.UserRepo.updateDeviceToken(user, req.deviceToken);
+                if (_req != null)
+                {
+                    await updateSelectedLanguage(_req);
+                }
                 await _repoWrapper.SaveAsync();
 
                 // Get user information by username and password
@@ -767,6 +795,7 @@ namespace AmazonFarmerAPI.Controllers
                         _repoWrapper.UserRepo.RemoveActiveToken(existingToken);
                     }
                 }
+
                 await _repoWrapper.SaveAsync();
 
                 ActiveToken newToken = new()
@@ -784,6 +813,22 @@ namespace AmazonFarmerAPI.Controllers
             }
 
             return resp;
+        }
+        private async Task updateSelectedLanguage(tblFarmerProfile profile)
+        {
+            if (!string.IsNullOrEmpty(profile.UserID))
+            {
+                profile.FatherName = profile.FatherName ?? string.Empty;
+                profile.CNICNumber = profile.CNICNumber ?? string.Empty;
+                profile.NTNNumber = profile.NTNNumber ?? string.Empty;
+                profile.STRNNumber = profile.STRNNumber ?? string.Empty;
+                profile.CellNumber = profile.CellNumber ?? string.Empty;
+                profile.OwnedLand = profile.OwnedLand ?? string.Empty;
+                profile.LeasedLand = profile.LeasedLand ?? string.Empty;
+                profile.Address1 = profile.Address1 ?? string.Empty;
+                profile.DateOfBirth = profile.DateOfBirth ?? string.Empty;
+                await _repoWrapper.UserRepo.updateSelectedLanguage(profile, profile.SelectedLangCode);
+            }
         }
 
 
@@ -862,7 +907,7 @@ namespace AmazonFarmerAPI.Controllers
             APIResponse resp = new APIResponse();
 
             // Check if the app version is valid
-            if (req.appVersion != Convert.ToDecimal(ConfigExntension.GetConfigurationValue("appVersion")))
+            if (req.appVersion < Convert.ToDecimal(ConfigExntension.GetConfigurationValue("appVersion")))
                 throw new AmazonFarmerException(_exceptions.invalidAppVersion);
             // Check if CNIC number is provided
             else if (string.IsNullOrEmpty(req.cnicNumber))
@@ -991,6 +1036,7 @@ namespace AmazonFarmerAPI.Controllers
         /// </summary>
         /// <returns>Returns an API response containing usernames along with OTPs.</returns>
         [AllowAnonymous]
+        //[ApiExplorerSettings(IgnoreApi = true)]
         [Obsolete("This endpoint is obsolete.")]
         [HttpPost("getUsernamesWithOTP")]
         public async Task<APIResponse> getUsernamesWithOTP()
@@ -1257,7 +1303,7 @@ namespace AmazonFarmerAPI.Controllers
                         .Select(x => new BannerDTO
                         {
                             bannerName = string.Empty,
-                            filePath = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL") + x.Image
+                            filePath = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL") + x.Image.Replace("/", "%2F").Replace(" ", "%20")
                         }).ToList();
                 }
                 _inResp.nextPay = await _repoWrapper.OrderRepo.getNearestPayableOrdersByUserID(userID);
@@ -1267,37 +1313,24 @@ namespace AmazonFarmerAPI.Controllers
 
 
                 #region get weather Information
-                try
+                EngroWeatherAPI_Response locationResp = await _accuWeatherService.getWeather(location.city);
+                //getWeatherAPI_Req locationResp = await _accuWeatherService.getLocation(location);
+                //_inResp.weather = await _accuWeatherService.getWeather(locationResp);
+
+                string baseUrl = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL"); //setting up base url
+
+                string weatherIconPath = baseUrl + ConfigExntension.GetConfigurationValue("AccuWeather:iconURL").Replace("[icon]", locationResp.weatherIconCode).Replace("/", "%2F").Replace(" ", "%20");
+
+                _inResp.weather = new WeatherDTO()
                 {
-                    EngroWeatherAPI_Response locationResp = await _accuWeatherService.getWeather(location.city);
-                    //getWeatherAPI_Req locationResp = await _accuWeatherService.getLocation(location);
-                    //_inResp.weather = await _accuWeatherService.getWeather(locationResp);
-
-                    string baseUrl = ConfigExntension.GetConfigurationValue("Locations:AdminBaseURL"); //setting up base url
-
-                    string weatherIconPath = baseUrl + ConfigExntension.GetConfigurationValue("AccuWeather:iconURL").Replace("[icon]", locationResp.weatherIconCode);
-
-                    _inResp.weather = new WeatherDTO()
-                    {
-                        weatherText = locationResp.description,
-                        weatherValue = Math.Round(locationResp.temp).ToString(),
-                        weatherArea = locationResp.name,
-                        weatherUnit = "C",
-                        weatherIconID = locationResp.weatherIconCode,
-                        weatherIconPath = weatherIconPath
-                    };
-                }
-                catch (Exception ex)
-                {
-                    _inResp.weather = new WeatherDTO()
-                    {
-                        weatherIconID = "01n",
-                        //weatherText = apiResp[0].WeatherText,
-                        weatherArea = "N/A",
-                        weatherUnit = "C",
-                        weatherValue = "N/A"
-                    };
-                }
+                    showWeatherWidget = locationResp.showWeatherWidget,
+                    weatherText = locationResp.description,
+                    weatherValue = Math.Round(locationResp.temp).ToString(),
+                    weatherArea = locationResp.name,
+                    weatherUnit = "C",
+                    weatherIconID = locationResp.weatherIconCode,
+                    weatherIconPath = weatherIconPath
+                };
                 //tblWeatherIcon tblWeather = await _repoWrapper.WeatherRepo.getWeatherByWeatherType(_inResp.weather.weatherIconID);
                 //var weatherTranslation = tblWeather == null ? null : tblWeather.WeatherIconTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault();
                 //_inResp.weather.weatherText = weatherTranslation == null ? "" : weatherTranslation.Text;
@@ -1361,6 +1394,8 @@ namespace AmazonFarmerAPI.Controllers
                     acreage = farm.Acreage,
                     address1 = farm.Address1,
                     address2 = farm.Address2,
+                    latitude = farm.latitude,
+                    longitude = farm.longitude,
                     city = farm.City.CityLanguages.First().Translation,
                     district = farm.District.DistrictLanguages.First().Translation,
                     tehsil = farm.Tehsil.TehsilLanguagess.First().Translation,
@@ -1405,7 +1440,8 @@ namespace AmazonFarmerAPI.Controllers
             APIResponse resp = new APIResponse();
             configurePassword_Resp inResp = new configurePassword_Resp() { username = string.Empty };
             var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Extracting user ID from claims
-            if (matchPasswordCriteria(req.password))
+            //if (matchPasswordCriteria(req.password))
+            if (true)
             {
                 TblUser user = await _repoWrapper.UserRepo.getUserByUserID(userID);
                 var signinResult = await _signInManager.PasswordSignInAsync(user, req.password, isPersistent: false, lockoutOnFailure: false);
@@ -1414,7 +1450,7 @@ namespace AmazonFarmerAPI.Controllers
                     inResp.username = user.UserName ?? string.Empty;
                 }
                 else
-                    throw new AmazonFarmerException(_exceptions.invalidPassword);
+                    throw new AmazonFarmerException(_exceptions.verifyPasswordInvalid);
 
                 resp.response = inResp;
             }
@@ -1431,7 +1467,7 @@ namespace AmazonFarmerAPI.Controllers
                 TblUser farmer = await _repoWrapper.UserRepo.getUserByUserID(userID);
                 if (farmer != null && farmer.FarmerProfile.Count() > 0)
                 {
-                    string Del = string.Concat("_Deleted_",DateTime.UtcNow.ToString("ddMMyyyyhhmmss"));
+                    string Del = string.Concat("_Deleted_", DateTime.UtcNow.ToString("ddMMyyyyhhmmss"));
                     farmer.UserName = string.Concat(farmer.UserName, Del);
                     farmer.NormalizedUserName = string.Concat(farmer.NormalizedUserName, Del);
                     farmer.CNICNumber = string.Concat(farmer.CNICNumber, Del);

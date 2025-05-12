@@ -33,12 +33,15 @@ namespace AmazonFarmerAPI.Controllers
         private IRepositoryWrapper _repoWrapper; // Repository wrapper to interact with data
         private readonly NotificationService _notificationService;
         private WsdlConfig _wsdlConfig;
+        private IConfiguration _configuration;
 
-        public OrderController(IRepositoryWrapper repoWrapper, NotificationService notificationService, IOptions<WsdlConfig> wsdlConfig) // Constructor for initializing repository wrapper
+        public OrderController(IRepositoryWrapper repoWrapper, NotificationService notificationService, IOptions<WsdlConfig> wsdlConfig,
+            IConfiguration configuration) // Constructor for initializing repository wrapper
         {
             _repoWrapper = repoWrapper; // Initializing the repository wrapper 
             _notificationService = notificationService;
             _wsdlConfig = wsdlConfig.Value;
+            _configuration = configuration;
         }
 
         [HttpPost("GetOrderPaymentInfo")]
@@ -55,12 +58,13 @@ namespace AmazonFarmerAPI.Controllers
             return aPIResponse;
         }
 
+        //NOT BEING USED
         [HttpPost("PostTransactionAcknowledgment")]
         [AllowAnonymous]
         [Obsolete]
         public async Task<APIResponse> PostTransactionAcknowledgmentUpdate(PaymentAcknowledgmentRequest req)
         {
-            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID);
+            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID,"NOTUSED");
 
             if (transaction != null
                 && transaction.Order != null
@@ -101,7 +105,7 @@ namespace AmazonFarmerAPI.Controllers
                 if (order.OrderType == EOrderType.Product)
                 {
                     PlanCropProductPrice planCropProductPrice = await GetOrderPriceWSDL(order, plan, profile.SAPFarmerCode, planCropProductPrices);
-                    orderPrice = planCropProductPrice.TotalAmount;
+
                 }
                 else
                 {
@@ -435,7 +439,7 @@ namespace AmazonFarmerAPI.Controllers
             bool isAnyPendingPayment = planOrders.Where(po => po.PaymentStatus == EOrderPaymentStatus.PaymentProcessing).Any();
 
             decimal alreadyPaidAdvancePayment = planOrders
-                    .Where(po => 
+                    .Where(po =>
                         po.PaymentStatus == EOrderPaymentStatus.Paid
                         && !po.IsConsumed
                         && (po.OrderType == EOrderType.Advance || po.OrderType == EOrderType.AdvancePaymentReconcile)
@@ -456,6 +460,8 @@ namespace AmazonFarmerAPI.Controllers
                     List<PlanCropProductPrice> planCropProductPrices = new List<PlanCropProductPrice>();
                     PlanCropProductPrice planCropProductPrice = await GetOrderPriceWSDL(planOrder, plan, SAPFarmerCode, planCropProductPrices);
                     orderPrice = planCropProductPrice.TotalAmount;
+
+
                     payableAmount = orderPrice;
                     if (isLastOrder)
                     {
@@ -477,16 +483,25 @@ namespace AmazonFarmerAPI.Controllers
             else if (planOrder.OrderType == EOrderType.Advance)
             {
                 List<PlanCropProductPrice> planCropProductPrices = new List<PlanCropProductPrice>();
+
                 foreach (TblOrders po in planOrders)
                 {
                     if (po.OrderType == EOrderType.Product)
                     {
                         PlanCropProductPrice planCropProductPrice = await GetOrderPriceWSDL(po, plan, SAPFarmerCode, planCropProductPrices);
+
                         orderPrice += planCropProductPrice.TotalAmount;
                     }
                 }
                 orderPrice = (orderPrice * advancePercentValue) / 100;
+                //For advance order do the calculation again for math.ceil.
+
+                //making amount decimal to ceiling 
+                orderPrice = Math.Ceiling(orderPrice);
+                orderPrice = orderPrice * 1.00m;
+
                 payableAmount = orderPrice;
+
             }
             else if (planOrder.OrderType == EOrderType.AdvancePaymentReconcile)
             {
@@ -503,6 +518,7 @@ namespace AmazonFarmerAPI.Controllers
                 orderPrice = (orderPrice * advancePercentValue) / 100;
 
                 payableAmount = orderPrice - alreadyPaidAdvancePayment;
+
             }
             else if (planOrder.OrderType == EOrderType.OrderReconcile)
             {
@@ -525,6 +541,8 @@ namespace AmazonFarmerAPI.Controllers
              )
             {
                 customerBalance = wsdlResponse.CustomerBalance;
+                customerBalance = Math.Floor(customerBalance);
+                customerBalance = customerBalance * 1.00m;
             }
 
             if (planOrder.OrderType == EOrderType.Advance
@@ -533,13 +551,14 @@ namespace AmazonFarmerAPI.Controllers
             {
                 customerBalance = 0;
             }
-
+            string PaymentGatewayPrefix = _configuration["PaymentGatewayPrefix"].ToString();
             OrderPaymentDetailResponse response = new OrderPaymentDetailResponse
             {
                 DoPlabceOrder = payableAmount - customerBalance <= 0 ? true : false,
                 PayableAmount = payableAmount - customerBalance > 0 ? payableAmount - customerBalance : 0.0m,
                 OrderAmount = orderPrice,
-                TransactionID = planOrder.OrderID.ToString() + "-" + planOrder.OrderRandomTransactionID.ToString(),
+                //TransactionID = planOrder.OrderID.ToString() + "-" + planOrder.OrderRandomTransactionID.ToString(),
+                TransactionID = PaymentGatewayPrefix + planOrder.OrderID.ToString() + planOrder.OrderRandomTransactionID.ToString(), //Removed hyphen fom order id
                 OrderID = planOrder.OrderID,
                 AvailableBalance = customerBalance == 0 ? 0.0m : customerBalance,
             };
@@ -593,6 +612,11 @@ namespace AmazonFarmerAPI.Controllers
                     int PlanCropID = await _repoWrapper.PlanRepo.getPlanCropIDByPlanProductID(orderProduct.PlanProductID);
 
                     oldProductPrice = (Convert.ToDecimal(wsdlResponse.netVal) + Convert.ToDecimal(wsdlResponse.taxVal)) * orderProduct.QTY;
+
+                    //making amount decimal to ceiling  
+                    oldProductPrice = Math.Ceiling(oldProductPrice);
+                    oldProductPrice = oldProductPrice * 1.00m;
+
                     planProductPrice = new()
                     {
                         Quantity = orderProduct.QTY,

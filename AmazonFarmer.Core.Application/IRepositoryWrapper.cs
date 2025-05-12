@@ -4,6 +4,7 @@ namespace AmazonFarmer.Core.Application
 {
     public interface IRepositoryWrapper // Defining the interface for Repository Wrapper
     {
+        public IComplaintRepo ComplaintRepo { get; } // Property for Complaint repository
         public IUserRepo UserRepo { get; } // Property for User repository
         public IRoleRepo RoleRepo { get; } // Property for Role repository
         public IAuthorityLetterRepo AuthorityLetterRepo { get; } // Property for Authority Letter repository
@@ -32,6 +33,7 @@ namespace AmazonFarmer.Core.Application
         public ICommonRepo CommonRepo { get; } // Property for Common repository
         IPaymentAcknowledgmentFileRepo PaymentAcknowledgmentFileRepo { get; }
         IPaymentAcknowledgmentRepo PaymentAcknowledgmentRepo { get; }
+        public IRegionRepo RegionRepo { get; } // Property for Region repository
         public void Save(); // Method signature for saving changes synchronously
         public Task SaveAsync(); // Method signature for saving changes asynchronously
         public Task SaveLogEntries();

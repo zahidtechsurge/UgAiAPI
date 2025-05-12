@@ -27,7 +27,7 @@ namespace AmazonFarmer.Core.Application.Interfaces
         // Method to get a Bill Payment request Data for duplication from the repository
         Task<bool> getDuplicateBillPaymentRequest(string ConsumerNo, string AuthID, string TranDate, string TranTime,int CurrentBillPaymentID);
 
-        Task<tblTransaction?> getTransactionByTranAuthID(string Tran_Auth_ID);
+        Task<tblTransaction?> getTransactionByTranAuthID(string Tran_Auth_ID, string consumerCode);
         tblTransaction UpdateTransaction(tblTransaction transaction);
         void AddTransactionLog(tblTransactionLog log);
         Task<decimal> getOrderPriceByComsumerNumber(string consumerNumber);

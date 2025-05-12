@@ -94,6 +94,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         public virtual List<TblEmployeeRegionAssignment> EmployeeRegions { get; set; } = null;
         public virtual List<TblEmployeeDistrictAssignment> EmployeeDistricts { get; set; } = null;
         public virtual List<tblNotification> Notifications { get; set; } = null!;
+        public virtual List<tblComplaint> Complaints { get; set; } = null!;
         public ActiveToken? Token { get; set; }
 
     }

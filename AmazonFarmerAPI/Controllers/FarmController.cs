@@ -63,8 +63,6 @@ namespace AmazonFarmerAPI.Controllers
         public async Task<APIResponse> setupFarm(FarmDTO req)
         {
             APIResponse resp = new APIResponse();
-            try
-            {
                 await validateSetupFarm(req);
                 // Initialize farm setup response object
                 farmSetup_Resp application = new farmSetup_Resp();
@@ -99,9 +97,12 @@ namespace AmazonFarmerAPI.Controllers
                 if (distictCityTehsilDTO == null)
                     throw new AmazonFarmerException("District City Tehsil not found");
                 string languageCode = User.FindFirst("languageCode")?.Value; // Retrieving language code from user claims
-
+                
                 #region get Farm Location by Google geocode
-                if (!req.latitude.HasValue && !req.longitude.HasValue)
+                if (
+                    (req.latitude == null && req.longitude == null) || 
+                    (req.latitude == 0 && req.longitude == 0)
+                )
                 {
                     FarmAddressDTO dto = MapFarmToFarmAddress(req, distictCityTehsilDTO);
                     getFarmLocation farmLocation = await _googleLocationExtension.GetlatLngForAddress(dto);
@@ -142,11 +143,6 @@ namespace AmazonFarmerAPI.Controllers
                 // Set response
                 resp.response = application;
 
-            }
-            catch (Exception ex)
-            {
-                throw new AmazonFarmerException(ex.Message);
-            }
             return resp;
         }
         private async Task validateSetupFarm(FarmDTO req)
@@ -243,8 +239,6 @@ namespace AmazonFarmerAPI.Controllers
         public async Task<APIResponse> getFarmRequests()
         {
             APIResponse resp = new APIResponse();
-            try
-            {
                 // Get the user ID from the token
                 var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 // Retrieve farm requests by user ID
@@ -266,13 +260,6 @@ namespace AmazonFarmerAPI.Controllers
                     farmsResponse.Add(farmResponse);
                 }
                 resp.response = farmsResponse;
-            }
-            catch (Exception ex)
-            {
-                // Handle exceptions
-                resp.isError = true;
-                resp.message = ex.Message;
-            }
             return resp;
         }
 
@@ -443,8 +430,6 @@ namespace AmazonFarmerAPI.Controllers
         public async Task<APIResponse> getFarms()
         {
             APIResponse resp = new APIResponse();
-            try
-            {
                 var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 List<tblfarm> Farms = await _repoWrapper.FarmRepo.getFarmsByUserID(userID);
 
@@ -463,12 +448,6 @@ namespace AmazonFarmerAPI.Controllers
                     farmsResponse.Add(farmResponse);
                 }
                 resp.response = farmsResponse;
-            }
-            catch (Exception ex)
-            {
-                resp.isError = true;
-                resp.message = ex.Message;
-            }
             return resp;
         }
 
@@ -571,6 +550,8 @@ namespace AmazonFarmerAPI.Controllers
                             acreage = farm.Acreage,
                             address1 = farm.Address1,
                             address2 = farm.Address2,
+                            latitude = farm.latitude,
+                            longitude = farm.longitude,
                             city = farm.City.CityLanguages.First().Translation,
                             district = farm.District.DistrictLanguages.First().Translation,
                             tehsil = farm.Tehsil.TehsilLanguagess.First().Translation,

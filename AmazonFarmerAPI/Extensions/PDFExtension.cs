@@ -15,6 +15,7 @@ namespace AmazonFarmerAPI.Extensions
         {
             _converter = converter;
         }
+
         public async Task<string> generatePlanSummary(planSummary summary, EPlanSummaryType summaryType)
         {
             string resp = string.Empty;
@@ -118,7 +119,7 @@ namespace AmazonFarmerAPI.Extensions
             else if (summaryType == EPlanSummaryType.product)
             {
 
-                foreach (var item in summary.products)
+                foreach (var item in summary.products) 
                 {
                     body += @"<tr>
                                 <td>" + item.product + @"</td>

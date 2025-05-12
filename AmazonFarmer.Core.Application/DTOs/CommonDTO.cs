@@ -24,9 +24,22 @@ namespace AmazonFarmer.Core.Application.DTOs
 
     public class pagination_Resp
     {
-        public int totalRecord { get; set; }
-        public int filteredRecord { get; set; }
-        public dynamic list { get; set; }
+        public int totalRecord { get; set; } = 0;
+        public int filteredRecord { get; set; } = 0;
+        public dynamic? list { get; set; }
+    }
+
+    public class ReportPagination_Req : pagination_AdditionalFilters_Req
+    {
+        public string sortColumn { get; set; } = string.Empty;
+        public string sortOrder { get; set; } = "DESC";
+    }
+    public class DownloadableReport_Req : ReportPagination_Req
+    {
+        /// <summary>
+        /// Property to indicate if the request is for download
+        /// </summary>
+        public bool? isDownload { get; set; } = false;
     }
 
     /// <summary>
@@ -35,7 +48,7 @@ namespace AmazonFarmer.Core.Application.DTOs
     public class DropDownValues
     {
         //public string languageCode { get; set; } = string.Empty; // Property for language code, default is an empty string
-        public dynamic labelFor { get; set; } // Property for dropdown label
+        public dynamic? labelFor { get; set; } // Property for dropdown label
         public int value { get; set; } // Property for dropdown value
         public string label { get; set; } = string.Empty;// Property for dropdown key
     }
@@ -43,8 +56,13 @@ namespace AmazonFarmer.Core.Application.DTOs
 
     public class pagination_Req
     {
+        public int? rootID { get; set; } = 0;
         public string? search { get; set; } = string.Empty;
         public int pageNumber { get; set; }
         public int pageSize { get; set; }
+    }
+    public class pagination_AdditionalFilters_Req : pagination_Req
+    {
+        public string? search1 { get; set; } = string.Empty;
     }
 }

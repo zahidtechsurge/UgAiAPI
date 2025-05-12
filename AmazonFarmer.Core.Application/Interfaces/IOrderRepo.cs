@@ -26,6 +26,7 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         Task<TblOrders> getOrderByID(Int64 orderID, string userID, string languageCode); // Method signature for getting the orders by order ID and language code
         Task<TblOrders> getOrderByID(Int64 orderID); // Method signature for getting the orders by order ID
         Task<IQueryable<TblOrders>> getOrders(); // Method signature for getting orders
+        Task<List<SP_OrderDetailsResult>> Get_OrderDetailsResults(int pageNumber, int pageSize, string sortColumn, string sortOrder, string? searchTerm, int isDownload);
 
 
 

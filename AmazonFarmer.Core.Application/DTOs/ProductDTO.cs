@@ -104,6 +104,7 @@
     /// </summary>
     public class ProductPrices_Resp
     {
+        //public int productQTY { get; set; }
         // The ID of the product
         public int productID { get; set; }
 
@@ -246,5 +247,51 @@
         public required string languageCode { get; set; }
         public required string text { get; set; }
     }
+    public class ProductCategoryTranslationResponse
+    {
+        public int translationID { get; set; }
+        public int categoryID { get; set; }
+        public string languageCode { get; set; } = string.Empty;
+        public string language { get; set; } = string.Empty;
+        public string text { get; set; } = string.Empty;
+    }
+    public class AddProductTranslationRequest
+    {
+        public int productID { get; set; }
+        public string languageCode { get; set; } = string.Empty;
+        public string text { get; set; } = string.Empty;
+        public string? filePath { get; set; } = string.Empty;
+        public string? fileName { get; set; } = string.Empty;
+        public string? content { get; set; } = string.Empty;
+    }
+    public class UpdateProductTranslationRequest : AddProductTranslationRequest
+    {
+        public int translationID { get; set; }
+    }
+    public class GetProductTranslationResponse : UpdateProductTranslationRequest
+    {
+        public string language { get; set; } = string.Empty;
+    }
+    public class AddProductRequest
+    {
+        public int categoryID { get; set; }
+        public string productName { get; set; } = string.Empty;
+        public string productCode { get; set; } = string.Empty;
+        public int uomID { get; set; }
+        public string saleOrg { get; set; } = string.Empty;
+        public string division { get; set; } = string.Empty;
+    }
+    public class UpdateProductRequest : AddProductRequest
+    {
+        public int productID { get; set; }
+        public int status { get; set; }
+    }
+    public class GetProductRequest : UpdateProductRequest
+    {
+        public string uom { get; set; } = string.Empty;
+        public string category { get; set; } = string.Empty;
+        public List<ProductTranslationDTO> translations = new List<ProductTranslationDTO>();
+    }
+
 
 }

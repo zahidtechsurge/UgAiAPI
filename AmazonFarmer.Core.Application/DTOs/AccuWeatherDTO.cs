@@ -14,6 +14,7 @@ namespace AmazonFarmer.Core.Application.DTOs
     }
     public class WeatherDTO
     {
+        public bool showWeatherWidget { get; set; } = true;
         public string weatherIconID { get; set; }
         public string weatherIconPath { get; set; }
         public string weatherText { get; set; }

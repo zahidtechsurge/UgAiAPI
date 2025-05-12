@@ -46,6 +46,7 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         Task<getFarmerInfoResp> getFarmerInfoByFarmerIDAndLanguageCode(string userID, string languageCode);
         Task updateUser(TblUser user); // Method signature for updating by user Entity
         Task updateFarmerProfile(tblFarmerProfile userProfile);
+        Task updateSelectedLanguage(tblFarmerProfile profile, string languageCode);
         Task<TblUser> getFarmerByFarmApplicationID(int applicationID);
 
         /// <summary>
@@ -72,6 +73,7 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         /// <param name="districtIds"></param>
         /// <returns></returns>
         Task<List<TblUser>> getTSOsByDistrictIDs(List<int> districtIds);
+        Task<List<TblUser>> getTSOsByDistrictIDsForHelp(List<int> districtIds);
         /// <summary>
         /// get farmer by planID
         /// <param name="planID"></param>
@@ -103,5 +105,6 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         Task<TblUser> getUserByUsername(string username, string phoneNumber);
         Task<TblUser> getUserByUsername(string username, string phoneNumber, string emailAddress);
         IQueryable<TblUser> getUsers();
+        Task<TblUser> getUserDetailByUserID(string userID);
     }
 }

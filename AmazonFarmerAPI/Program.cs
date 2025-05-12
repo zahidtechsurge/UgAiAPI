@@ -183,9 +183,11 @@ using (var scope = app.Services.CreateScope())
         var dbContext = scope.ServiceProvider
             .GetRequiredService<AmazonFarmerContext>();
 
-
-        // Here is the migration executed
-        dbContext.Database.Migrate();
+        if (Convert.ToBoolean(builder.Configuration["ProgramConfig:MigrationEnabled"]))
+        {
+            // Here is the migration executed
+            dbContext.Database.Migrate();
+        }
 
         var userManager = services.GetRequiredService<UserManager<TblUser>>();
         var roleManager = services.GetRequiredService<RoleManager<TblRole>>();
@@ -208,8 +210,11 @@ using (var scope = app.Services.CreateScope())
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
 //{
-app.UseSwagger();
-app.UseSwaggerUI();
+if (Convert.ToBoolean(builder.Configuration["ProgramConfig:SwaggerEnabled"]))
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 //} 
 //{
 //Commenting as this is not working

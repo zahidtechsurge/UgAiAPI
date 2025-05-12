@@ -67,7 +67,7 @@ namespace AmazonFarmerAPI.Controllers
 
 
             if (!string.IsNullOrEmpty(req.search))
-                letters = letters.Where(x => x.AuthorityLetterNo.Contains(req.search));
+                letters = letters.Where(x => x.AuthorityLetterNo.Contains(req.search) || x.BearerNIC.Contains(req.search));
             letters = letters.OrderByDescending(x => x.AuthorityLetterID).Skip(req.skip).Take(req.take);
 
             var letterList = letters.ToList();
@@ -135,7 +135,7 @@ namespace AmazonFarmerAPI.Controllers
                     letterID = authLetter.AuthorityLetterID,
                     letterNo = authLetter.AuthorityLetterNo,
                     letterCreationDate = authLetter.CreatedOn,
-                    orderDate = authLetter.Dated,
+                    orderDate = authLetter.Order.ExpectedDeliveryDate,
                     bearerName = authLetter.BearerName,
                     bearerNIC = authLetter.BearerNIC,
                     orderNo = authLetter.Order.OrderID.ToString().PadLeft(10, '0'),
@@ -232,9 +232,16 @@ namespace AmazonFarmerAPI.Controllers
                     if (authLetter.Status)
                         throw new AmazonFarmerException(_exceptions.authorityLetterUpdatedAlready);
 
-                    string scannedCNIC = await performOCR(Convert.FromBase64String(req.content));
+                    APIResponse scannedCNIC = await performOCR(Convert.FromBase64String(req.content));
+                    //string scannedCNIC = await performOCR(Convert.FromBase64String(req.content));
 
-                    if (authLetter.BearerNIC != scannedCNIC)
+                    if (scannedCNIC.isError)
+                    {
+                        resp.isError = true;
+                        resp.message = scannedCNIC.message;
+                    }
+
+                    if (authLetter.BearerNIC != scannedCNIC.response)
                     {
                         resp.isError = true;
                         resp.message = (_exceptions.cnicNumberDoesNotMatach);
@@ -250,7 +257,7 @@ namespace AmazonFarmerAPI.Controllers
                     uploadAttachmentResp attachment = await attachmentExt.uploadAttachment(attReq);
                     validateCNIC_Resp inResp = new validateCNIC_Resp()
                     {
-                        cnicNumber = scannedCNIC,
+                        cnicNumber = scannedCNIC.response,
                         attachmentID = attachment.id
                     };
                     resp.response = inResp;
@@ -423,7 +430,7 @@ namespace AmazonFarmerAPI.Controllers
                                             Type = ENotificationType.Email,
                                             Recipients = new List<NotificationRequestRecipient> { new NotificationRequestRecipient() { Email = farmer.Email, Name = farmer.FirstName } },
                                             Subject = notificationDTO.title,
-                                            Message = notificationDTO.body 
+                                            Message = notificationDTO.body
                                         });
                         if (!string.IsNullOrEmpty(farmer.PhoneNumber))
                             notifications.Add(
@@ -450,7 +457,7 @@ namespace AmazonFarmerAPI.Controllers
                                         Type = ENotificationType.Device,
                                         Recipients = new List<NotificationRequestRecipient> { new NotificationRequestRecipient() { Email = farmer.Id, Name = farmer.FirstName } },
                                         Subject = notificationDTO.title,
-                                        Message = notificationDTO.deviceBody 
+                                        Message = notificationDTO.deviceBody
                                     });
 
                         NotificationReplacementDTO replacementDTO = new NotificationReplacementDTO();
@@ -468,39 +475,40 @@ namespace AmazonFarmerAPI.Controllers
             return resp;
         }
 
-        private async Task<string> performOCR(byte[] imageBytes)
+
+
+        private async Task<APIResponse> performOCR(byte[] imageBytes)
         {
+            APIResponse resp = new APIResponse();
             string credentialsFilePath = Path.Combine(_hostEnvironment.ContentRootPath, "visioncredentials.json");
             string VideorespText = "";
-            try
+            // Authenticate with Google Cloud using service account credentials
+            var builder = new ImageAnnotatorClientBuilder
             {
-                // Authenticate with Google Cloud using service account credentials
-                var builder = new ImageAnnotatorClientBuilder
-                {
-                    CredentialsPath = credentialsFilePath
-                };
-                var visionClient = builder.Build();
-                // Create the image
-                Google.Cloud.Vision.V1.Image image = Google.Cloud.Vision.V1.Image.FromBytes(imageBytes);
-                // Create the OCR request
-                var response = await visionClient.DetectDocumentTextAsync(image);
-                // Extract and return the text detected by OCR
-                if (response != null && response.Text != null)
-                {
-                    return await GetMaskedPatternMatch(response.Text, @"\s+(\d{5}-\d{7}-\d)");
-                }
-                else
-                {
-                    throw new AmazonFarmerException(_exceptions.textNotFoundInImage);
-                }
-            }
-            catch (Exception ex)
+                CredentialsPath = credentialsFilePath
+            };
+            var visionClient = builder.Build();
+            // Create the image
+            Google.Cloud.Vision.V1.Image image = Google.Cloud.Vision.V1.Image.FromBytes(imageBytes);
+            // Create the OCR request
+            var response = await visionClient.DetectDocumentTextAsync(image);
+            // Extract and return the text detected by OCR
+            if (response != null && response.Text != null)
             {
-                return ex.Message;
+                return GetMaskedPatternMatch(response.Text, @"\s+(\d{5}-\d{7}-\d)");
+                //return GetMaskedPatternMatch(response.Text, @"\s+(\d{5}-\d{7}-\d)");
             }
+            else
+            {
+                resp.isError = true;
+                resp.message = (_exceptions.textNotFoundInImage);
+                //throw new AmazonFarmerException(_exceptions.textNotFoundInImage);
+            }
+            return resp;
         }
-        private async Task<string> GetMaskedPatternMatch(string inputString, string maskedPattern)
+        private APIResponse GetMaskedPatternMatch(string inputString, string maskedPattern)
         {
+            APIResponse resp = new APIResponse();
             // Create a regex object
             Regex regex = new Regex(maskedPattern);
             if (inputString.Contains("Identity Number"))
@@ -508,17 +516,23 @@ namespace AmazonFarmerAPI.Controllers
                 Match match = regex.Match(inputString);
                 if (match.Success)
                 {
-                    return match.Groups[1].Value;
+                    resp.response = match.Groups[1].Value;
+                    //return match.Groups[1].Value;
                 }
                 else
                 {
-                    throw new AmazonFarmerException(_exceptions.imageDoesNotSeemsLikeCNIC);
+                    resp.isError = true;
+                    resp.message = (_exceptions.imageDoesNotSeemsLikeCNIC);
+                    //throw new AmazonFarmerException(_exceptions.imageDoesNotSeemsLikeCNIC);
                 }
             }
             else
             {
-                throw new AmazonFarmerException(_exceptions.imageDoesNotSeemsLikeCNIC);
+                resp.isError = true;
+                resp.message = (_exceptions.imageDoesNotSeemsLikeCNIC);
+                //throw new AmazonFarmerException(_exceptions.imageDoesNotSeemsLikeCNIC);
             }
+            return resp;
         }
         private async Task<List<authorityLetter_Invoice>> getInvoicesBySAPOrderID(string sapOrderID)
         {
@@ -536,7 +550,7 @@ namespace AmazonFarmerAPI.Controllers
                 {
                     sapOrderID = sapOrderID,
                     sapFarmerCode = inv.KUNAG,
-                    qty = Convert.ToInt32(inv.FKIMG.ToString()).ToString(),
+                    qty = Convert.ToInt32(inv.FKIMG).ToString(),
                     invoiceNumber = inv.VBELN,
                     invoiceDate = inv.FKDAT,
                     invoiceAmount = "3000"
@@ -546,8 +560,6 @@ namespace AmazonFarmerAPI.Controllers
 
             return invoices;
         }
-
-
         private async Task<bool> ChangeCustomerPaymentWSDL(TblOrders order)
         {
             ZSD_AMAZON_CUSTOMER_PAY_CHG request = new()

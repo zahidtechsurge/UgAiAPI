@@ -24,15 +24,178 @@ namespace AmazonFarmer.Administrator.API.Controllers
             _repoWrapper = repositoryWrapper;
         }
 
+        [AllowAnonymous]
         [HttpPost("getWarehouses")]
-        public async Task<APIResponse> GetWarehouses(pagination_Req req)
+        public async Task<APIResponse> GetWarehouses(ReportPagination_Req req)
         {
             APIResponse resp = new APIResponse();
 
             pagination_Resp InResp = new pagination_Resp();
             IQueryable<tblwarehouse> warehouses = _repoWrapper.WarehouseRepo.getWarehouses();
+
+            if (!string.IsNullOrEmpty(req.sortColumn))
+            {
+                if (req.sortColumn.Contains("warehouseID"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        warehouses = warehouses.OrderBy(x => x.ID);
+                    }
+                    else
+                    {
+                        warehouses = warehouses.OrderByDescending(x => x.ID);
+                    }
+                }
+                else if (req.sortColumn.Contains("warehouse"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        warehouses = warehouses.OrderBy(x => x.Name);
+                    }
+                    else
+                    {
+                        warehouses = warehouses.OrderByDescending(x => x.Name);
+                    }
+                }
+                else if (req.sortColumn.Contains("warehouseCode"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        warehouses = warehouses.OrderBy(x => x.WHCode);
+                    }
+                    else
+                    {
+                        warehouses = warehouses.OrderByDescending(x => x.WHCode);
+                    }
+                }
+                else if (req.sortColumn.Contains("warehouseAddress"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        warehouses = warehouses.OrderBy(x => x.Address);
+                    }
+                    else
+                    {
+                        warehouses = warehouses.OrderByDescending(x => x.Address);
+                    }
+                }
+                else if (req.sortColumn.Contains("warehouseInchargeID"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        warehouses = warehouses.OrderBy(x => x.WarehouseIncharge.Id);
+                    }
+                    else
+                    {
+                        warehouses = warehouses.OrderByDescending(x => x.WarehouseIncharge.Id);
+                    }
+                }
+                else if (req.sortColumn.Contains("warehouseIncharge"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        warehouses = warehouses.OrderBy(x => x.WarehouseIncharge.FirstName);
+                    }
+                    else
+                    {
+                        warehouses = warehouses.OrderByDescending(x => x.WarehouseIncharge.FirstName);
+                    }
+                }
+                else if (req.sortColumn.Contains("warehouseInchargeEmail"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        warehouses = warehouses.OrderBy(x => x.WarehouseIncharge.Email);
+                    }
+                    else
+                    {
+                        warehouses = warehouses.OrderByDescending(x => x.WarehouseIncharge.Email);
+                    }
+                }
+                else if (req.sortColumn.Contains("warehouseInchargePhone"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        warehouses = warehouses.OrderBy(x => x.WarehouseIncharge.PhoneNumber);
+                    }
+                    else
+                    {
+                        warehouses = warehouses.OrderByDescending(x => x.WarehouseIncharge.PhoneNumber);
+                    }
+                }
+                else if (req.sortColumn.Contains("district"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        warehouses = warehouses.OrderBy(x => x.District.Name);
+                    }
+                    else
+                    {
+                        warehouses = warehouses.OrderByDescending(x => x.District.Name);
+                    }
+                }
+                else if (req.sortColumn.Contains("salePoint"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        warehouses = warehouses.OrderBy(x => x.SalePoint);
+                    }
+                    else
+                    {
+                        warehouses = warehouses.OrderByDescending(x => x.SalePoint);
+                    }
+                }
+                else if (req.sortColumn.Contains("warehouseLat"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        warehouses = warehouses.OrderBy(x => x.latitude);
+                    }
+                    else
+                    {
+                        warehouses = warehouses.OrderByDescending(x => x.latitude);
+                    }
+                }
+                else if (req.sortColumn.Contains("warehouseLong"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        warehouses = warehouses.OrderBy(x => x.longitude);
+                    }
+                    else
+                    {
+                        warehouses = warehouses.OrderByDescending(x => x.longitude);
+                    }
+                }
+                else if (req.sortColumn.Contains("status"))
+                {
+                    if (req.sortOrder.Contains("ASC"))
+                    {
+                        warehouses = warehouses.OrderBy(x => x.Status);
+                    }
+                    else
+                    {
+                        warehouses = warehouses.OrderByDescending(x => x.Status);
+                    }
+                }
+            }
+            else
+            {
+                warehouses = warehouses.OrderByDescending(x => x.ID);
+            }
             if (!string.IsNullOrEmpty(req.search))
-                warehouses = warehouses.Where(x => x.Name.ToLower().Contains(req.search.ToLower()));
+            {
+                warehouses = warehouses.Where(x =>
+                    x.Name.ToLower().Contains(req.search.ToLower()) ||
+                    x.WHCode.ToLower().Contains(req.search.ToLower()) ||
+                    (
+                        x.WarehouseIncharge != null && (x.WarehouseIncharge.FirstName+ " "+ x.WarehouseIncharge.LastName).ToString().ToLower().Contains(req.search.ToLower())
+                    ) ||
+                    (
+                        x.WarehouseIncharge != null && (x.WarehouseIncharge.Email).ToLower().Contains(req.search.ToLower())
+                    )
+                );
+            }
             InResp.totalRecord = warehouses.Count();
             warehouses = warehouses.Skip(req.pageNumber * req.pageSize)
                          .Take(req.pageSize);
@@ -44,7 +207,9 @@ namespace AmazonFarmer.Administrator.API.Controllers
                 warehouseCode = x.WHCode,
                 warehouseAddress = x.Address,
                 warehouseInchargeID = x.WarehouseIncharge.Id,
-                warehouseIncharge = x.WarehouseIncharge.FirstName,
+                warehouseIncharge = string.Concat(x.WarehouseIncharge.FirstName," ", x.WarehouseIncharge.LastName),
+                warehouseInchargeEmail = x.WarehouseIncharge.Email ?? string.Empty,
+                warehouseInchargePhone = x.WarehouseIncharge.PhoneNumber ?? string.Empty,
                 districtID = x.District == null ? 0 : x.District.ID,
                 district = x.District == null ? string.Empty : x.District.Name,
                 salePoint = x.SalePoint ?? string.Empty,
@@ -97,14 +262,16 @@ namespace AmazonFarmer.Administrator.API.Controllers
             tblwarehouse x = await _repoWrapper.WarehouseRepo.getWarehouseByID(warehouseID);
             if (x == null)
                 throw new AmazonFarmerException(_exceptions.warehouseNotFound);
-            WarehouseDTO  inResp = new WarehouseDTO()
+            WarehouseDTO inResp = new WarehouseDTO()
             {
                 warehouseID = x.ID,
                 warehouse = x.Name,
                 warehouseCode = x.WHCode,
                 warehouseAddress = x.Address,
                 warehouseInchargeID = x.WarehouseIncharge.Id,
-                warehouseIncharge = x.WarehouseIncharge.FirstName,
+                warehouseIncharge = string.Concat(x.WarehouseIncharge.FirstName, " ", x.WarehouseIncharge.LastName),
+                warehouseInchargeEmail = x.WarehouseIncharge.Email ?? string.Empty,
+                warehouseInchargePhone = x.WarehouseIncharge.PhoneNumber ?? string.Empty,
                 districtID = x.District == null ? 0 : x.District.ID,
                 district = x.District == null ? string.Empty : x.District.Name,
                 salePoint = x.SalePoint ?? string.Empty,
@@ -162,18 +329,15 @@ namespace AmazonFarmer.Administrator.API.Controllers
             if (warehouse == null)
                 throw new AmazonFarmerException(_exceptions.warehouseNotFound);
 
-            warehouse = new tblwarehouse()
-            {
-                Name = req.warehouseName,
-                WHCode = req.warehouseCode,
-                Address = req.warehouseAddress,
-                latitude = req.warehouseLat,
-                longitude = req.warehouseLong,
-                InchargeID = req.warehouseIncharge,
-                DistrictID = req.warehousedistrictID,
-                SalePoint = req.warehouseSalePoint,
-                Status = req.status ? EActivityStatus.Active : EActivityStatus.DeActive
-            };
+            warehouse.Name = req.warehouseName;
+            warehouse.WHCode = req.warehouseCode;
+            warehouse.Address = req.warehouseAddress;
+            warehouse.latitude = req.warehouseLat;
+            warehouse.longitude = req.warehouseLong;
+            warehouse.InchargeID = req.warehouseIncharge;
+            warehouse.DistrictID = req.warehousedistrictID;
+            warehouse.SalePoint = req.warehouseSalePoint;
+            warehouse.Status = req.status ? EActivityStatus.Active : EActivityStatus.DeActive;
 
             _repoWrapper.WarehouseRepo.updateWarehouse(warehouse);
             await _repoWrapper.SaveAsync();

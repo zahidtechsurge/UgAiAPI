@@ -333,6 +333,8 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string farmName { get; set; }
         public string address1 { get; set; }
         public string address2 { get; set; }
+        public double? latitude { get; set; }
+        public double? longitude { get; set; }
         public string city { get; set; }
         public string tehsil { get; set; }
         public string district { get; set; }
@@ -357,6 +359,8 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string farmName { get; set; }
         public string address1 { get; set; }
         public string address2 { get; set; }
+        public double? latitude { get; set; } = null;
+        public double? longitude { get; set; } = null;
         public string city { get; set; }
         public string tehsil { get; set; }
         public string district { get; set; }

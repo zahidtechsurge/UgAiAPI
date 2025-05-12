@@ -35,14 +35,16 @@ namespace AmazonFarmerAPI.Controllers
         private IRepositoryWrapper _repoWrapper; // Repository wrapper to interact with data
         private readonly GoogleLocationExtension _googleLocationExtension; // Google location extension for distance calculations
         private readonly NotificationService _notificationService;
-
+        private readonly IConfiguration _configruation;
         private WsdlConfig _wsdlConfig;
-        public EmployeePlanController(IRepositoryWrapper repoWrapper, NotificationService notificationService, GoogleLocationExtension googleLocationExtension, IOptions<WsdlConfig> wsdlConfig)
+        public EmployeePlanController(IRepositoryWrapper repoWrapper, NotificationService notificationService,
+            GoogleLocationExtension googleLocationExtension, IOptions<WsdlConfig> wsdlConfig, IConfiguration configuration)
         {
             _repoWrapper = repoWrapper;
             _notificationService = notificationService;
             _googleLocationExtension = googleLocationExtension;
             _wsdlConfig = wsdlConfig.Value;
+            _configruation = configuration;
         }
 
         [HttpPost("getPlanRequests")]
@@ -270,6 +272,7 @@ namespace AmazonFarmerAPI.Controllers
                         productID = p.ProductID,
                         product = p.Product.Name,
                         qty = p.Qty,
+                        uom = p.Product.UOM.UOM,
                         date = p.Date//.ToString("yyyy-MM-dd")
                     }).ToList(),
                     services = x.PlanServices.Select(s => new cropService_planCrops_getPlanDetail
@@ -393,6 +396,8 @@ namespace AmazonFarmerAPI.Controllers
             #region Approving work when approved option is selected
             if (req.statusID == (int)EPlanStatus.Approved)
             {
+                List<tblCrop> cropsConsumption = await _repoWrapper.CropRepo.getCropsProductConsumptionMetrics();
+
                 tblPlan wholePlan = await _repoWrapper.PlanRepo.getPlanByPlanIDForApproval(req.planID, territoryIds);
 
                 tblPlan plan = wholePlan;
@@ -403,126 +408,217 @@ namespace AmazonFarmerAPI.Controllers
                 }
 
                 List<TblOrders> planOrders = await _repoWrapper.PlanRepo.getOrdersForPlanForApproval(req.planID);
-                //foreach (tblPlanCrops planCrop in plan.PlanCrops)
-                //{
-                //    planCrop.PlanProducts = planCrop.PlanProducts.Where(pp => pp.Status == EActivityStatus.Active).ToList();
-                //}
-                if (plan == null)
-                    throw new AmazonFarmerException(_exceptions.planNotFound);
-
-                bool isRejectionNotAllowed = planOrders.Where(ao => ao.PaymentStatus == EOrderPaymentStatus.PaymentProcessing
-                     || ao.PaymentStatus == EOrderPaymentStatus.LedgerUpdate
-                     || ao.PaymentStatus == EOrderPaymentStatus.Acknowledged
-                     ).Any();
-
-
-                if (isRejectionNotAllowed)
+                bool endorseDueToConsumptionMetrics = false;
+                decimal tsoMargin = Convert.ToDecimal(_configruation["loamSettings:TSOMargin"]);
+                decimal rsmMargin = Convert.ToDecimal(_configruation["loamSettings:RSMMargin"]);
+                //Checking for consumption metrics checks
+                foreach (tblPlanCrops planCrop in plan.PlanCrops)
                 {
-                    throw new AmazonFarmerException(_exceptions.rejectionNotAllowed);
-                }
-
-                if (plan.PlanChangeStatus == EPlanChangeRequest.Pending || plan.PlanChangeStatus == EPlanChangeRequest.Accept)
-                    throw new AmazonFarmerException(_exceptions.isPlanEditable);
-
-                if (plan.Status == EPlanStatus.TSOProcessing || plan.Status == EPlanStatus.RSMProcessing || plan.Status == EPlanStatus.NSMProcessing)
-                {
-
-                    if (req.planCrops.Where(pc => pc.hasException).Any())
+                    //TblOrderProducts planOrderProduct = planOrder.Products.FirstOrDefault();
+                    foreach (var planProduct in planCrop.PlanProducts)
                     {
-                        throw new AmazonFarmerException(_exceptions.invalidMethod);
-                    }
-
-                    string advancePercentValue = await _repoWrapper.CommonRepo.GetConfigurationValueByConfigType(EConfigType.AdvancePaymentPercent);
-                    int percentageValue = Convert.ToInt32(advancePercentValue);
-
-                    //Getting Total Price List for Plan
-                    List<PlanCropProductPrice> planCropProductPrices = await GetPlanPrice(plan, percentageValue);
-
-                    //Sum of all plan Prices
-                    decimal newPlanTotalPrice = planCropProductPrices.Sum(pp => pp.TotalAmount);
-                    decimal AdvancePaymentAmount = (newPlanTotalPrice * percentageValue) / 100;
-
-
-                    if (planOrders == null || planOrders.Count() == 0)
-                    {
-                        await ApproveNewPlan(plan, planCropProductPrices, AdvancePaymentAmount, EOrderType.Advance);
-                    }
-                    else
-                    {
-                        await ApprovePlan(plan, planCropProductPrices, planOrders);
-
-
-                        bool alreadyPaidPlan = planOrders.Where(po =>
-                              po.PaymentStatus != EOrderPaymentStatus.Paid
-                              || po.PaymentStatus != EOrderPaymentStatus.Acknowledged
-                              || po.PaymentStatus != EOrderPaymentStatus.LedgerUpdate
-                              || po.PaymentStatus != EOrderPaymentStatus.PaymentProcessing
-                              ).Any();
-
-
-                        if (alreadyPaidPlan)
+                        foreach (var item in planCrop.CropGroup.CropGroupCrops)
                         {
-                            List<TblOrders> allAdvancePaymentOrders = planOrders
-                                .Where(o => o.OrderType == EOrderType.Advance || o.OrderType == EOrderType.AdvancePaymentReconcile)
-                                .ToList();
-
-                            List<TblOrders> allOrderReconcileOrders = planOrders.Where(o => o.OrderType == EOrderType.OrderReconcile)
-                                .ToList();
-
-                            bool anyUnPaidPaymentRemaining = planOrders.Where(o => o.PaymentStatus == EOrderPaymentStatus.NonPaid)
-                                .Any();
-
-                            if (anyUnPaidPaymentRemaining && req.planApprovalRejectionType == EPlanApprovalRejectionType.RefundAdvance)
+                            var cropConsumption = cropsConsumption.Where(cc => cc.ID == item.CropID).FirstOrDefault();
+                            if (cropConsumption != null)
                             {
-                                throw new AmazonFarmerException(_exceptions.orderApprovalFailure);
-                            }
+                                tblProductConsumptionMetrics metrics = cropConsumption.ProductConsumptionMetrics
+                                      .Where(pcm => pcm.ProductID == planProduct.ProductID).FirstOrDefault();
 
-                            if (req.planApprovalRejectionType == EPlanApprovalRejectionType.ForfeitAdvance)
-                            {
-                                foreach (TblOrders advanceOrder in allAdvancePaymentOrders)
+                                if (metrics != null)
                                 {
-                                    if (advanceOrder.PaymentStatus == EOrderPaymentStatus.Paid)
+                                    var calculatedValue = Convert.ToDecimal(planCrop.Acre) * metrics.Usage;
+                                    if (designationID == (int)EDesignation.Territory_Sales_Officer)
                                     {
-                                        await ChangeCustomerPaymentWSDL(advanceOrder, refundText: "Z042", reasonCode: "FA");
-                                        advanceOrder.PaymentStatus = EOrderPaymentStatus.Forfeit;
-                                        advanceOrder.IsConsumed = true;
-                                        await _repoWrapper.OrderRepo.UpdateOrder(advanceOrder);
-                                        _repoWrapper.OrderRepo.AddOrderLog(advanceOrder, User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                                        // Calculate TSO Margin of the reference value
+                                        decimal tenPercent = calculatedValue * tsoMargin;
+                                        if ((planProduct.Qty > calculatedValue + tenPercent) || (planProduct.Qty < calculatedValue - tenPercent))
+                                        {
+                                            req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
+                                            req.statusID = (int)EPlanStatus.RSMProcessing;
+                                            req.reason = "Consumption metric issue";
+                                            await EndorseWork(req, territoryIds);
+                                            endorseDueToConsumptionMetrics = true;
+                                        }
+                                    }
+                                    else if (designationID == (int)EDesignation.Regional_Sales_Manager)
+                                    {
+
+                                        // Calculate RSM Margin of the reference value
+                                        decimal twentyPercent = calculatedValue * rsmMargin;
+                                        if ((planProduct.Qty > calculatedValue + twentyPercent) || (planProduct.Qty < calculatedValue - twentyPercent))
+                                        {
+                                            req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
+                                            req.statusID = (int)EPlanStatus.NSMProcessing;
+                                            req.reason = "Consumption metric issue";
+                                            await EndorseWork(req, territoryIds);
+                                            endorseDueToConsumptionMetrics = true;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    if (designationID == (int)EDesignation.Territory_Sales_Officer)
+                                    {
+
+                                        req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
+                                        req.statusID = (int)EPlanStatus.RSMProcessing;
+                                        req.reason = "Consumption metric issue";
+                                        await EndorseWork(req, territoryIds);
+                                        endorseDueToConsumptionMetrics = true;
+                                    }
+                                    else if (designationID == (int)EDesignation.Regional_Sales_Manager)
+                                    {
+
+                                        req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
+                                        req.statusID = (int)EPlanStatus.NSMProcessing;
+                                        req.reason = "Consumption metric issue";
+                                        await EndorseWork(req, territoryIds);
+                                        endorseDueToConsumptionMetrics = true;
                                     }
                                 }
                             }
-                            else if (req.planApprovalRejectionType == EPlanApprovalRejectionType.RefundAdvance)
+                            else
                             {
-                                foreach (TblOrders advanceOrder in allAdvancePaymentOrders)
+                                if (designationID == (int)EDesignation.Territory_Sales_Officer)
                                 {
-                                    if (advanceOrder.PaymentStatus == EOrderPaymentStatus.Paid)
-                                    {
 
-                                        await ChangeCustomerPaymentWSDL(advanceOrder, refundText: "Z045", reasonCode: "");
-                                        advanceOrder.PaymentStatus = EOrderPaymentStatus.Refund;
-                                        advanceOrder.IsConsumed = true;
-                                        await _repoWrapper.OrderRepo.UpdateOrder(advanceOrder);
-                                        _repoWrapper.OrderRepo.AddOrderLog(advanceOrder, User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-                                    }
+                                    req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
+                                    req.statusID = (int)EPlanStatus.RSMProcessing;
+                                    req.reason = "Consumption metric issue";
+                                    await EndorseWork(req, territoryIds);
+                                    endorseDueToConsumptionMetrics = true;
+                                }
+                                else if (designationID == (int)EDesignation.Regional_Sales_Manager)
+                                {
+
+                                    req.planCrops.Where(pc => pc.planCropID == planCrop.ID).FirstOrDefault().hasException = true;
+                                    req.statusID = (int)EPlanStatus.NSMProcessing;
+                                    req.reason = "Consumption metric issue";
+                                    await EndorseWork(req, territoryIds);
+                                    endorseDueToConsumptionMetrics = true;
                                 }
                             }
                         }
                     }
+                }
+                if (!endorseDueToConsumptionMetrics)
+                {
+                    if (plan == null)
+                        throw new AmazonFarmerException(_exceptions.planNotFound);
 
-                    await UpdateOrderServices(plan);
+                    bool isRejectionNotAllowed = planOrders.Where(ao => ao.PaymentStatus == EOrderPaymentStatus.PaymentProcessing
+                         || ao.PaymentStatus == EOrderPaymentStatus.LedgerUpdate
+                         || ao.PaymentStatus == EOrderPaymentStatus.Acknowledged
+                         ).Any();
+
+                    if (isRejectionNotAllowed)
+                    {
+                        throw new AmazonFarmerException(_exceptions.rejectionNotAllowed);
+                    }
+
+                    if (plan.PlanChangeStatus == EPlanChangeRequest.Pending || plan.PlanChangeStatus == EPlanChangeRequest.Accept)
+                        throw new AmazonFarmerException(_exceptions.isPlanEditable);
+
+                    if (plan.Status == EPlanStatus.TSOProcessing || plan.Status == EPlanStatus.RSMProcessing || plan.Status == EPlanStatus.NSMProcessing)
+                    {
+                        if (req.planCrops.Where(pc => pc.hasException).Any())
+                        {
+                            throw new AmazonFarmerException(_exceptions.invalidMethod);
+                        }
+
+                        string advancePercentValue = await _repoWrapper.CommonRepo.GetConfigurationValueByConfigType(EConfigType.AdvancePaymentPercent);
+                        int percentageValue = Convert.ToInt32(advancePercentValue);
+
+                        //Getting Total Price List for Plan
+                        List<PlanCropProductPrice> planCropProductPrices = await GetPlanPrice(plan, percentageValue);
+
+                        //Sum of all plan Prices
+                        decimal newPlanTotalPrice = planCropProductPrices.Sum(pp => pp.TotalAmount);
+                        decimal AdvancePaymentAmount = (newPlanTotalPrice * percentageValue) / 100;
+
+                        //making amount decimal to ceiling and assing 2 rupee
+                        AdvancePaymentAmount = Math.Ceiling(AdvancePaymentAmount);
+
+                        if (planOrders == null || planOrders.Count() == 0)
+                        {
+                            await ApproveNewPlan(plan, planCropProductPrices, AdvancePaymentAmount, EOrderType.Advance);
+                        }
+                        else
+                        {
+                            await ApprovePlan(plan, planCropProductPrices, planOrders);
+
+
+                            bool alreadyPaidPlan = planOrders.Where(po =>
+                                  po.PaymentStatus != EOrderPaymentStatus.Paid
+                                  || po.PaymentStatus != EOrderPaymentStatus.Acknowledged
+                                  || po.PaymentStatus != EOrderPaymentStatus.LedgerUpdate
+                                  || po.PaymentStatus != EOrderPaymentStatus.PaymentProcessing
+                                  ).Any();
+
+
+                            if (alreadyPaidPlan)
+                            {
+                                List<TblOrders> allAdvancePaymentOrders = planOrders
+                                    .Where(o => o.OrderType == EOrderType.Advance || o.OrderType == EOrderType.AdvancePaymentReconcile)
+                                    .ToList();
+
+                                List<TblOrders> allOrderReconcileOrders = planOrders.Where(o => o.OrderType == EOrderType.OrderReconcile)
+                                    .ToList();
+
+                                bool anyUnPaidPaymentRemaining = planOrders.Where(o => o.PaymentStatus == EOrderPaymentStatus.NonPaid)
+                                    .Any();
+
+                                if (anyUnPaidPaymentRemaining && req.planApprovalRejectionType == EPlanApprovalRejectionType.RefundAdvance)
+                                {
+                                    throw new AmazonFarmerException(_exceptions.orderApprovalFailure);
+                                }
+
+                                if (req.planApprovalRejectionType == EPlanApprovalRejectionType.ForfeitAdvance)
+                                {
+                                    foreach (TblOrders advanceOrder in allAdvancePaymentOrders)
+                                    {
+                                        if (advanceOrder.PaymentStatus == EOrderPaymentStatus.Paid)
+                                        {
+                                            await ChangeCustomerPaymentWSDL(advanceOrder, refundText: "Z042", reasonCode: "FA");
+                                            advanceOrder.PaymentStatus = EOrderPaymentStatus.Forfeit;
+                                            advanceOrder.IsConsumed = true;
+                                            await _repoWrapper.OrderRepo.UpdateOrder(advanceOrder);
+                                            _repoWrapper.OrderRepo.AddOrderLog(advanceOrder, User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                                        }
+                                    }
+                                }
+                                else if (req.planApprovalRejectionType == EPlanApprovalRejectionType.RefundAdvance)
+                                {
+                                    foreach (TblOrders advanceOrder in allAdvancePaymentOrders)
+                                    {
+                                        if (advanceOrder.PaymentStatus == EOrderPaymentStatus.Paid)
+                                        {
+
+                                            await ChangeCustomerPaymentWSDL(advanceOrder, refundText: "Z045", reasonCode: "");
+                                            advanceOrder.PaymentStatus = EOrderPaymentStatus.Refund;
+                                            advanceOrder.IsConsumed = true;
+                                            await _repoWrapper.OrderRepo.UpdateOrder(advanceOrder);
+                                            _repoWrapper.OrderRepo.AddOrderLog(advanceOrder, User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        await UpdateOrderServices(plan);
+                    }
+
+                    plan.Status = (EPlanStatus)req.statusID;
+                    plan.Reason = req.reason;
+                    //update plan
+                    await _repoWrapper.PlanRepo.updatePlan(plan);
+                    await _repoWrapper.SaveAsync();
+
+                    //Unlocking Orders when approving the plan
+                    await unLockOrders(plan.ID);
                 }
 
-
-
-
-                plan.Status = (EPlanStatus)req.statusID;
-                plan.Reason = req.reason;
-                //update plan
-                await _repoWrapper.PlanRepo.updatePlan(plan);
-                await _repoWrapper.SaveAsync();
-
-                //Unlocking Orders when approving the plan
-                await unLockOrders(plan.ID);
 
             }
             #endregion
@@ -558,26 +654,7 @@ namespace AmazonFarmerAPI.Controllers
             #region Endorse work
             else if (req.statusID == (int)EPlanStatus.RSMProcessing || req.statusID == (int)EPlanStatus.NSMProcessing)
             {
-                tblPlan plan = await _repoWrapper.PlanRepo.getPlanByPlanIDForApproval(req.planID, territoryIds);
-                #region updating plan when exception is raised Endorse Crops
-                if (req.planCrops.Count() > 0)
-                {
-                    plan.Status = (EPlanStatus)req.statusID;
-                    plan.Reason = req.reason;
-                    await _repoWrapper.PlanRepo.updatePlan(plan);
-
-                    foreach (PlanCropsReq item in req.planCrops)
-                    {
-                        tblPlanCrops? planCrop = plan.PlanCrops?.Where(x => x.ID == item.planCropID).FirstOrDefault();
-                        if (planCrop != null)
-                        {
-                            planCrop.PlanCropEndorse = item.hasException ? EPlanCropEndorse.Exception : EPlanCropEndorse.Ok;
-                            await _repoWrapper.PlanRepo.updatePlanCrop(planCrop);
-                        }
-                    }
-                    await _repoWrapper.SaveAsync();
-                }
-                #endregion
+                await EndorseWork(req, territoryIds);
             }
             #endregion
 
@@ -788,7 +865,7 @@ namespace AmazonFarmerAPI.Controllers
                 replacementDTO.ReasonDropDownOptionId = ((int)req.planApprovalRejectionType).ToString();
                 replacementDTO.ReasonDropDownOption = req.planApprovalRejectionType != null && req.planApprovalRejectionType != 0 ? ConfigExntension.GetEnumDescription((EPlanApprovalRejectionType)req.planApprovalRejectionType) : null;
                 replacementDTO.ReasonComment = req.reason;
-                replacementDTO.PlanID = req.planID.ToString().PadLeft(10,'0');
+                replacementDTO.PlanID = req.planID.ToString().PadLeft(10, '0');
 
                 await _notificationService.SendNotifications(notifications, replacementDTO);
 
@@ -796,7 +873,29 @@ namespace AmazonFarmerAPI.Controllers
             resp.message = "Status has been updated";
             return resp;
         }
+        private async Task EndorseWork(updatePlanStatusReq req, List<int> territoryIds)
+        {
+            tblPlan plan = await _repoWrapper.PlanRepo.getPlanByPlanIDForApproval(req.planID, territoryIds);
+            #region updating plan when exception is raised Endorse Crops
+            if (req.planCrops.Count() > 0)
+            {
+                plan.Status = (EPlanStatus)req.statusID;
+                plan.Reason = req.reason;
+                await _repoWrapper.PlanRepo.updatePlan(plan);
 
+                foreach (PlanCropsReq item in req.planCrops)
+                {
+                    tblPlanCrops? planCrop = plan.PlanCrops?.Where(x => x.ID == item.planCropID).FirstOrDefault();
+                    if (planCrop != null)
+                    {
+                        planCrop.PlanCropEndorse = item.hasException ? EPlanCropEndorse.Exception : EPlanCropEndorse.Ok;
+                        await _repoWrapper.PlanRepo.updatePlanCrop(planCrop);
+                    }
+                }
+                await _repoWrapper.SaveAsync();
+            }
+            #endregion
+        }
         private EDeviceNotificationRequestStatus GetNotificationRequestStatus(EPlanStatus ePlanStatus)
         {
             switch (ePlanStatus)
@@ -970,74 +1069,181 @@ namespace AmazonFarmerAPI.Controllers
         {
             APIResponse resp = new();
 
-            if (string.IsNullOrEmpty(req.planID))
-                throw new AmazonFarmerException(_exceptions.planIDRequired);
+            #region Old Plan Summary Logic
+            //if (string.IsNullOrEmpty(req.planID))
+            //    throw new AmazonFarmerException(_exceptions.planIDRequired);
 
-            var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Retrieving UserID from user claims
-            if (string.IsNullOrEmpty(userID))
-            {
-                throw new AmazonFarmerException(_exceptions.userIDNotFound);
-            }
+            //var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Retrieving UserID from user claims
+            //if (string.IsNullOrEmpty(userID))
+            //{
+            //    throw new AmazonFarmerException(_exceptions.userIDNotFound);
+            //}
 
+            //if (!User.IsInRole("Employee"))
+            //    throw new AmazonFarmerException(_exceptions.userNotAuthorized);
+
+            //tblPlan plan = await _repoWrapper.PlanRepo.getPlanByPlanID(Convert.ToInt32(req.planID.TrimStart('0')), "EN");
+
+            //if (plan != null)
+            //{
+            //    getDistance getDistance = new getDistance // Creating getDistance object for distance calculation
+            //    {
+            //        farmLatitude = plan.Farm.latitude.Value, // Setting farm latitude
+            //        farmLongitude = plan.Farm.longitude.Value, // Setting farm longitude
+            //        WarehouseLocations = new List<LocationDTO>() { new LocationDTO { latitude = plan.Warehouse.latitude, longitude = plan.Warehouse.longitude } } // Initializing warehouse locations list
+            //    };
+            //    getDistance = await _googleLocationExtension.GetDistanceBetweenLocations(getDistance); // Getting distance between locations using Google location extension
+
+
+            //    resp.response = new planSummary()
+            //    {
+            //        isCropsAvailable = plan!.PlanCrops!.Where(x => x.Status == EActivityStatus.Active).Count() == plan!.PlanCrops!.Count() && plan!.PlanCrops!.Count() > 0 ? true : false,
+            //        seasonID = plan.SeasonID,
+            //        season = plan.Season.SeasonTranslations.First().Translation,
+            //        months = await _repoWrapper.MonthRepo.getMonthsByLanguageCodeAndSeasonID("EN", plan.SeasonID),
+            //        crops = plan.PlanCrops.Where(x => x.Status == EActivityStatus.Active).Select(x => new Crop
+            //        {
+            //            cropGroupID = x.CropGroupID,
+            //            //crop = x.Crop.CropTranslations.First().Text,
+            //            crops = x.CropGroup.CropGroupCrops.Select(cgc => new planCropGroup_get
+            //            {
+            //                cropID = cgc.CropID,
+            //                cropName = cgc.Crop.CropTranslations.Where(x => x.LanguageCode == "EN").FirstOrDefault().Text,
+            //                filePath = cgc.Crop.CropTranslations.Where(x => x.LanguageCode == "EN").FirstOrDefault().Image
+            //            }).ToList(),
+            //            acreage = Convert.ToInt32(x.Acre),
+            //            products = x.PlanProducts.Where(x => x.Status == EActivityStatus.Active).GroupBy(x => x.Date.Month).Select(x => new getMonthWiseProductCount
+            //            {
+            //                monthID = x.Key,
+            //                totalProducts = x.Sum(p => p.Qty)
+            //            }).ToList()
+            //        }).ToList(),
+            //        products = plan.PlanCrops.Where(x => x.Status == EActivityStatus.Active).SelectMany(x => x.PlanProducts)
+            //                  .GroupBy(p => new { p.Date.Month, p.ProductID, p.Product.Name })
+            //                  .Select(g => new Product_DTO
+            //                  {
+            //                      productID = g.Key.ProductID,
+            //                      product = g.Key.Name, // You might need to set the product name here
+            //                      months = g.Select(p => new Month
+            //                      {
+            //                          monthID = p.Date.Month,
+            //                          productID = p.Product.ID,
+            //                          product = p.Product.ProductTranslations.First().Text, // You might need to set the product name here
+            //                          totalProducts = g.Sum(x => x.Qty),
+            //                          uom = p.Product.UOM.UnitOfMeasureTranslation.First().Text // You might need to set the unit of measurement here
+            //                      }).ToList()
+            //                  }).ToList(),
+            //        warehouseLocation = plan.Warehouse.Name + " - " + getDistance.WarehouseLocations.FirstOrDefault().distanceText,
+            //        warehouseDistance = getDistance.WarehouseLocations.FirstOrDefault().distanceText
+            //    };
+            //}
+
+            #endregion
+            //var languageCode = User.FindFirst("languageCode")?.Value; // Extracting language code from claims
+            var languageCode = "EN";
+            //var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Extracting user ID from claims
+            //string designationID = User.FindFirst("designationID")?.Value; // Retrieving designation ID from user claims
             if (!User.IsInRole("Employee"))
                 throw new AmazonFarmerException(_exceptions.userNotAuthorized);
 
-            tblPlan plan = await _repoWrapper.PlanRepo.getPlanByPlanID(Convert.ToInt32(req.planID.TrimStart('0')), "EN");
+            tblPlan plan = await _repoWrapper.PlanRepo.getPlanByPlanID(Convert.ToInt32(req.planID.TrimStart('0')), languageCode);
 
-            if (plan != null)
+
+            if (string.IsNullOrEmpty(req.planID))
+                throw new AmazonFarmerException(_exceptions.planIDRequired);
+            else
             {
-                getDistance getDistance = new getDistance // Creating getDistance object for distance calculation
+                //tblPlan plan = await _repoWrapper.PlanRepo.getPlanByPlanID(Convert.ToInt32(req.planID), userID, languageCode);
+                if (plan == null)
+                    throw new AmazonFarmerException(_exceptions.planNotFound);
+                //else if (User.IsInRole("Farmer") && plan.UserID != userID)
+                //    throw new AmazonFarmerException(_exceptions.planNotFound);
+                //else if (User.IsInRole("Employee"))
+                //    throw new AmazonFarmerException(_exceptions.userNotAuthorized);
+                else
                 {
-                    farmLatitude = plan.Farm.latitude.Value, // Setting farm latitude
-                    farmLongitude = plan.Farm.longitude.Value, // Setting farm longitude
-                    WarehouseLocations = new List<LocationDTO>() { new LocationDTO { latitude = plan.Warehouse.latitude, longitude = plan.Warehouse.longitude } } // Initializing warehouse locations list
-                };
-                getDistance = await _googleLocationExtension.GetDistanceBetweenLocations(getDistance); // Getting distance between locations using Google location extension
 
+                    plan.PlanCrops = plan.PlanCrops.Where(
+                        c => c.PlanProducts.Where(
+                            prod => (prod.Qty - prod.DeliveredQty) > 0
+                        ).Count() > 0
+                    ).ToList();
 
-                resp.response = new planSummary()
-                {
-                    isCropsAvailable = plan!.PlanCrops!.Where(x => x.Status == EActivityStatus.Active).Count() == plan!.PlanCrops!.Count() && plan!.PlanCrops!.Count() > 0 ? true : false,
-                    seasonID = plan.SeasonID,
-                    season = plan.Season.SeasonTranslations.First().Translation,
-                    months = await _repoWrapper.MonthRepo.getMonthsByLanguageCodeAndSeasonID("EN", plan.SeasonID),
-                    crops = plan.PlanCrops.Where(x => x.Status == EActivityStatus.Active).Select(x => new Crop
+                    foreach (tblPlanCrops item in plan.PlanCrops)
                     {
-                        cropGroupID = x.CropGroupID,
-                        //crop = x.Crop.CropTranslations.First().Text,
-                        crops = x.CropGroup.CropGroupCrops.Select(cgc => new planCropGroup_get
-                        {
-                            cropID = cgc.CropID,
-                            cropName = cgc.Crop.CropTranslations.Where(x => x.LanguageCode == "EN").FirstOrDefault().Text,
-                            filePath = cgc.Crop.CropTranslations.Where(x => x.LanguageCode == "EN").FirstOrDefault().Image
-                        }).ToList(),
-                        acreage = Convert.ToInt32(x.Acre),
-                        products = x.PlanProducts.Where(x => x.Status == EActivityStatus.Active).GroupBy(x => x.Date.Month).Select(x => new getMonthWiseProductCount
-                        {
-                            monthID = x.Key,
-                            totalProducts = x.Sum(p => p.Qty)
-                        }).ToList()
-                    }).ToList(),
-                    products = plan.PlanCrops.Where(x => x.Status == EActivityStatus.Active).SelectMany(x => x.PlanProducts)
-                              .GroupBy(p => new { p.Date.Month, p.ProductID, p.Product.Name })
-                              .Select(g => new Product_DTO
-                              {
-                                  productID = g.Key.ProductID,
-                                  product = g.Key.Name, // You might need to set the product name here
-                                  months = g.Select(p => new Month
-                                  {
-                                      monthID = p.Date.Month,
-                                      productID = p.Product.ID,
-                                      product = p.Product.ProductTranslations.First().Text, // You might need to set the product name here
-                                      totalProducts = g.Sum(x => x.Qty),
-                                      uom = p.Product.UOM.UnitOfMeasureTranslation.First().Text // You might need to set the unit of measurement here
-                                  }).ToList()
-                              }).ToList(),
-                    warehouseLocation = plan.Warehouse.Name + " - " + getDistance.WarehouseLocations.FirstOrDefault().distanceText,
-                    warehouseDistance = getDistance.WarehouseLocations.FirstOrDefault().distanceText
-                };
-            }
+                        item.PlanProducts = item.PlanProducts.Where(x => (x.Qty - x.DeliveredQty) > 0).ToList();
+                    }
+                    getDistance getDistance = new getDistance // Creating getDistance object for distance calculation
+                    {
+                        farmLatitude = plan.Farm.latitude.Value, // Setting farm latitude
+                        farmLongitude = plan.Farm.longitude.Value, // Setting farm longitude
+                        WarehouseLocations = new List<LocationDTO>() { new LocationDTO { latitude = plan.Warehouse.latitude, longitude = plan.Warehouse.longitude } } // Initializing warehouse locations list
+                    };
+                    getDistance = await _googleLocationExtension.GetDistanceBetweenLocations(getDistance); // Getting distance between locations using Google location extension
 
+                    var imageBase = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL");
+
+                    resp.response = new getPlanDetail_Resp()
+                    {
+                        planID = plan.ID,
+                        farmID = plan.FarmID,
+                        farm = plan.Farm.FarmName,
+                        warehouseID = plan.WarehouseID,
+                        warehouse = plan.Warehouse.WarehouseTranslation.FirstOrDefault().Text + " - " + getDistance.WarehouseLocations.FirstOrDefault().distanceText,
+                        warehouseDistance = getDistance.WarehouseLocations.FirstOrDefault().distanceText,
+                        seasonID = plan.SeasonID,
+                        season = plan.Season.SeasonTranslations.Where(x => x.LanguageCode == languageCode).First().Translation,
+                        status = plan.Status,
+                        reason = plan.Reason,
+                        planner = plan.User.FirstName,
+                        farmerComment = plan.FarmerComment ?? string.Empty,
+                        crops = plan.PlanCrops.Where(x => x.Status == EActivityStatus.Active).Select(x => new planCrops_getPlanDetail
+                        {
+                            planCropID = x.ID,
+                            //cropID = x.CropID,
+                            cropGroupID = x.CropGroupID,
+                            cropsGroup = _repoWrapper.PlanRepo.getCropInformationByCropGroupID(x.CropGroupID, languageCode, imageBase).Result,
+                            //cropIDs = x.CropGroup.CropGroupCrops.Select(gc => gc.CropID).ToList(),
+                            //imagePath = x.Crop.CropTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault().Image,
+                            //crop = x.Crop.CropTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault().Text,
+                            acreage = Convert.ToInt32(x.Acre),
+                            hasException = x.PlanCropEndorse == EPlanCropEndorse.Exception ? true : false,
+                            //suggestion = x.CropGroup.CropGroupCrops.Select(cgc => new ConsumptionMatrixDTO
+                            //{
+                            //    cgc.Crop.ProductConsumptionMetrics
+                            //.Select(x => new ConsumptionMatrixDTO
+                            //{
+                            //    name = x.Product.ProductTranslations
+                            //        .Where(x => x.LanguageCode == languageCode)
+                            //        .FirstOrDefault().Text,
+                            //    qty = x.Usage.ToString(),
+                            //    uom = x.UOM
+                            //}).FirstOrDefault() }).ToList(),
+                            //}).ToList(),
+                            products = x.PlanProducts.Where(x => x.Status == EActivityStatus.Active).Select(p => new cropProduct_planCrops_getPlanDetail
+                            {
+                                planProductID = p.ID,
+                                productID = p.ProductID,
+                                product = p.Product.ProductTranslations.Where(x => x.LanguageCode == languageCode).FirstOrDefault() != null ? p.Product.ProductTranslations.Where(x => x.LanguageCode == languageCode).First().Text : string.Empty,
+                                qty = p.Qty - p.DeliveredQty,
+                                uom = p.Product.UOM.UnitOfMeasureTranslation.Where(x => x.LanguageCode == languageCode).FirstOrDefault() != null ? p.Product.UOM.UnitOfMeasureTranslation.Where(x => x.LanguageCode == languageCode).First().Text : string.Empty,
+                                date = p.Date//.ToString("yyyy-MM-dd")
+                            }).ToList(),
+                            services = x.PlanServices.Where(x => x.Status == EActivityStatus.Active).Select(s => new cropService_planCrops_getPlanDetail
+                            {
+                                planServiceID = s.ID,
+                                serviceID = s.ServiceID,
+                                service = s.Service.ServiceTranslations.Where(x => x.LanguageCode == languageCode).First().Text,
+                                lastHarvestDate = s.LastHarvestDate,//.ToString("yyyy-MM-dd"),
+                                landPreparationDate = s.LandPreparationDate,//.ToString("yyyy-MM-dd"),
+                                sewingDate = s.SewingDate//.ToString("yyyy-MM-dd")
+                            }).ToList()
+                        }).ToList(),
+                        changeRequestStatus = plan.PlanChangeStatus,
+                        isEmptyCropsAllowed = plan!.Orders!.Any() ? true : false
+                    };
+                }
+            }
             return resp;
         }
         private async Task ApproveNewPlan(tblPlan plan, List<PlanCropProductPrice> planCropProductPrices,
@@ -1061,6 +1267,8 @@ namespace AmazonFarmerAPI.Controllers
                         PlanCropProductPrice? planProductPrice = planCropProductPrices.Where(pp => pp.ProductCode == planProduct.Product.ProductCode).FirstOrDefault();
 
                         newProductPrice = planProductPrice.UnitTotalAmount * planProduct.Qty;
+                        //making amount decimal to ceiling
+                        newProductPrice = Math.Ceiling(newProductPrice);
 
                         order = await CreateANewOrder(plan, planCrop, planProduct, newProductPrice, EOrderType.Product, planProductPrice, planProduct.Qty);
 
@@ -1874,6 +2082,10 @@ namespace AmazonFarmerAPI.Controllers
                             && wsdlResponse.Messages.FirstOrDefault().Message.msgTyp.ToUpper() == "S" && !string.IsNullOrEmpty(wsdlResponse.itemNum.TrimStart('0')))
                         {
                             newProductPrice = (Convert.ToDecimal(wsdlResponse.netVal) + Convert.ToDecimal(wsdlResponse.taxVal)) * planProduct.Qty;
+
+                            //making amount decimal to ceiling
+                            newProductPrice = Math.Ceiling(newProductPrice);
+                            
                             planProductPrice = new()
                             {
                                 Quantity = planProduct.Qty,
@@ -1899,6 +2111,8 @@ namespace AmazonFarmerAPI.Controllers
                     else
                     {
                         newProductPrice = planProduct.Qty * planProductPrice.UnitTotalAmount;
+                        //making amount decimal to ceiling 
+                        newProductPrice = Math.Ceiling(newProductPrice);
                         planProductPrice = new()
                         {
                             Quantity = planProduct.Qty,
@@ -1972,6 +2186,10 @@ namespace AmazonFarmerAPI.Controllers
                             int PlanCropID = await _repoWrapper.PlanRepo.getPlanCropIDByPlanProductID(orderProduct.PlanProductID);
 
                             oldProductPrice = (Convert.ToDecimal(wsdlResponse.netVal) + Convert.ToDecimal(wsdlResponse.taxVal)) * orderProduct.QTY;
+
+                            //making amount decimal to ceiling
+                            oldProductPrice = Math.Ceiling(oldProductPrice);
+                            
                             PlanCropProductPrice planProductPrice = new()
                             {
                                 Quantity = orderProduct.QTY,
@@ -1993,6 +2211,8 @@ namespace AmazonFarmerAPI.Controllers
                     else
                     {
                         oldProductPrice = orderProduct.QTY * alreadyFetchedProductPrice.UnitTotalAmount;
+                        //making amount decimal to ceiling
+                        oldProductPrice = Math.Ceiling(oldProductPrice);
                         oldOrderTotalPrice += oldProductPrice;
                     }
                 }

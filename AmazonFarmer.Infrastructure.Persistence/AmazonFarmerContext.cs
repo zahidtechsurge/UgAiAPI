@@ -1,4 +1,5 @@
-﻿using AmazonFarmer.Core.Domain.Entities;
+﻿using AmazonFarmer.Core.Application.DTOs;
+using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence.Seeding;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -32,6 +33,7 @@ namespace AmazonFarmer.Infrastructure.Persistence
         {
 
         }
+        public DbSet<tblComplaint> Complaints { get; set; }
         public DbSet<TblUser> Users { get; set; }
         public DbSet<ActiveToken> ActiveTokens { get; set; }
         public DbSet<TblFarmerRole> FarmerRoles { get; set; }
@@ -125,12 +127,22 @@ namespace AmazonFarmer.Infrastructure.Persistence
         public DbSet<PaymentAcknowledgmentFile> PaymentAcknowledgmentFiles { get; set; }
         public DbSet<tblCropGroup> CropGroup { get; set; }
         public DbSet<tblCropGroupCrops> CropGroupCrops { get; set; }
+        public DbSet<PlanStatusResult> SP_PlanStatusResult { get; set; }
+        public DbSet<PlanSeasonCropResult> SP_PlanSeasonCropResult { get; set; }
+        public DbSet<SP_FarmerDetailsResult> SP_FarmerDetailsResult { get; set; }
+        public DbSet<SP_LogEntryResult> SP_LogEntryResult { get; set; }
+        public DbSet<SP_OrderDetailsResult> SP_OrderDetailsResult { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //SeedData(modelBuilder).GetAwaiter().GetResult();
             //modelBuilder.Seed();
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<PlanStatusResult>().ToView("View_PlanStatusResult");
+            modelBuilder.Entity<PlanSeasonCropResult>().ToView("View_PlanSeasonCropResult");
+            modelBuilder.Entity<SP_FarmerDetailsResult>().ToView("View_FarmerDetailsResult");
+            modelBuilder.Entity<SP_LogEntryResult>().ToView("View_LogEntryResult");
+            modelBuilder.Entity<SP_OrderDetailsResult>().ToView("View_OrderDetailsResult");
 
             modelBuilder.Entity<TblUser>(b =>
             {

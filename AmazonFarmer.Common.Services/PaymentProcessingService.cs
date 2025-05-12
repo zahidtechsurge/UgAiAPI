@@ -66,7 +66,7 @@ namespace AmazonFarmer.Common.Services
 
 
             order.PaymentDate = DateTime.UtcNow;
-            order.PaymentDatePrice = transaction.Amount / 100;
+            order.PaymentDatePrice = transaction.Amount;
 
             order.SAPTransactionID = wsdlResponse.DOC_NUM;
             order.FiscalYear = wsdlResponse.FISCAL_YEAR;
@@ -148,6 +148,7 @@ namespace AmazonFarmer.Common.Services
                     notifications.Add(farmerDevice);
 
                     replacementDTO.PKRAmount = "Rs" + transaction.Amount.ToString("N2");
+                    replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
                     replacementDTO.ConsumerNumber = transaction.ConsumerCode;
 
                     await _notificationService.SendNotifications(notifications, replacementDTO);
@@ -266,6 +267,7 @@ namespace AmazonFarmer.Common.Services
             replacementDTO.NotificationBodyTypeID = ENotificationBody.OrderPaymentProcessCompleted;
             replacementDTO.ConsumerNumber = transaction.ConsumerCode;
             replacementDTO.OrderID = order.OrderID.ToString().PadLeft(10, '0');
+            replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
             replacementDTO.WarehouseId = order.WarehouseID.ToString();
             replacementDTO.WarehouseName = order.Warehouse.Name;
             replacementDTO.GoogleMapLinkWithCoordinated = "";
