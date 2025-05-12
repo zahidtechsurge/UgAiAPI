@@ -11,6 +11,9 @@ namespace AmazonFarmer.Core.Application
     public interface ICommonRepo
     {
         Task<string> GetConfigurationValueByConfigType(EConfigType type);
+        Task<List<tblConfig>> GetConfigurationValueByConfigType();
         Task<List<tblConfig>> GetConfigurationValueByConfigType(List<EConfigType> types);
+        void UpdateConfigurationValue(tblConfig config);
+        Task<tblConfig?> GetConfigurationByID(int Id);
     }
 }

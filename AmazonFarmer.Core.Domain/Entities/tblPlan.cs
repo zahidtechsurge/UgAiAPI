@@ -24,6 +24,8 @@ namespace AmazonFarmer.Core.Domain.Entities
 
         public bool IsPlanPaid { get; set; }
         public EModeOfPayment? ModeOfPayment { get; set; } = EModeOfPayment.Partial_Payment;
+        public string? ChangeWarehouseReason { get; set; } = string.Empty;
+        public EChangeWarehouseStatus? ChangeWarehouseStatus { get; set; } = EChangeWarehouseStatus.Default;
         [ForeignKey("UserID")]
         public virtual TblUser? User { get; set; }
         [ForeignKey("WarehouseID")]

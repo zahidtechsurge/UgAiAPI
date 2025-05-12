@@ -16,6 +16,12 @@ namespace AmazonFarmer.Core.Domain.Entities
         public string Name{ get; set; }
         public string Description { get; set; }
         public string Value { get; set; } 
+        public EConfigStatus Status { get; set; }
+    }
+    public enum EConfigStatus
+    {
+        Active = 1,
+        Deactive = 0
     }
 
     public enum EConfigType
@@ -23,6 +29,8 @@ namespace AmazonFarmer.Core.Domain.Entities
         AdvancePaymentPercent = 1,
         AdvancePaymentBufferTime = 2,
         OrderBufferTime = 3,
-        OrderPaymentBufferTime= 4
+        OrderPaymentBufferTime= 4,
+        PartialPayment = 5,
+        FullPayment = 6
     }
 }

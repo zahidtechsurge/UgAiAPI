@@ -26,10 +26,18 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             return await _context.ConfigurationTable.Where(c => c.Type == type).Select(c => c.Value).FirstAsync();
         }
-
+        public async Task<List<tblConfig>> GetConfigurationValueByConfigType()
+        {
+            return await _context.ConfigurationTable.ToListAsync();
+        }
         public async Task<List<tblConfig>> GetConfigurationValueByConfigType(List<EConfigType> types)
         {
             return await _context.ConfigurationTable.Where(c => types.Contains(c.Type)).ToListAsync();
         }
+        public async Task<tblConfig?> GetConfigurationByID(int Id)
+        {
+            return await _context.ConfigurationTable.Where(x => x.Id == Id).FirstOrDefaultAsync();
+        }
+        public void UpdateConfigurationValue(tblConfig config) { _context.ConfigurationTable.Update(config); }
     }
 }

@@ -409,6 +409,21 @@ namespace AmazonFarmer.Core.Domain.Entities
         [Description("Full Payment (100% Order)")]
         Full_Payment = 1
     }
+
+    public enum EChangeWarehouseStatus
+    {
+        [Description("Request not initiated")]
+        Default = 0,
+        [Description("RSM Approval")]
+        RSMProcessing = 1,
+        [Description("NSM Approval")]
+        NSMProcessing = 2,
+        [Description("Approved")]
+        Approved = 3,
+        [Description("Declined")]
+        Declined = 4
+    }
+
     public enum EPlanStatus
     {
         [Description("TSO Approval")]

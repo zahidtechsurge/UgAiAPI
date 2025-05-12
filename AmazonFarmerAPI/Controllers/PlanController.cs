@@ -1461,6 +1461,25 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
             }
             return resp;
         }
+
+        [HttpGet("getPlanModeOfPaymentOptions")]
+        public async Task<APIResponse> GetPlanModeOfPaymentOptions()
+        {
+            var resp = new APIResponse();
+            List<EConfigType> types = new List<EConfigType>() { EConfigType.FullPayment, EConfigType.PartialPayment };
+            List<tblConfig> Configurations = await _repoWrapper.CommonRepo.GetConfigurationValueByConfigType(types);
+            resp.response = Configurations
+                .Select(c => new
+                {
+                    modeOfPayment = c.Id,
+                    modeOfPaymentID = c.Value,
+                    modeOfPaymentName = c.Name,
+                    modeOfPaymentDesc = c.Description,
+                })
+                .ToList();
+            return resp;
+        }
+
         private async Task lockOrders(int planID)
         {
             List<TblOrders> orders = await _repoWrapper.OrderRepo.getOrdersByPlanID(planID);

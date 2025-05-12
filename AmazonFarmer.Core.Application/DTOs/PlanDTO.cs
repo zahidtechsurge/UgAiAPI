@@ -377,6 +377,25 @@ namespace AmazonFarmer.Core.Application.DTOs
         /// </summary>
         public int requestTypeID { get; set; }
     }
+    public class PlanWarehouseChangeRequest
+    {
+        public string? orderBy { get; set; } = string.Empty;
+        public string? search { get; set; } = string.Empty;
+        public int skip { get; set; } = 0;
+        public int take { get; set; } = 10;
+        /// <summary>
+        /// 1   Default / Approved / Declined
+        /// 2   RSM Approval
+        /// 3   NSM Approval
+        /// </summary>
+        public int requestTypeID { get; set; }
+    }
+    public class PlanWarehouseUpdateRequest
+    {
+        public int planID { get; set; }
+        public int statusID { get; set; }
+        public string? reason { get; set; } = string.Empty;
+    }
     public class Employee_getPlansDTO
     {
         public int planID { get; set; }
