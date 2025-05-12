@@ -286,21 +286,21 @@ namespace AmazonFarmerAPI.Controllers
         /// <param name="take">Number of files to take for pagination.</param>
         /// <returns>Paginated response <see cref="pagination_Resp"/> containing a list of soil sample files.</returns>
         private async Task<pagination_Resp> getServiceReportListing(string startsWith)
-        {
+         {
             // Initialize the pagination response object
             pagination_Resp pagResp = new pagination_Resp();
             List<getSoilSampleList> lst = new List<getSoilSampleList>();
             // Retrieve SFTP connection details from configuration
-            //var connectionString = ConfigExntension.GetConfigurationValue("AzureFileStorage:ConnectionString");
-            //var shareName = ConfigExntension.GetConfigurationValue("AzureFileStorage:ShareName");
-            //var directoryName = ConfigExntension.GetConfigurationValue("AzureFileStorage:ServiceReportDirectory");
+            var connectionString = ConfigExntension.GetConfigurationValue("AzureFileStorage:ConnectionString");
+            var shareName = ConfigExntension.GetConfigurationValue("AzureFileStorage:ShareName");
+            var directoryName = ConfigExntension.GetConfigurationValue("AzureFileStorage:ServiceReportDirectory");
             try
             {
-                //ShareClient shareClient = new ShareClient(connectionString, shareName);
-                //ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(directoryName);
+                ShareClient shareClient = new ShareClient(connectionString, shareName);
+                ShareDirectoryClient directoryClient = shareClient.GetDirectoryClient(directoryName);
 
-                //lst = await ListFilesAndDirectoriesAsync(directoryClient, startsWith, directoryName);
-                lst = ListFilesAndDirectoriesFromFTP(startsWith);
+                lst = await ListFilesAndDirectoriesAsync(directoryClient, startsWith, directoryName);
+                //lst = ListFilesAndDirectoriesFromFTP(startsWith);
 
                 pagResp.list = lst;
                 pagResp.totalRecord = lst.Count();
@@ -363,7 +363,7 @@ namespace AmazonFarmerAPI.Controllers
             await foreach (ShareFileItem item in directoryClient.GetFilesAndDirectoriesAsync())
             {
 
-                if (!item.IsDirectory)
+                if (!item.IsDirectory)   
                 {
                     if (item.Name.ToLower().StartsWith(startsWith.ToLower()) && item.Name.ToLower().EndsWith(".pdf"))
                     {
