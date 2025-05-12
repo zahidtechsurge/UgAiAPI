@@ -7,6 +7,7 @@ using Google.Cloud.Vision.V1;
 using MailKit.Search;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Ocsp;
 using System.Collections.Generic;
 using System.IdentityModel.Claims;
@@ -36,7 +37,7 @@ namespace AmazonFarmerAPI.Controllers
             TblUser? loggedInUser = await _repoWrapper.UserRepo.getUserByUserID(userID);
             int designationID = Convert.ToInt32(User.FindFirst("designationID")?.Value); // Retrieving designation ID from user claims
             if (loggedInUser == null)
-                throw new AmazonFarmerException(_exceptions.authorityLetterIDNotFound);
+                throw new AmazonFarmerException(_exceptions.userNotFound);
             else if (!User.IsInRole("Employee") || designationID == null || designationID == 0 || designationID != (int)EDesignation.Territory_Sales_Officer)
                 throw new AmazonFarmerException(_exceptions.APINotAuthorized);
             else
@@ -93,6 +94,7 @@ namespace AmazonFarmerAPI.Controllers
                 }
                 pagResp.list = lst;
 
+                #region Comment
                 //pagResp.list = orders.Select(x => new getBlockedOrders_Resp
                 //{
                 //    orderID = x.OrderID.ToString().PadLeft(10, '0'),
@@ -105,6 +107,7 @@ namespace AmazonFarmerAPI.Controllers
                 //    : "Products EMPTY",//x.Products.FirstOrDefault().Product.Name,
                 //    qty = x.Products != null ? x.Products.FirstOrDefault().QTY : 0
                 //}).ToList();
+                #endregion
 
                 resp.response = pagResp;
 
@@ -113,6 +116,56 @@ namespace AmazonFarmerAPI.Controllers
 
         }
 
+        [HttpGet("getOrderDetail/{OrderID}")]
+        public async Task<APIResponse> GetOrderDetail(Int64 OrderID)
+        {
+            #region Auth
+            // Get the user ID from claims
+            var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            TblUser? loggedInUser = await _repoWrapper.UserRepo.getUserByUserID(userID);
+            int designationID = Convert.ToInt32(User.FindFirst("designationID")?.Value); // Retrieving designation ID from user claims
+            if (loggedInUser == null)
+                throw new AmazonFarmerException(_exceptions.userNotFound);
+            else if (!User.IsInRole("Employee") || designationID == null || designationID == 0 || designationID != (int)EDesignation.Territory_Sales_Officer)
+                throw new AmazonFarmerException(_exceptions.APINotAuthorized);
+            #endregion
+
+            APIResponse APIResponse = new APIResponse();
+
+
+            var OrderDetail = await _repoWrapper.OrderRepo.getOrderByID(OrderID);
+            if (OrderDetail == null)
+                throw new AmazonFarmerException(_exceptions.orderAlreadyBlocked);
+            else
+            {
+                APIResponse = new APIResponse()
+                {
+                    isError = false,
+                    message = string.Empty,
+                    response = new
+                    {
+                        planID = OrderDetail.PlanID,
+                        farmerName = string.Concat(OrderDetail.User.FirstName, " ", OrderDetail.User.LastName ?? string.Empty),
+                        farmerPhoneNumber = OrderDetail.User.PhoneNumber,
+                        farmerEmail = OrderDetail.User.Email,
+                        orderExpiredDate = OrderDetail.DuePaymentDate,
+                        orderDeliveryDate = OrderDetail.ExpectedDeliveryDate,
+                        orderID = OrderDetail.OrderID,
+                        orderType = OrderDetail.OrderType,
+                        orderProductName = OrderDetail.Products?.FirstOrDefault()?.Product.Name ?? "order product not found",
+                        orderProductQty = OrderDetail.Products?.FirstOrDefault()?.QTY ?? decimal.Zero,
+                        orderProductUnitPrice = OrderDetail.Products?.FirstOrDefault()?.UnitPrice ?? decimal.Zero,
+                        orderProductUnitTax = OrderDetail.Products?.FirstOrDefault()?.UnitTax ?? decimal.Zero,
+                        orderProductUnitTotalAmount = OrderDetail.Products?.FirstOrDefault()?.UnitTotalAmount ?? decimal.Zero,
+                        orderProductAmount = OrderDetail.Products?.FirstOrDefault()?.Amount ?? decimal.Zero,
+                        warehouseName = OrderDetail.Warehouse.Name,
+                        warehouseLocation = OrderDetail.Warehouse.Address
+                    }
+                };
+            }
+
+                return APIResponse;
+        }
         [HttpPut("updateBlockedOrder")]
         public async Task<JSONResponse> updateBlockedOrder(updateBlockedOrder_Req req)
         {

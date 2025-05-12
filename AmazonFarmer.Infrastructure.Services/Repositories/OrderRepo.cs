@@ -79,7 +79,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Include(x => x.User).ThenInclude(u => u.FarmerProfile)
                 .Include(x => x.Plan).ThenInclude(p => p.OrderServices).ThenInclude(os => os.Service)
                 .Include(p => p.Products).ThenInclude(x => x.PlanProduct)
-                .Include(a=>a.AuthorityLetters).ThenInclude(d=>d.AuthorityLetterDetails)
+                .Include(a => a.AuthorityLetters).ThenInclude(d => d.AuthorityLetterDetails)
                 .Where(x => x.OrderID == OrderID).FirstOrDefaultAsync();
         }
         public async Task<TblOrders?> getOrderByOrderID(Int64 OrderID, string UserId)
@@ -157,7 +157,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         public async Task<TblOrders> getOrderByID(Int64 orderID, string userID, string languageCode)
         {
             return await _context.Orders
-                .Include(x=>x.Warehouse).ThenInclude(x=>x.WarehouseIncharge)
+                .Include(x => x.Warehouse).ThenInclude(x => x.WarehouseIncharge)
                 .Include(x => x.Products)
                 .ThenInclude(x => x.Product)
                 .ThenInclude(x => x.ProductTranslations.Where(x => x.LanguageCode == languageCode))
@@ -168,12 +168,20 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         public async Task<TblOrders> getOrderByID(Int64 orderID)
         {
             return await _context.Orders
-                .Include(x => x.User).ThenInclude(x => x.FarmerProfile)
+                .Include(x => x.User)
+                    .ThenInclude(x => x.FarmerProfile)
                 .Include(x => x.Products)
-                .ThenInclude(x => x.Product)
-                .ThenInclude(x => x.ProductTranslations)
-                .Include(x => x.Plan).ThenInclude(x => x.Farm)
-                .Where(x => x.OrderID == orderID && (x.OrderStatus != EOrderStatus.Blocked && x.OrderStatus != EOrderStatus.Deleted))
+                    .ThenInclude(x => x.Product)
+                        .ThenInclude(x => x.ProductTranslations)
+                .Include(x => x.Plan)
+                    .ThenInclude(x => x.Farm)
+                .Where(x =>
+                    x.OrderID == orderID &&
+                    (
+                        x.OrderStatus != EOrderStatus.Blocked &&
+                        x.OrderStatus != EOrderStatus.Deleted
+                    )
+                )
                 .FirstOrDefaultAsync();
         }
 

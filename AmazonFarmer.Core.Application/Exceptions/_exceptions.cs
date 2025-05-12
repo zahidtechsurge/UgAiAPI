@@ -226,6 +226,7 @@ namespace AmazonFarmer.Core.Application.Exceptions
         //File exception not value
         public const string fileExtensionNotValid = "Please attach a valid file type";
 
-
+        //Order
+        public const string orderAlreadyBlocked = "Order is already blocked or removed";
     }
 }
