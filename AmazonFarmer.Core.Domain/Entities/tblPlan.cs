@@ -23,6 +23,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
 
         public bool IsPlanPaid { get; set; }
+        public EModeOfPayment? ModeOfPayment { get; set; } = EModeOfPayment.Partial_Payment;
         [ForeignKey("UserID")]
         public virtual TblUser? User { get; set; }
         [ForeignKey("WarehouseID")]

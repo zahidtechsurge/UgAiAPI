@@ -125,14 +125,20 @@
     }
     public class PrivateFunc_GetProductPrice
     {
-        public List<string> serviceCode { get; set; }
-        public string sapFarmerCode { get; set; }
+        public List<string> serviceCode { get; set; } = [];
+        public string sapFarmerCode { get; set; } = string.Empty;
         public string? productDivision { get; set; }
         public string productCode { get; set; }
         public int productQTY { get; set; }
         public string warehouseSalePoint { get; set; }
         public string productSalesOrg { get; set; }
         public string productUOM { get; set; }
+    }
+    public class PrivateFunc_GetMultiProductPrices
+    {
+        public List<string> serviceCode { get; set; } = [];
+        public string sapFarmerCode { get; set; } = string.Empty;
+        public List<PrivateFunc_GetProductPrice> Products { get; set; } = [];
     }
 
     /// <summary>

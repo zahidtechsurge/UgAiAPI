@@ -873,6 +873,10 @@ namespace AmazonFarmerAPI.Controllers
             resp.message = "Status has been updated";
             return resp;
         }
+
+        private void CreatePartialOrder() { }
+        private void CreateFullOrder() { }
+
         private async Task EndorseWork(updatePlanStatusReq req, List<int> territoryIds)
         {
             tblPlan plan = await _repoWrapper.PlanRepo.getPlanByPlanIDForApproval(req.planID, territoryIds);
@@ -1275,14 +1279,14 @@ namespace AmazonFarmerAPI.Controllers
                     }
                 }
                 //Advance Payment Order
-                if (AdvancePaymentAmount != 0)
+                if (plan.ModeOfPayment == EModeOfPayment.Partial_Payment && AdvancePaymentAmount != 0)
                 {
                     //decimal AdvancePaymentAmount = (newPlanTotalPrice * percentageValue) / 100;
                     order = await CreateANewOrder(plan, null, null, AdvancePaymentAmount, orderType, planCropProductPrices.FirstOrDefault(), 0);
                 }
                 else
                 {
-                    if (orderType != EOrderType.AdvancePaymentReconcile)
+                    if (plan.ModeOfPayment == EModeOfPayment.Partial_Payment && orderType != EOrderType.AdvancePaymentReconcile)
                     {
                         throw new AmazonFarmerException(_exceptions.invalidMethod);
                     }

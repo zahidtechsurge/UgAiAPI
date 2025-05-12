@@ -402,6 +402,13 @@ namespace AmazonFarmer.Core.Domain.Entities
         Ok = 1,
         Exception = 2
     }
+    public enum EModeOfPayment
+    {
+        [Description("Partial Payment (5% Advance, 95% Order)")]
+        Partial_Payment = 0,
+        [Description("Full Payment (100% Order)")]
+        Full_Payment = 1
+    }
     public enum EPlanStatus
     {
         [Description("TSO Approval")]

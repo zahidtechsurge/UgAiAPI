@@ -6,6 +6,7 @@ using AmazonFarmer.NotificationServices.Services;
 using AmazonFarmer.WSDL;
 using AmazonFarmer.WSDL.Helpers;
 using AmazonFarmerAPI.Extensions;
+using Google.Api;
 using Google.Cloud.Vision.V1;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -192,7 +193,28 @@ namespace AmazonFarmerAPI.Controllers
             resp.response = APIresp;
             return resp;
         }
+        private async Task<List<ProductPrice>> GetMultiProductPrices(PrivateFunc_GetMultiProductPrices req)
+        {
+            var resp = new List<ProductPrice>();
+            foreach (var item in req.Products)
+            {
 
+                PrivateFunc_GetProductPrice sapReq = new PrivateFunc_GetProductPrice()
+                {
+                    serviceCode = req.serviceCode,
+                    sapFarmerCode = req.sapFarmerCode,
+                    productDivision = item.productDivision,
+                    productCode = item.productCode,
+                    warehouseSalePoint = item.warehouseSalePoint,
+                    productSalesOrg = item.productSalesOrg,
+                    productUOM = item.productUOM,
+                    productQTY = item.productQTY
+                };
+                ProductPrice sapResp = await GetProductPrices(sapReq);
+                resp.Add(sapResp);
+            }
+            return resp;
+        } 
         private async Task<ProductPrice> GetProductPrices(PrivateFunc_GetProductPrice req)
         {
             decimal newProductPrice = 0;

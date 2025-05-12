@@ -53,6 +53,11 @@ namespace AmazonFarmer.Core.Application.DTOs
         // The request type of the plan
         public int warehouseID { get; set; }
         public string farmerComment { get; set; }
+        /// <summary>
+        /// 0: partial payment: 5/95
+        /// 1: full payment: 100%
+        /// </summary>
+        public int? modeOfPayment { get; set; } = 0;
     }
 
     /// <summary>

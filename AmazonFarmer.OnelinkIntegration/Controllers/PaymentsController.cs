@@ -839,7 +839,7 @@ namespace AmazonFarmer.OnelinkIntegration.Controllers
                     PlanCropProductPrice planCropProductPrice = await GetOrderPriceWSDL(planOrder, plan, SAPFarmerCode, planCropProductPrices);
                     orderPrice = planCropProductPrice.TotalAmount;
 
-                    if (isLastOrder)
+                    if (plan.ModeOfPayment == EModeOfPayment.Partial_Payment && isLastOrder)
                     {
                         if (orderPrice >= alreadyPaidAdvancePayment)
                         {

@@ -40,64 +40,64 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
         public async Task<APIResponse> getFarms(farms_Request request)
         {
             APIResponse resp = new APIResponse(); // Initializing API response object
-                var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Extracting user ID from claims
-                if (!string.IsNullOrEmpty(userID)) // Checking if user ID is not null or empty
+            var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Extracting user ID from claims
+            if (!string.IsNullOrEmpty(userID)) // Checking if user ID is not null or empty
+            {
+                List<tblfarm> Farms = await _repoWrapper.FarmRepo.getFarmsByUserID(userID);
+
+                List<farms_Resp> farmsResponse = new List<farms_Resp>();
+                foreach (var farm in Farms)
                 {
-                    List<tblfarm> Farms = await _repoWrapper.FarmRepo.getFarmsByUserID(userID);
-
-                    List<farms_Resp> farmsResponse = new List<farms_Resp>();
-                    foreach (var farm in Farms)
-                    {
-                        decimal allRabiPlanAcreage = farm.plans
-                                .Where(p => p.Status != EPlanStatus.Rejected
-                                        && p.Status != EPlanStatus.Removed
-                                        && p.Status != EPlanStatus.Completed
-                                        && p.SeasonID == (int)ESeasons.Rabi)
-                                .SelectMany(p => p.PlanCrops.Where(pc => pc.Status == EActivityStatus.Active))
-                                .Sum(pc => (decimal?)pc.Acre) ?? 0m;
-                        decimal allKharifPlanAcreage = farm.plans
-                                .Where(p => p.Status != EPlanStatus.Rejected
-                                        && p.Status != EPlanStatus.Removed
-                                        && p.Status != EPlanStatus.Completed
-                                        && p.SeasonID == (int)ESeasons.Kharif)
-                                .SelectMany(p => p.PlanCrops.Where(pc => pc.Status == EActivityStatus.Active))
-                                .Sum(pc => (decimal?)pc.Acre) ?? 0m;
-
-                        decimal excludingCurrentPlanAcreage = farm.plans
-                                .Where(p => p.Status != EPlanStatus.Rejected
+                    decimal allRabiPlanAcreage = farm.plans
+                            .Where(p => p.Status != EPlanStatus.Rejected
                                     && p.Status != EPlanStatus.Removed
                                     && p.Status != EPlanStatus.Completed
-                                    && p.ID != request.planID)
-                                .SelectMany(p => p.PlanCrops.Where(pc => pc.Status == EActivityStatus.Active))
-                                .Sum(pc => (decimal?)pc.Acre) ?? 0m;
+                                    && p.SeasonID == (int)ESeasons.Rabi)
+                            .SelectMany(p => p.PlanCrops.Where(pc => pc.Status == EActivityStatus.Active))
+                            .Sum(pc => (decimal?)pc.Acre) ?? 0m;
+                    decimal allKharifPlanAcreage = farm.plans
+                            .Where(p => p.Status != EPlanStatus.Rejected
+                                    && p.Status != EPlanStatus.Removed
+                                    && p.Status != EPlanStatus.Completed
+                                    && p.SeasonID == (int)ESeasons.Kharif)
+                            .SelectMany(p => p.PlanCrops.Where(pc => pc.Status == EActivityStatus.Active))
+                            .Sum(pc => (decimal?)pc.Acre) ?? 0m;
 
-                        farms_Resp farmResponse = new farms_Resp()
-                        {
-                            address = farm.Address1 ?? string.Empty,
-                            farmID = farm.FarmID,
-                            farmName = farm.FarmName,
-                            isApproved = farm.isApproved,
-                            isPrimary = farm.isPrimary,
-                            acreage = farm.Acreage,
-                            rabiAcreage = 0,
-                            kharifAcreage = 0
-                        };
+                    decimal excludingCurrentPlanAcreage = farm.plans
+                            .Where(p => p.Status != EPlanStatus.Rejected
+                                && p.Status != EPlanStatus.Removed
+                                && p.Status != EPlanStatus.Completed
+                                && p.ID != request.planID)
+                            .SelectMany(p => p.PlanCrops.Where(pc => pc.Status == EActivityStatus.Active))
+                            .Sum(pc => (decimal?)pc.Acre) ?? 0m;
 
-                        if (request.planID == 0)
-                        {
-                            farmResponse.rabiAcreage = (int)(farmResponse.acreage - allRabiPlanAcreage) < 0 ? 0 : (int)(farmResponse.acreage - allRabiPlanAcreage);
-                            farmResponse.kharifAcreage = (int)(farmResponse.acreage - allKharifPlanAcreage) < 0 ? 0 : (int)(farmResponse.acreage - allKharifPlanAcreage);
-                            farmResponse.acreage = 0;
-                        }
-                        else
-                        {
-                            farmResponse.acreage = (int)(farmResponse.acreage - excludingCurrentPlanAcreage);
-                        }
+                    farms_Resp farmResponse = new farms_Resp()
+                    {
+                        address = farm.Address1 ?? string.Empty,
+                        farmID = farm.FarmID,
+                        farmName = farm.FarmName,
+                        isApproved = farm.isApproved,
+                        isPrimary = farm.isPrimary,
+                        acreage = farm.Acreage,
+                        rabiAcreage = 0,
+                        kharifAcreage = 0
+                    };
 
-                        farmsResponse.Add(farmResponse);
+                    if (request.planID == 0)
+                    {
+                        farmResponse.rabiAcreage = (int)(farmResponse.acreage - allRabiPlanAcreage) < 0 ? 0 : (int)(farmResponse.acreage - allRabiPlanAcreage);
+                        farmResponse.kharifAcreage = (int)(farmResponse.acreage - allKharifPlanAcreage) < 0 ? 0 : (int)(farmResponse.acreage - allKharifPlanAcreage);
+                        farmResponse.acreage = 0;
                     }
-                    resp.response = farmsResponse; // Retrieving farms by user ID
+                    else
+                    {
+                        farmResponse.acreage = (int)(farmResponse.acreage - excludingCurrentPlanAcreage);
+                    }
+
+                    farmsResponse.Add(farmResponse);
                 }
+                resp.response = farmsResponse; // Retrieving farms by user ID
+            }
             return resp; // Returning the API response
         }
 
@@ -295,7 +295,8 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                 Status = planStatus,
                 PlanCrops = PlanCrops,
                 FarmerComment = req.farmerComment,
-                PlanChangeStatus = EPlanChangeRequest.Default
+                PlanChangeStatus = EPlanChangeRequest.Default,
+                ModeOfPayment = (EModeOfPayment?)(req.modeOfPayment ?? (int)EModeOfPayment.Partial_Payment)
             };
 
             return planReq;
@@ -636,83 +637,83 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
         {
             APIResponse resp = new APIResponse(); // Initializing API response object
             pagination_Resp inResp = new();
-                var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Extracting user ID from claims
-                var languageCode = User.FindFirst("languageCode")?.Value; // Extracting language code from claims
-                if (!string.IsNullOrEmpty(userID) && !string.IsNullOrEmpty(languageCode)) // Checking if both user ID and language code are provided
-                {
-                    IQueryable<tblPlan> plans = await _repoWrapper.PlanRepo.getPlansByUserIDandLanguageCode(userID, languageCode); // Retrieving plans by user ID and language code
+            var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Extracting user ID from claims
+            var languageCode = User.FindFirst("languageCode")?.Value; // Extracting language code from claims
+            if (!string.IsNullOrEmpty(userID) && !string.IsNullOrEmpty(languageCode)) // Checking if both user ID and language code are provided
+            {
+                IQueryable<tblPlan> plans = await _repoWrapper.PlanRepo.getPlansByUserIDandLanguageCode(userID, languageCode); // Retrieving plans by user ID and language code
 
-                    if (req.requestTypeID != 0)
+                if (req.requestTypeID != 0)
+                {
+                    if (req.requestTypeID == 3)
                     {
-                        if (req.requestTypeID == 3)
-                        {
-                            plans = plans.Where(x => x.Status == EPlanStatus.TSOProcessing || x.Status == EPlanStatus.RSMProcessing || x.Status == EPlanStatus.NSMProcessing);
-                        }
-                        else if (req.requestTypeID == 2)
-                        {
-                            plans = plans.Where(x => x.Orders.Where(x => x.PaymentStatus == EOrderPaymentStatus.Paid && x.DeliveryStatus != EDeliveryStatus.ShipmentComplete).Count() > 0);
-                        }
-                        else if (req.requestTypeID == 1)
-                        {
-                            plans = plans.Where(x => x.Orders.Where(x => x.PaymentStatus == EOrderPaymentStatus.NonPaid).Count() > 0);
-                        }
-                        else if (req.requestTypeID == 4)
-                        {
-                            plans = plans.Where(x => x.PlanChangeStatus == EPlanChangeRequest.Pending);
-                        }
-                        else if (req.requestTypeID == 5)
-                        {
-                            plans = plans.Where(x => x.Status == EPlanStatus.Draft);
-                        }
+                        plans = plans.Where(x => x.Status == EPlanStatus.TSOProcessing || x.Status == EPlanStatus.RSMProcessing || x.Status == EPlanStatus.NSMProcessing);
                     }
-
-                    inResp.totalRecord = plans.Count();
-
-                    List<EPlanStatus> approverStates = new List<EPlanStatus>() { EPlanStatus.TSOProcessing, EPlanStatus.RSMProcessing, EPlanStatus.NSMProcessing };
-                    List<EOrderPaymentStatus> orderPaymentStatus = new List<EOrderPaymentStatus>() { EOrderPaymentStatus.Paid, EOrderPaymentStatus.PaymentProcessing, EOrderPaymentStatus.Acknowledged, EOrderPaymentStatus.LedgerUpdate, EOrderPaymentStatus.Refund };
-
-                    plans = plans.Skip(req.skip).Take(req.take);
-
-                    // Project the results into getPlans_Resp DTO
-                    List<getPlans_Resp> lst = await
-                    plans.Skip(req.skip).Take(req.take).OrderByDescending(x => x.ID).Select(x => new getPlans_Resp
+                    else if (req.requestTypeID == 2)
                     {
-                        isSummaryAvailable = x!.PlanCrops!.Where(y => y.Status == EActivityStatus.DeActive).Count() == x!.PlanCrops!.Count() && x!.PlanCrops!.Count() > 0 ? false : true,
-                        // Format planID as a 10-digit string with leading zeros
-                        planID = x.ID.ToString().PadLeft(10, '0'),
-                        // Assign farm name from Farm entity
-                        farm = x.Farm.FarmName,
-                        // Get season translation in the specified language
-                        season = x.Season.SeasonTranslations.First().Translation,
-                        // Format farm acreage and assign to farmAcreage
-                        farmAcreage = x.Farm.Acreage.ToString(),
-                        // Assign statusID as integer value of plan status
-                        statusID = (int)x.Status,
-                        // Assign planChangeStatusID  as integer value of plan status
-                        planChangeStatusID = (int)x.PlanChangeStatus,
-                        // Assign reason from plan entity
-                        reason = x.Reason ?? string.Empty,
-                        canDelete = x.Orders.Any(x => orderPaymentStatus.Contains(x.PaymentStatus)) ? false : x.Status != EPlanStatus.Draft ? false : true,
-                        //canRequestForChanges = x.Orders.Where(x => orderPaymentStatus.Contains(x.PaymentStatus)).Count() == x.Orders.Count() && x.Orders.Count() > 0 ? false : (x.PlanChangeStatus == EPlanChangeRequest.Default || x.PlanChangeStatus == EPlanChangeRequest.Declined) && x.Status != EPlanStatus.Draft ? true : false,
-                        canRequestForChanges = (/*x.Status == EPlanStatus.Draft && x.Status != EPlanStatus.Removed && */(approverStates.Contains(x.Status) || x.Status == EPlanStatus.Approved) && (x.PlanChangeStatus == EPlanChangeRequest.Default || x.PlanChangeStatus == EPlanChangeRequest.Declined)) ? true : false,
-                        canSubmitForApproval = (x.Status == EPlanStatus.Draft || x.Status == EPlanStatus.Revert) ? true : false,
-                        canViewOrder = x.Orders.Any() ? true : false,
-                        //canViewOrder = (x.Status == EPlanStatus.Completed)  
-                        //    && (x.PlanChangeStatus == EPlanChangeRequest.Default 
-                        //        || x.PlanChangeStatus == EPlanChangeRequest.Declined) ? true : false,
-                        canOrderPayment = false
-                        //canOrderPayment = x.Orders.Where(x => x.PaymentStatus == EOrderPaymentStatus.NonPaid && x.DuePaymentDate < DateTime.UtcNow).Count() > 0 && (x.Status == EPlanStatus.Approved) && x.PlanChangeStatus == EPlanChangeRequest.Default ? true : false
-                    }).ToListAsync();
-
-                    inResp.list = lst.ToList();
-                    inResp.filteredRecord = lst.Count();
-
-                    resp.response = inResp;
+                        plans = plans.Where(x => x.Orders.Where(x => x.PaymentStatus == EOrderPaymentStatus.Paid && x.DeliveryStatus != EDeliveryStatus.ShipmentComplete).Count() > 0);
+                    }
+                    else if (req.requestTypeID == 1)
+                    {
+                        plans = plans.Where(x => x.Orders.Where(x => x.PaymentStatus == EOrderPaymentStatus.NonPaid).Count() > 0);
+                    }
+                    else if (req.requestTypeID == 4)
+                    {
+                        plans = plans.Where(x => x.PlanChangeStatus == EPlanChangeRequest.Pending);
+                    }
+                    else if (req.requestTypeID == 5)
+                    {
+                        plans = plans.Where(x => x.Status == EPlanStatus.Draft);
+                    }
                 }
-                else
+
+                inResp.totalRecord = plans.Count();
+
+                List<EPlanStatus> approverStates = new List<EPlanStatus>() { EPlanStatus.TSOProcessing, EPlanStatus.RSMProcessing, EPlanStatus.NSMProcessing };
+                List<EOrderPaymentStatus> orderPaymentStatus = new List<EOrderPaymentStatus>() { EOrderPaymentStatus.Paid, EOrderPaymentStatus.PaymentProcessing, EOrderPaymentStatus.Acknowledged, EOrderPaymentStatus.LedgerUpdate, EOrderPaymentStatus.Refund };
+
+                plans = plans.Skip(req.skip).Take(req.take);
+
+                // Project the results into getPlans_Resp DTO
+                List<getPlans_Resp> lst = await
+                plans.Skip(req.skip).Take(req.take).OrderByDescending(x => x.ID).Select(x => new getPlans_Resp
                 {
-                    throw new AmazonFarmerException(_exceptions.userIDorLanguageCodeNotFound); // Throws exception if either user ID or language code is not found
-                }
+                    isSummaryAvailable = x!.PlanCrops!.Where(y => y.Status == EActivityStatus.DeActive).Count() == x!.PlanCrops!.Count() && x!.PlanCrops!.Count() > 0 ? false : true,
+                    // Format planID as a 10-digit string with leading zeros
+                    planID = x.ID.ToString().PadLeft(10, '0'),
+                    // Assign farm name from Farm entity
+                    farm = x.Farm.FarmName,
+                    // Get season translation in the specified language
+                    season = x.Season.SeasonTranslations.First().Translation,
+                    // Format farm acreage and assign to farmAcreage
+                    farmAcreage = x.Farm.Acreage.ToString(),
+                    // Assign statusID as integer value of plan status
+                    statusID = (int)x.Status,
+                    // Assign planChangeStatusID  as integer value of plan status
+                    planChangeStatusID = (int)x.PlanChangeStatus,
+                    // Assign reason from plan entity
+                    reason = x.Reason ?? string.Empty,
+                    canDelete = x.Orders.Any(x => orderPaymentStatus.Contains(x.PaymentStatus)) ? false : x.Status != EPlanStatus.Draft ? false : true,
+                    //canRequestForChanges = x.Orders.Where(x => orderPaymentStatus.Contains(x.PaymentStatus)).Count() == x.Orders.Count() && x.Orders.Count() > 0 ? false : (x.PlanChangeStatus == EPlanChangeRequest.Default || x.PlanChangeStatus == EPlanChangeRequest.Declined) && x.Status != EPlanStatus.Draft ? true : false,
+                    canRequestForChanges = (/*x.Status == EPlanStatus.Draft && x.Status != EPlanStatus.Removed && */(approverStates.Contains(x.Status) || x.Status == EPlanStatus.Approved) && (x.PlanChangeStatus == EPlanChangeRequest.Default || x.PlanChangeStatus == EPlanChangeRequest.Declined)) ? true : false,
+                    canSubmitForApproval = (x.Status == EPlanStatus.Draft || x.Status == EPlanStatus.Revert) ? true : false,
+                    canViewOrder = x.Orders.Any() ? true : false,
+                    //canViewOrder = (x.Status == EPlanStatus.Completed)  
+                    //    && (x.PlanChangeStatus == EPlanChangeRequest.Default 
+                    //        || x.PlanChangeStatus == EPlanChangeRequest.Declined) ? true : false,
+                    canOrderPayment = false
+                    //canOrderPayment = x.Orders.Where(x => x.PaymentStatus == EOrderPaymentStatus.NonPaid && x.DuePaymentDate < DateTime.UtcNow).Count() > 0 && (x.Status == EPlanStatus.Approved) && x.PlanChangeStatus == EPlanChangeRequest.Default ? true : false
+                }).ToListAsync();
+
+                inResp.list = lst.ToList();
+                inResp.filteredRecord = lst.Count();
+
+                resp.response = inResp;
+            }
+            else
+            {
+                throw new AmazonFarmerException(_exceptions.userIDorLanguageCodeNotFound); // Throws exception if either user ID or language code is not found
+            }
             return resp; // Returning the API response
         }
 
