@@ -590,7 +590,10 @@ namespace AmazonFarmer.WSDL
             }
             return null;
         }
-
+        public async Task<dynamic> SendTaxCertificate(TaxCertificateRequest request)
+        {
+            return string.Empty;
+        }
 
         private async Task<WSDLLog> LogRequestWsdl(dynamic request, string requestURL, string requestMethod)
         {

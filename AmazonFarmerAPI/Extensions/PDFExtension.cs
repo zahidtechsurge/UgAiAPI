@@ -16,6 +16,14 @@ namespace AmazonFarmerAPI.Extensions
             _converter = converter;
         }
 
+
+        public async Task<string> generateAuthorityLetterPDF(TblAuthorityLetters EALdata)
+        {
+            string resp = string.Empty;
+
+            return await _htmlToPDF(resp, Path.Combine("private-documents", "temp-authorityLetter"), string.Concat("Letter No.", EALdata.AuthorityLetterNo, "-", EALdata.PDFGUID + "-" + DateTime.UtcNow.ToString("ddMMyyyy_hhmmff") + ".pdf"));
+        }
+
         public async Task<string> generatePlanSummary(planSummary summary, EPlanSummaryType summaryType)
         {
             string resp = string.Empty;
@@ -119,7 +127,7 @@ namespace AmazonFarmerAPI.Extensions
             else if (summaryType == EPlanSummaryType.product)
             {
 
-                foreach (var item in summary.products) 
+                foreach (var item in summary.products)
                 {
                     body += @"<tr>
                                 <td>" + item.product + @"</td>

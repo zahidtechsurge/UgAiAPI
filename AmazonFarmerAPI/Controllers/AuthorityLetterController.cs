@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Org.BouncyCastle.Cms;
+using Org.BouncyCastle.Ocsp;
 using System.IdentityModel.Claims;
 using System.Text.RegularExpressions;
 using static System.Net.Mime.MediaTypeNames;
@@ -420,6 +421,30 @@ namespace AmazonFarmerAPI.Controllers
 
             return resp;
         }
+
+        [Obsolete]
+        [HttpPost("downloadAuthorityLetter")]
+        public async Task<APIResponse> DownloadAuthorityLetter(authorityLetter_GetDetails req)
+        {
+            var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Extracting user ID from claims
+            string languageCode = "EN"; // Extracting language code from claims
+            if (userID == null || string.IsNullOrEmpty(userID))
+                throw new AmazonFarmerException(_exceptions.userIDNotFound);
+            TblUser? loggedInUser = await _repoWrapper.UserRepo.getUserByUserID(userID);
+            if (loggedInUser == null)
+                throw new AmazonFarmerException(_exceptions.userNotFound);
+            else if (req.letterID == 0)
+                throw new AmazonFarmerException(_exceptions.authorityLetterIDNotFound);
+
+            TblAuthorityLetters letter = await _repoWrapper.AuthorityLetterRepo.getAuthorityLetterByID(req.letterID, loggedInUser.Id, languageCode);
+            if (letter == null)
+                throw new AmazonFarmerException(_exceptions.authorityLetterNotFound);
+            letter.Order.SAPOrderID = letter!.Order!.SAPOrderID!.TrimStart('0') ?? string.Empty;
+            letter.BearerNIC = string.Format("{0:00000-0000000-0}", long.Parse(letter.BearerNIC.Replace("-", "")));
+            return new APIResponse(){ };
+        }
+
+
         private async Task<string> generateLetterNo()
         {
             string resp = string.Empty;

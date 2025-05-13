@@ -50,4 +50,11 @@ namespace AmazonFarmer.Core.Application.DTOs
         public decimal UnitTotalAmount { get; set; }
         public decimal TotalAmount { get; set; }
     }
+
+
+    public partial class TaxCertificateRequest
+    {
+        public string? sapFarmerCode { get; set; } = string.Empty;
+
+    }
 }
