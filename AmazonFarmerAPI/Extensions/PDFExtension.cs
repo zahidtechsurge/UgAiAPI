@@ -17,11 +17,252 @@ namespace AmazonFarmerAPI.Extensions
         }
 
 
-        public async Task<string> generateAuthorityLetterPDF(TblAuthorityLetters EALdata)
+        public async Task<string> generateSalesTaxCertificatePDF(InvoiceDTO DTO, ProductSalesOrgInfo belonging)
         {
             string resp = string.Empty;
 
-            return await _htmlToPDF(resp, Path.Combine("private-documents", "temp-authorityLetter"), string.Concat("Letter No.", EALdata.AuthorityLetterNo, "-", EALdata.PDFGUID + "-" + DateTime.UtcNow.ToString("ddMMyyyy_hhmmff") + ".pdf"));
+            #region pdfString
+            string pdfString = @"<!DOCTYPE html>
+                <html>
+                <head>
+                <title>Page Title</title>
+                </head>
+                <style>
+                table{border-collapse: collapse;}
+                td, th{border: 1px solid gray;font-size:8px;padding:3px;}
+                strong{font-size:20px;font-family:arial}
+                tfooter tr td{font-weight:bold;}
+                hr,img {margin:0;padding:0;}
+                </style>
+                <body>
+                <div style=""text-align:right;font-size:8px"">
+                    <u>Customer Copy</u>
+                </div>
+                <table style=""border:none;width:100%;margin:0;"">
+                	<tbody>
+                		<tr>
+                      		<td style=""border:none;font-weight:bold;bottom:0;font-size:11px;"">
+                            " + (belonging.Name) + @"
+                            <br/>
+                            " + (belonging.Address) + @"
+                            <br/>
+                            Tel: " + DTO.phoneNumber + @"
+                            <br/>
+                            NTN:" + DTO.nTNDealer + @"
+                            <br/>
+                            STRN:" + DTO.salesTaxNumberDealer + @"
+                            <br/>
+                            </td>
+                            <td style=""border:none;text-align:right;vertical-align: middle;"">
+                            	<img style=""width:150px!important"" src=" + belonging.LogoBase + @"/>
+                            </td>
+                        </tr>
+                	</tbody>
+                </table>
+                <hr/>
+                <br/>
+                <div style=""text-align:center;""><strong>SALES TAX INVOICE</strong></div>
+                <br/>
+                <table style=""width:100%;"">
+                <tbody>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Dealer Code</td>
+    	                <td>" + (DTO.dealerCode) + @"</td>
+    	                <td style=""font-weight:bold;"">Sale Order Number</td>
+    	                <td>" + (DTO.salesOrderNumber) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Dealer Name</td>
+    	                <td>" + (DTO.dealerName) + @"</td>
+    	                <td style=""font-weight:bold;"">Sale Order Date</td>
+    	                <td>" + (DTO.salesOrderDate) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Ship To Party-Code</td>
+    	                <td>" + (DTO.shiptopartycode) + @"</td>
+    	                <td style=""font-weight:bold;"">Delivery Number</td>
+    	                <td>" + (DTO.deliveryNumber) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Ship To Party-Name</td>
+    	                <td>" + (DTO.shiptopartyName) + @"</td>
+    	                <td style=""font-weight:bold;"">Shipment Number</td>
+    	                <td>" + (DTO.shipmentNumber) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Payer</td>
+    	                <td>" + (DTO.payer) + @"</td>
+    	                <td style=""font-weight:bold;"">Shipment Date</td>
+    	                <td>" + (DTO.shipmentDate) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td rowspan=""4"" style=""font-weight:bold;"">Ship To Party-Address</td>
+    	                <td rowspan=""4"">" + (BreakStringAfterWords(DTO.shiptopartyAddress, 7)) + @"</td>
+    	                <td style=""font-weight:bold;"">Delivery Mode</td>
+    	                <td>" + (DTO.deliveryMode) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Supply Source Code</td>
+    	                <td>" + (DTO.supplySourceCode) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Supply Source</td>
+    	                <td>" + (DTO.supplySourceDescription) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Sales Point</td>
+    	                <td>" + (DTO.salesPoint) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Phone Number</td>
+    	                <td>" + (DTO.phoneNumber) + @"</td>
+    	                <td style=""font-weight:bold;"">Invoice Number</td>
+    	                <td>" + (DTO.invoiceNumber) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Sales Area</td>
+    	                <td>" + (DTO.salesArea) + @"</td>
+    	                <td style=""font-weight:bold;"">Invoice Date</td>
+    	                <td>" + (DTO.invoiceDate) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Sales Tax Number-Dealer</td>
+    	                <td>" + (DTO.salesTaxNumberDealer) + @"</td>
+    	                <td style=""font-weight:bold;"">Truck Number</td>
+    	                <td>" + (DTO.truckNumber) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">NIC Number-Dealer</td>
+    	                <td>" + (DTO.cNICNumberDealer) + @"</td>
+    	                <td style=""font-weight:bold;"">Forward Agent Name</td>
+    	                <td>" + (DTO.forwardAgentName) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">NTN-Dealer</td>
+    	                <td>" + (DTO.nTNDealer) + @"</td>
+    	                <td style=""font-weight:bold;"">Payment Due Date</td>
+    	                <td>" + (DTO.paymentDueDate) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Filer/Non-Filer</td>
+    	                <td>" + (DTO.filerNonFilerStatus) + @"</td>
+    	                <td style=""font-weight:bold;"">BG Number</td>
+    	                <td>" + (DTO.bGNumber) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Loading Dock</td>
+    	                <td>" + (DTO.loadingDock) + @"</td>
+    	                <td style=""font-weight:bold;"">Distance (KM)</td>
+    	                <td>" + (DTO.distance) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Issue Plant</td>
+    	                <td>" + (DTO.issuingPlant) + @"</td>
+    	                <td style=""font-weight:bold;"">PSA Number</td>
+    	                <td>" + (DTO.pSANumber) + @"</td>
+                    </tr>
+	                <tr>
+    	                <td style=""font-weight:bold;"">Second Truck Number</td>
+    	                <td>" + (DTO.vessel) + @"</td>
+                    </tr>
+                </tbody>
+                </table>
+
+                <br/>
+
+                <table style=""width:100%;"">
+	                <thead>
+    	                <tr>
+        	                <th>Material Code</th>        	
+                            <th>Material Description</th>        	
+                            <th>HS Code</th>        	
+                            <th>Batch Number</th>        	
+                            <th>QTY (Bags)</th>        	
+                            <th>Rate</th>        	
+                            <th>Gross Price</th>        	
+                            <th>Discount</th>        	
+                            <th>Price Excluding GST</th>        	
+                            <th>Sales Tax</th>        	
+                            <th>Price Including GST</th>
+
+    	                </tr>
+	                </thead>
+	                <tbody>
+                        <tr>
+                            <td style=""text-align:center;"">" + (DTO.materialCode) + @"</td>
+                            <td style=""text-align:center;"">" + (DTO.materialDescription) + @"</td>
+                            <td>" + (DTO.hSCode) + @"</td>
+                            <td style=""text-align:center;"">" + (DTO.batchNumber) + @"</td>
+                            <td style=""text-align:center;"">" + (DTO.quantity) + @"</td>
+                            <td style=""text-align:right;"">" + (DTO.invoicingRate) + @"</td>
+                            <td style=""text-align:right;"">" + (DTO.grossPrice) + @"</td>
+                            <td style=""text-align:right;"">" + (DTO.discount) + @"</td>
+                            <td style=""text-align:right;"">" + (DTO.priceExcludingGST) + @"</td>
+                            <td style=""text-align:right;"">" + (DTO.salesTax) + @"</td>
+                            <td style=""text-align:right;"">" + (DTO.priceIncludingGST) + @"</td>
+    	                </tr>
+                    </tbody>
+	                <tfoot>
+    	                <tr>
+                        <td colspan=""3"" style=""font-weight:bold;"">Total</td>
+                        <td></td>
+                        <td style=""font-weight:bold;text-align:center;"">" + (DTO.quantity) + @"</td>
+                        <td></td>
+                        <td style=""font-weight:bold;text-align:right;"">" + (DTO.grossPrice) + @"</td>
+                        <td style=""font-weight:bold;text-align:right;"">" + (DTO.discount) + @"</td>
+                        <td style=""font-weight:bold;text-align:right;"">" + (DTO.priceExcludingGST) + @"</td>
+                        <td style=""font-weight:bold;text-align:right;"">" + (DTO.salesTax) + @"</td>
+                        <td style=""font-weight:bold;text-align:right;"">" + (DTO.priceIncludingGST) + @"</td>
+    	                </tr>
+                    </tfoot>
+                </table>
+
+                <br/>
+
+				<table style=""border:none;width:100%;"">
+                	<tbody>
+                    	<tr>
+                        	<td style=""border:none;font-weight:bold;"">Price Excluding FED</td>
+                        	<td style=""border:none;text-align:right;font-weight:bold;"">" + (DTO.priceExcludingFED) + @"</td>
+                    	</tr>
+                    	<tr>
+                        	<td style=""border:none;font-weight:bold;"">FED Amount</td>
+                        	<td style=""border:none;text-align:right;font-weight:bold;"">" + (DTO.fEDAmount) + @"</td>
+                    	</tr>
+                    	<tr>
+                        	<td style=""border:none;font-weight:bold;"">Price Including FED</td>
+                        	<td style=""border:none;text-align:right;font-weight:bold;"">" + (DTO.priceIncludingFED) + @"</td>
+                    	</tr>
+                    	<tr>
+                        	<td style=""border:none;font-weight:bold;"">Further Tax ( 0.00 % )</td>
+                        	<td style=""border:none;text-align:right;font-weight:bold;"">" + (DTO.furtherTax) + @"</td>
+                    	</tr>
+                        <tr>
+                        	<td style=""border:none;font-weight:bold;"">BG / Credit Charges</td>
+                        	<td style=""border:none;text-align:right;font-weight:bold;"">" + (DTO.bGCreditCharges) + @"</td>
+                    	</tr>
+                    	<tr>
+                        	<td style=""border:none;font-weight:bold;"">Total Exclusing AIT</td>
+                        	<td style=""border:none;text-align:right;font-weight:bold;"">" + (DTO.priceExcludingAIT) + @"</td>
+                    	</tr>
+                    	<tr>
+                        	<td style=""border:none;font-weight:bold;"">AIT (" + DTO.aITRate + @" %)</td>
+                        	<td style=""border:none;text-align:right;font-weight:bold;"">" + (DTO.aIT) + @"</td>
+                    	</tr>
+                    	<tr>
+                        	<td style=""border:none;font-weight:bold;"">Total Amount including AIT </td>
+                        	<td style=""border-right:0px;border-left:0px;text-align:right;font-weight:bold;width:70px"">" + (DTO.priceIncludingAIT) + @"</td>
+                    	</tr>
+                	</tbody>
+                </table>
+
+                </body>
+                </html>
+                
+                ";
+            #endregion pdfString
+
+            return await _htmlToPDF(resp, Path.Combine("private-documents", "temp-SalesTaxCertificate"), string.Concat("MaterialCode ", DTO.materialCode, " - SapOrderID ", DTO.sAPOrderID + "-" + DateTime.UtcNow.ToString("ddMMyyyy_hhmmff") + ".pdf"));
         }
 
         public async Task<string> generatePlanSummary(planSummary summary, EPlanSummaryType summaryType)
@@ -271,6 +512,25 @@ namespace AmazonFarmerAPI.Extensions
 
 
 
+        private string BreakStringAfterWords(string input, int wordsPerLine)
+        {
+            string[] words = input.Split(' ');
+            StringBuilder output = new StringBuilder();
+            int wordCount = 0;
+
+            foreach (string word in words)
+            {
+                if (wordCount > 0 && wordCount % wordsPerLine == 0)
+                {
+                    output.Append("<br/>");
+                }
+
+                output.Append(word).Append(' ');
+                wordCount++;
+            }
+
+            return output.ToString().Trim();
+        }
 
         private async Task<string> _htmlToPDF(string html, string filePath, string fileName)
         {

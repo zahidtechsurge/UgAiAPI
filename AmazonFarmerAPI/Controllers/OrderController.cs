@@ -22,6 +22,7 @@ using ChangeCustomerPayment;
 using AmazonFarmer.NotificationServices.Services;
 using AmazonFarmer.WSDL.Helpers;
 using Microsoft.Extensions.Options;
+using DetailsInvoice;
 
 namespace AmazonFarmerAPI.Controllers
 {
@@ -64,7 +65,7 @@ namespace AmazonFarmerAPI.Controllers
         [Obsolete]
         public async Task<APIResponse> PostTransactionAcknowledgmentUpdate(PaymentAcknowledgmentRequest req)
         {
-            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID,"NOTUSED");
+            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID, "NOTUSED");
 
             if (transaction != null
                 && transaction.Order != null
@@ -162,6 +163,41 @@ namespace AmazonFarmerAPI.Controllers
             }
             return new APIResponse() { isError = true, response = "", message = "No Order found!" };
         }
+        [HttpGet("getOrderInvoices/{OrderID}")]
+        public async Task<APIResponse> GetOrderInvoices(Int64 OrderID)
+        {
+            // Get the user ID from claims
+            var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var Order = await _repoWrapper.OrderRepo.getOrderByOrderID(OrderID, userID);
+            if (Order == null) throw new AmazonFarmerException(_exceptions.orderNotFound);
+            WSDLFunctions wSDLFunctions = new WSDLFunctions(_repoWrapper, _wsdlConfig);
+            ZSD_AMAZ_ORDER_INV_DETAILSResponse? wsdlResponse = await wSDLFunctions.InvoiceDetailsRequest(new ZSD_AMAZ_ORDER_INV_DETAILS
+            {
+                I_AUBEL = Order.SAPOrderID,
+                I_VBELN = ""
+            });
+            List<authorityLetter_Invoice> invoices = new List<authorityLetter_Invoice>();
+            if (wsdlResponse != null && wsdlResponse.E_DETAILS != null && wsdlResponse.E_DETAILS.Count() > 0)
+            {
+                invoices = wsdlResponse.E_DETAILS.Select(inv => new authorityLetter_Invoice
+                {
+                    sapOrderID = Order.SAPOrderID,
+                    sapFarmerCode = inv.KUNAG,
+                    qty = Convert.ToInt32(inv.FKIMG).ToString(),
+                    invoiceNumber = inv.VBELN,
+                    invoiceDate = inv.FKDAT,
+                    invoiceAmount = "3000"
+                }).ToList();
+            }
+            return new APIResponse
+            {
+                isError = false,
+                message = string.Empty,
+                response = invoices
+            };
+        }
+
+
 
         //[HttpPost("DoChangeCustomerPaymentRequest")]
         //[AllowAnonymous]
@@ -172,6 +208,36 @@ namespace AmazonFarmerAPI.Controllers
 
         //    await ChangeCustomerPaymentWSDL(order);
         //}
+
+
+
+
+        private async Task<List<authorityLetter_Invoice>> getInvoicesBySAPOrderID(string sapOrderID)
+        {
+
+            WSDLFunctions wSDLFunctions = new WSDLFunctions(_repoWrapper, _wsdlConfig);
+            ZSD_AMAZ_ORDER_INV_DETAILSResponse? wsdlResponse = await wSDLFunctions.InvoiceDetailsRequest(new ZSD_AMAZ_ORDER_INV_DETAILS
+            {
+                I_AUBEL = sapOrderID,
+                I_VBELN = ""
+            });
+            List<authorityLetter_Invoice> invoices = new List<authorityLetter_Invoice>();
+            if (wsdlResponse != null && wsdlResponse.E_DETAILS != null && wsdlResponse.E_DETAILS.Count() > 0)
+            {
+                invoices = wsdlResponse.E_DETAILS.Select(inv => new authorityLetter_Invoice
+                {
+                    sapOrderID = sapOrderID,
+                    sapFarmerCode = inv.KUNAG,
+                    qty = Convert.ToInt32(inv.FKIMG).ToString(),
+                    invoiceNumber = inv.VBELN,
+                    invoiceDate = inv.FKDAT,
+                    invoiceAmount = "3000"
+                }).ToList();
+                invoices = await _repoWrapper.AuthorityLetterRepo.getAvailableInvoicesForOrder(sapOrderID, invoices);
+            }
+
+            return invoices;
+        }
         private async Task TransactionFulfilment(tblTransaction transaction)
         {
             string salesOrderNumber = "";

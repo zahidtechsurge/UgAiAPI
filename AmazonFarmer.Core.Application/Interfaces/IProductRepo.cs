@@ -30,6 +30,7 @@ namespace AmazonFarmer.Core.Application.Interfaces // Defining namespace for the
         Task<tblProductTranslation?> GetProductTranslationById(int transID);
         Task<tblProductTranslation?> GetProductTranslationById(int productID, string languageCode);
         Task<TblProduct?> GetProductByID(int productID);
+        Task<TblProduct?> GetProductByCode(string productCode);
         Task<TblProduct?> GetProductByNameOrCode(string productName, string productCode);
         void AddProduct(TblProduct product);
         void UpdateProduct(TblProduct product);

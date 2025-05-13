@@ -177,6 +177,10 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         {
             return await _context.Products.Where(x=>x.ID == productID).FirstOrDefaultAsync();
         }
+        public async Task<TblProduct?> GetProductByCode(string productCode)
+        {
+            return await _context.Products.Where(x => x.ProductCode == productCode).FirstOrDefaultAsync();
+        }
         public async Task<TblProduct?> GetProductByNameOrCode(string productName, string productCode)
         {
             return await _context.Products.Where(x => x.Name == productName || x.ProductCode == productCode).FirstOrDefaultAsync();

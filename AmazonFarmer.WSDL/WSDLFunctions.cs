@@ -20,6 +20,7 @@ using ChangeSaleOrder;
 using Microsoft.EntityFrameworkCore;
 using DetailsInvoice;
 using Microsoft.Extensions.Options;
+using Azure;
 
 namespace AmazonFarmer.WSDL
 {
@@ -593,6 +594,118 @@ namespace AmazonFarmer.WSDL
         public async Task<dynamic> SendTaxCertificate(TaxCertificateRequest request)
         {
             return string.Empty;
+        }
+        public async Task<InvoiceDTO> GetSalesTaxInvoice(SalesTaxCertificateRequest request)
+        {
+            // Dummy response object with mock data
+            dynamic response = new
+            {
+                TOT_ICL_AIT = 10500.50m,
+                AIT = 500.50m,
+                AIT_RATE = 5.0,
+                TOT_EXCL_AIT = 10000.00m,
+                BG_CHARGE = 100.00m,
+                PRICE_ICL_GST = 11500.00m,
+                SALES_TAX = 1500.00m,
+                PRICE_EXC_GST = 10000.00m,
+                DISCOUNT = 200.00m,
+                DEALER_CODE = "000123",
+                GROSS_PRICE = 12000.00m,
+                RATE = 1200.00m,
+                BATCH_NO = "B12345",
+                BG_NUMBER = "BG789456",
+                DEALER_CNIC = "35202-1234567-1",
+                DEALER_NAME = "ABC Traders",
+                DELIVERY_MODE = "Truck",
+                DELIVERY = "000456",
+                DISTZ = 300,
+                FILLER = "Filer",
+                FWD_AGENT = "XYZ Logistics",
+                STEUC = "HS1234",
+                INVOICE_DATE = "2025-05-10",
+                INVOICE_NO = "00098765",
+                ISSUE_PLANT = "Plant A",
+                LOADING_DOCK = "Dock 1",
+                MATERIAL = "000111",
+                DESC = "Fertilizer Product",
+                DEALER_NTN = "1234567-8",
+                BILL_CODE = "000888",
+                PAY_DUE_DATE = "2025-06-10",
+                PHONE_NO = "0300-1234567",
+                EXTI1 = "PSA001",
+                MATERIAL_QUANT = 50,
+                SALES_AREA = "Area A",
+                SALE_DATE = "2025-05-01",
+                SALE_ORDER = "0005566",
+                SALES_POINT = "SP-01",
+                DEALER_SALES_TAX = "1234567890",
+                SHIPMENT_DATE = "2025-05-11",
+                TKNUM = "0000789",
+                CADDRESS = "123 Dealer Street, City",
+                SHIP_CODE = "000321",
+                SHIP_NAME = "Dealer Warehouse",
+                SUPP_SRC_CODE = "SRC123",
+                SUPP_SRC = "Main Factory",
+                TRUCK_NO = "TRL-786",
+                EXTI2 = "Vessel-X",
+                FED = 250.00m,
+                PRICE_ICL_FED = 12250.00m
+            };
+
+            return new InvoiceDTO
+            {
+                priceIncludingAIT = response.TOT_ICL_AIT.ToString("N2"),
+                aIT = response.AIT.ToString("N2"),
+                aITRate = response.AIT_RATE.ToString(),
+                priceExcludingAIT = response.TOT_EXCL_AIT.ToString("N2"),
+                bGCreditCharges = response.BG_CHARGE.ToString("N2"),
+                priceIncludingGST = response.PRICE_ICL_GST.ToString("N2"),
+                salesTax = response.SALES_TAX.ToString("N2"),
+                priceExcludingGST = response.PRICE_EXC_GST.ToString("N2"),
+                discount = response.DISCOUNT.ToString("N2"),
+                dealerCode = response.DEALER_CODE.ToString().TrimStart('0'),
+                grossPrice = response.GROSS_PRICE.ToString("N2"),
+                invoicingRate = response.RATE.ToString("N2"),
+                batchNumber = response.BATCH_NO,
+                bGNumber = response.BG_NUMBER,
+                cNICNumberDealer = response.DEALER_CNIC,
+                dealerName = response.DEALER_NAME,
+                deliveryMode = response.DELIVERY_MODE,
+                deliveryNumber = response.DELIVERY.TrimStart('0'),
+                distance = response.DISTZ.ToString(),
+                filerNonFilerStatus = response.FILLER,
+                forwardAgentName = response.FWD_AGENT,
+                hSCode = response.STEUC,
+                invoiceDate = response.INVOICE_DATE,
+                invoiceNumber = response.INVOICE_NO.TrimStart('0'),
+                issuingPlant = response.ISSUE_PLANT,
+                loadingDock = response.LOADING_DOCK,
+                materialCode = response.MATERIAL.TrimStart('0'),
+                materialDescription = response.DESC,
+                nTNDealer = response.DEALER_NTN,
+                payer = response.BILL_CODE.TrimStart('0'),
+                paymentDueDate = response.PAY_DUE_DATE,
+                phoneNumber = response.PHONE_NO,
+                pSANumber = response.EXTI1,
+                quantity = response.MATERIAL_QUANT.ToString(),
+                salesArea = response.SALES_AREA,
+                salesOrderDate = response.SALE_DATE,
+                salesOrderNumber = response.SALE_ORDER.TrimStart('0'),
+                salesPoint = response.SALES_POINT,
+                salesTaxNumberDealer = response.DEALER_SALES_TAX.ToString(),
+                shipmentDate = response.SHIPMENT_DATE,
+                shipmentNumber = response.TKNUM.TrimStart('0'),
+                shiptopartyAddress = response.CADDRESS,
+                shiptopartycode = response.SHIP_CODE.TrimStart('0'),
+                shiptopartyName = response.SHIP_NAME,
+                supplySourceCode = response.SUPP_SRC_CODE,
+                supplySourceDescription = response.SUPP_SRC,
+                truckNumber = response.TRUCK_NO,
+                vessel = response.EXTI2,
+                fEDAmount = response.FED.ToString("N2"),
+                priceIncludingFED = response.PRICE_ICL_FED.ToString("N2"),
+                priceExcludingFED = response.GROSS_PRICE.ToString("N2")
+            };
         }
 
         private async Task<WSDLLog> LogRequestWsdl(dynamic request, string requestURL, string requestMethod)

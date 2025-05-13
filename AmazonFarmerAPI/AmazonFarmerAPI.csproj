@@ -48,6 +48,7 @@
     <Folder Include="private-documents\Farm-Document\" />
     <Folder Include="private-documents\AuthorityLetter-CNIC\" />
     <Folder Include="private-documents\General-Document\" />
+    <Folder Include="private-documents\temp-SalesTaxCertificate\" />
     <Folder Include="private-documents\NTN\" />
   </ItemGroup>
 

@@ -2,6 +2,66 @@
 
 namespace AmazonFarmer.Core.Application.DTOs
 {
+
+    public class InvoiceDTO
+    {
+        public string inv_Address { get; set; }
+        public string sAPOrderID { get; set; }
+        public string materialCode { get; set; }
+        public string materialDescription { get; set; }
+        public string hSCode { get; set; }
+        public string invoicingRate { get; set; }
+        public string batchNumber { get; set; }
+        public string quantity { get; set; }
+        public string grossPrice { get; set; }
+        public string discount { get; set; }
+        public string priceExcludingGST { get; set; }
+        public string salesTax { get; set; }
+        public string priceIncludingGST { get; set; }
+        public string priceExcludingFED { get; set; } = "0.00";
+        public string fEDAmount { get; set; } = "0.00";
+        public string priceIncludingFED { get; set; } = "0.00";
+        public string furtherTax { get; set; } = "0.00";
+        public string bGCreditCharges { get; set; }
+        public string priceExcludingAIT { get; set; }
+        public string priceIncludingAIT { get; set; }
+        public string aITRate { get; set; }
+        public string aIT { get; set; }
+        public string dealerCode { get; set; }
+        public string dealerName { get; set; }
+        public string shiptopartycode { get; set; }
+        public string shiptopartyName { get; set; }
+        public string payer { get; set; }
+        public string shiptopartyAddress { get; set; }
+        public string phoneNumber { get; set; }
+        public string salesArea { get; set; }
+        public string salesTaxNumberDealer { get; set; }
+        public string cNICNumberDealer { get; set; }
+        public string nTNDealer { get; set; }
+        public string filerNonFilerStatus { get; set; }
+        public string loadingDock { get; set; }
+        public string issuingPlant { get; set; }
+        public string vessel { get; set; }
+        public string salesOrderNumber { get; set; }
+        public string salesOrderDate { get; set; }
+        public string deliveryNumber { get; set; }
+        public string shipmentNumber { get; set; }
+        public string shipmentDate { get; set; }
+        public string deliveryMode { get; set; }
+        public string supplySourceCode { get; set; }
+        public string supplySourceDescription { get; set; }
+        public string salesPoint { get; set; }
+        public string invoiceNumber { get; set; }
+        public string invoiceAmount { get; set; }
+        public string invoiceDate { get; set; }
+        public string truckNumber { get; set; }
+        public string forwardAgentName { get; set; }
+        public string paymentDueDate { get; set; }
+        public string bGNumber { get; set; }
+        public string distance { get; set; }
+        public string pSANumber { get; set; }
+    }
+
     /// <summary>
     /// Data Transfer Object for Authority Letter List
     /// </summary>
@@ -56,6 +116,7 @@ namespace AmazonFarmer.Core.Application.DTOs
     {
         public int letterID { get; set; }
     }
+
     public class authorityLetter_GetOrderDetail_Resp
     {
         public Int64 orderID { get; set; }

@@ -55,6 +55,26 @@ namespace AmazonFarmer.Core.Application.DTOs
     public partial class TaxCertificateRequest
     {
         public string? sapFarmerCode { get; set; } = string.Empty;
-
     }
+    
+    public class SalesTaxCertificateRequest
+    {
+        public string? InvoiceNumber { get; set; } = string.Empty;
+        public string? OrderNo { get; set; } = string.Empty;
+        public string? SAPFarmerCode { get; set; } = string.Empty;
+    }
+
+    public class ProductSalesOrgInfo
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Address { get; set; } = "7th The Harbor Front Building, HC # 3, Marine Drive, Block 4";
+        public string LogoBase { get; set; } = string.Empty;
+    }
+
+    public class SalesTaxCertificateResponse
+    {
+        
+    }
+
+
 }
