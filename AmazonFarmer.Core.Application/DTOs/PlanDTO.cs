@@ -425,6 +425,8 @@ namespace AmazonFarmer.Core.Application.DTOs
         public string farmerComment { get; set; } = "";
         public List<DropDownValues> planApprovalRejectionType { get; set; } = new List<DropDownValues>();
         public bool isSummaryAvailable { get; set; } = false;
+        public string warehouseChangeRequestReason { get; set; } = string.Empty;
+        public int warehouseChangeRequestStatusID { get; set; } = 0;
     }
     public class Employee_getPlanDetail_Farm
     {

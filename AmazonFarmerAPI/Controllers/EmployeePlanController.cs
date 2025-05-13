@@ -257,9 +257,11 @@ namespace AmazonFarmerAPI.Controllers
             {
                 isSummaryAvailable = plan!.PlanCrops!.Where(y => y.Status == EActivityStatus.DeActive).Count() == plan!.PlanCrops!.Count() && plan!.PlanCrops!.Count() > 0 ? false : true,
                 planID = plan.ID,
-                season = plan.Season.Name,
-                pickupLocation = plan.Warehouse.Name,
-                crop = plan.PlanCrops.Select(x => new planCrops_getPlanDetail
+                season = plan.Season!.Name ?? string.Empty,
+                pickupLocation = plan.Warehouse!.Name ?? string.Empty,
+                warehouseChangeRequestStatusID = (int?)plan.ChangeWarehouseStatus ?? 0,
+                warehouseChangeRequestReason = plan.ChangeWarehouseReason ?? string.Empty,
+                crop = plan.PlanCrops!.Select(x => new planCrops_getPlanDetail
                 {
                     planCropID = x.ID,
                     cropGroupID = x.CropGroupID,
@@ -284,7 +286,7 @@ namespace AmazonFarmerAPI.Controllers
                         sewingDate = s.SewingDate//.ToString("yyyy-MM-dd")
                     }).ToList(),
                     totalProducts = x.PlanProducts.Sum(x => x.Qty),
-                }).ToList(),
+                }).ToList() ?? new List<planCrops_getPlanDetail>(),
                 farm = new Employee_getPlanDetail_Farm
                 {
                     name = farm == null ? string.Empty : farm.FarmName,
@@ -296,10 +298,10 @@ namespace AmazonFarmerAPI.Controllers
                 },
                 farmer = new farmerProfileDTO
                 {
-                    firstName = farmer == null ? string.Empty : farmer.FirstName,
-                    LastName = farmer == null ? string.Empty : farmer.LastName,
-                    phone = farmer == null ? string.Empty : farmer.PhoneNumber,
-                    email = farmer == null ? string.Empty : farmer.Email,
+                    firstName = farmer == null || farmer.FirstName == null ? string.Empty : farmer.FirstName,
+                    LastName = farmer == null || farmer.LastName == null ? string.Empty : farmer.LastName,
+                    phone = farmer == null || farmer.PhoneNumber == null ? string.Empty : farmer.PhoneNumber,
+                    email = farmer == null || farmer.Email == null ? string.Empty : farmer.Email,
                     cnicNumber = farmerProfile == null ? string.Empty : farmerProfile.CNICNumber,
                     dateOfBirth = farmerProfile == null ? string.Empty : farmerProfile.DateOfBirth,
                     fatherName = farmerProfile == null ? string.Empty : farmerProfile.FatherName,
@@ -1363,23 +1365,47 @@ namespace AmazonFarmerAPI.Controllers
 
             if (!User.IsInRole("Employee"))
                 throw new AmazonFarmerException(_exceptions.userNotAuthorized);
-
+            List<int> territoryIds = new List<int>();
             int designationID = Convert.ToInt32(User.FindFirst("designationID")?.Value); // Retrieving designation ID from user claims
+            IQueryable<tblPlan> QueryablePlan = await _repoWrapper.PlanRepo.getPlanList();
+            tblPlan? Plan = null;
             if (designationID == (int)EDesignation.Territory_Sales_Officer)
             {
                 if (string.IsNullOrEmpty(Request.reason))
                     throw new AmazonFarmerException(_exceptions.reasonRequired);
 
-                List<int> territoryIds = await _repoWrapper.UserRepo.GetDistrictIDsForTSO(userID);
-                IQueryable<tblPlan> QueryablePlan = await _repoWrapper.PlanRepo.getPlanList();
-                tblPlan? Plan = await QueryablePlan.Where(x => x.ID == Request.planID && territoryIds.Contains(x.Farm.DistrictID)).FirstOrDefaultAsync();
+                territoryIds = await _repoWrapper.UserRepo.GetDistrictIDsForTSO(userID);
+                //IQueryable<tblPlan> QueryablePlan = await _repoWrapper.PlanRepo.getPlanList();
+                Plan = await QueryablePlan.Where(x => x.ID == Request.planID && territoryIds.Contains(x.Farm.DistrictID)).FirstOrDefaultAsync();
                 if (Plan == null) throw new AmazonFarmerException(_exceptions.planNotFound);
                 Plan.ChangeWarehouseStatus = EChangeWarehouseStatus.RSMProcessing;
-                Plan.ChangeWarehouseReason = Request.reason;
+                Plan.ChangeWarehouseReason = Request.reason; ;
+            }
+            else if (designationID == (int)EDesignation.Regional_Sales_Manager)
+            {
+                territoryIds = await _repoWrapper.UserRepo.GetRegionIDsForRSM(userID);
+                Plan = await QueryablePlan.Where(x => x.ID == Request.planID && territoryIds.Contains(x.Farm.DistrictID)).FirstOrDefaultAsync();
+                if (Plan == null && Plan.ChangeWarehouseStatus == EChangeWarehouseStatus.RSMProcessing)
+                    throw new AmazonFarmerException(_exceptions.planNotFound);
+                Plan.ChangeWarehouseStatus = (EChangeWarehouseStatus)Request.statusID;
+            }
+            else if (designationID == (int)EDesignation.National_Sales_Manager)
+            {
+                Plan = await QueryablePlan.Where(x => x.ID == Request.planID).FirstOrDefaultAsync();
+                if (Plan == null && Plan.ChangeWarehouseStatus == EChangeWarehouseStatus.NSMProcessing)
+                    throw new AmazonFarmerException(_exceptions.planNotFound);
+                Plan.ChangeWarehouseStatus = (EChangeWarehouseStatus)Request.statusID;
+            }
+
+
+            if (Plan != null)
+            {
                 await _repoWrapper.PlanRepo.updatePlan(Plan);
                 await _repoWrapper.SaveAsync();
             }
-            []
+            else throw new AmazonFarmerException(_exceptions.planNotFound);
+
+            return new JSONResponse { isError = false, message = "Request updated" };
         }
 
         private IQueryable<tblPlan> filterPlan(IQueryable<tblPlan> plans, string searchTerm)
