@@ -259,8 +259,8 @@ namespace AmazonFarmerAPI.Controllers
                 planID = plan.ID,
                 season = plan.Season!.Name ?? string.Empty,
                 pickupLocation = plan.Warehouse!.Name ?? string.Empty,
-                warehouseChangeRequestStatusID = (int?)plan.ChangeWarehouseStatus ?? 0,
-                warehouseChangeRequestReason = plan.ChangeWarehouseReason ?? string.Empty,
+                //warehouseChangeRequestStatusID = (int?)plan.ChangeWarehouseStatus ?? 0,
+                //warehouseChangeRequestReason = plan.ChangeWarehouseReason ?? string.Empty,
                 crop = plan.PlanCrops!.Select(x => new planCrops_getPlanDetail
                 {
                     planCropID = x.ID,
@@ -1252,161 +1252,162 @@ namespace AmazonFarmerAPI.Controllers
             }
             return resp;
         }
+        #region Warehouse Change Request Module
+        //[HttpGet("getPlanWarehouseUpdateRequests")]
+        //public async Task<APIResponse> GetPlanWarehouseUpdateRequests(PlanWarehouseChangeRequest req)
+        //{
+        //    // Get the user ID from the token
+        //    APIResponse resp = new APIResponse();
+        //    pagination_Resp pagResp = new pagination_Resp();
+        //    var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Retrieving UserID from user claims
+        //    if (string.IsNullOrEmpty(userID))
+        //    {
+        //        throw new AmazonFarmerException(_exceptions.userIDNotFound);
+        //    }
 
-        [HttpGet("getPlanWarehouseUpdateRequests")]
-        public async Task<APIResponse> GetPlanWarehouseUpdateRequests(PlanWarehouseChangeRequest req)
-        {
-            // Get the user ID from the token
-            APIResponse resp = new APIResponse();
-            pagination_Resp pagResp = new pagination_Resp();
-            var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Retrieving UserID from user claims
-            if (string.IsNullOrEmpty(userID))
-            {
-                throw new AmazonFarmerException(_exceptions.userIDNotFound);
-            }
+        //    if (!User.IsInRole("Employee"))
+        //        throw new AmazonFarmerException(_exceptions.userNotAuthorized);
 
-            if (!User.IsInRole("Employee"))
-                throw new AmazonFarmerException(_exceptions.userNotAuthorized);
+        //    int designationID = Convert.ToInt32(User.FindFirst("designationID")?.Value); // Retrieving designation ID from user claims
 
-            int designationID = Convert.ToInt32(User.FindFirst("designationID")?.Value); // Retrieving designation ID from user claims
-
-            IQueryable<tblPlan> plans = await _repoWrapper.PlanRepo.getPlanList();
-            List<int> territoryIds = new List<int>();
-            if (designationID == (int)EDesignation.Territory_Sales_Officer)
-            {
-                territoryIds = await _repoWrapper.UserRepo.GetDistrictIDsForTSO(userID);
-                plans = plans.Where(x => territoryIds.Contains(x.Farm.DistrictID));
-                if (req.requestTypeID == 1)
-                {
-                    plans = plans.Where(x => x.Status == EPlanStatus.TSOProcessing && (x.ChangeWarehouseStatus == EChangeWarehouseStatus.Default || x.ChangeWarehouseStatus == EChangeWarehouseStatus.Declined || x.ChangeWarehouseStatus == EChangeWarehouseStatus.Approved));
-                }
-                else if (req.requestTypeID == 2)
-                {
-                    plans = plans.Where(x => x.ChangeWarehouseStatus == EChangeWarehouseStatus.RSMProcessing);
-                }
-                else if (req.requestTypeID == 3)
-                {
-                    plans = plans.Where(x => x.ChangeWarehouseStatus == EChangeWarehouseStatus.NSMProcessing);
-                }
-            }
-            else if (designationID == (int)EDesignation.Regional_Sales_Manager)
-            {
-                territoryIds = await _repoWrapper.UserRepo.GetRegionIDsForRSM(userID);
-                plans = plans.Where(x => territoryIds.Contains(x.Farm.DistrictID));
-                if (req.requestTypeID == 1)
-                {
-                    plans = plans.Where(x => x.Status == EPlanStatus.TSOProcessing && (x.ChangeWarehouseStatus == EChangeWarehouseStatus.Default || x.ChangeWarehouseStatus == EChangeWarehouseStatus.Declined || x.ChangeWarehouseStatus == EChangeWarehouseStatus.Approved));
-                }
-                else if (req.requestTypeID == 2)
-                {
-                    plans = plans.Where(x => x.ChangeWarehouseStatus == EChangeWarehouseStatus.RSMProcessing);
-                }
-                else if (req.requestTypeID == 3)
-                {
-                    plans = plans.Where(x => x.ChangeWarehouseStatus == EChangeWarehouseStatus.NSMProcessing);
-                }
-            }
-            else if (designationID == (int)EDesignation.National_Sales_Manager)
-            {
-                if (req.requestTypeID == 1)
-                {
-                    plans = plans.Where(x => x.Status == EPlanStatus.TSOProcessing && (x.ChangeWarehouseStatus == EChangeWarehouseStatus.Default || x.ChangeWarehouseStatus == EChangeWarehouseStatus.Declined || x.ChangeWarehouseStatus == EChangeWarehouseStatus.Approved));
-                }
-                else if (req.requestTypeID == 2)
-                {
-                    plans = plans.Where(x => x.ChangeWarehouseStatus == EChangeWarehouseStatus.RSMProcessing);
-                }
-                else if (req.requestTypeID == 3)
-                {
-                    plans = plans.Where(x => x.ChangeWarehouseStatus == EChangeWarehouseStatus.NSMProcessing);
-                }
-            }
-
-
-            if (!string.IsNullOrEmpty(req.orderBy))
-            {
-                plans = sortPlan(plans, req.orderBy);
-            }
-            else plans = plans.OrderByDescending(x => x.ID);
-
-            List<Employee_getPlansDTO> lst = new List<Employee_getPlansDTO>();
-            pagResp.totalRecord = plans.Count();
-            //add search terms
-            if (!string.IsNullOrEmpty(req.search))
-            {
-                plans = filterPlan(plans, req.search);
-            }
-            pagResp.filteredRecord = plans.Count();
-            plans = plans.Skip(req.skip).Take(req.take);
-
-            pagResp.list = await plans.Select(x => new Employee_getPlansDTO
-            {
-                planID = x.ID,
-                viewablePlanID = x.ID.ToString().PadLeft(10, '0'),
-                farm = x.Farm.FarmName,
-                farmer = string.Concat(x.User.FirstName + " " + x.User.LastName),
-                season = x.Season.Name,
-                status = x.Status.ToString(),
-                statusID = (int)x.Status
-            }).ToListAsync();
-            resp.response = pagResp;
-
-            return resp;
-        }
-
-        [HttpPut("planWarehouseUpdate")]
-        public async Task<JSONResponse> PlanWarehouseUpdate(PlanWarehouseUpdateRequest Request)
-        {
-            var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Retrieving UserID from user claims
-            if (string.IsNullOrEmpty(userID))
-            {
-                throw new AmazonFarmerException(_exceptions.userIDNotFound);
-            }
-
-            if (!User.IsInRole("Employee"))
-                throw new AmazonFarmerException(_exceptions.userNotAuthorized);
-            List<int> territoryIds = new List<int>();
-            int designationID = Convert.ToInt32(User.FindFirst("designationID")?.Value); // Retrieving designation ID from user claims
-            IQueryable<tblPlan> QueryablePlan = await _repoWrapper.PlanRepo.getPlanList();
-            tblPlan? Plan = null;
-            if (designationID == (int)EDesignation.Territory_Sales_Officer)
-            {
-                if (string.IsNullOrEmpty(Request.reason))
-                    throw new AmazonFarmerException(_exceptions.reasonRequired);
-
-                territoryIds = await _repoWrapper.UserRepo.GetDistrictIDsForTSO(userID);
-                //IQueryable<tblPlan> QueryablePlan = await _repoWrapper.PlanRepo.getPlanList();
-                Plan = await QueryablePlan.Where(x => x.ID == Request.planID && territoryIds.Contains(x.Farm.DistrictID)).FirstOrDefaultAsync();
-                if (Plan == null) throw new AmazonFarmerException(_exceptions.planNotFound);
-                Plan.ChangeWarehouseStatus = EChangeWarehouseStatus.RSMProcessing;
-                Plan.ChangeWarehouseReason = Request.reason; ;
-            }
-            else if (designationID == (int)EDesignation.Regional_Sales_Manager)
-            {
-                territoryIds = await _repoWrapper.UserRepo.GetRegionIDsForRSM(userID);
-                Plan = await QueryablePlan.Where(x => x.ID == Request.planID && territoryIds.Contains(x.Farm.DistrictID)).FirstOrDefaultAsync();
-                if (Plan == null && Plan.ChangeWarehouseStatus == EChangeWarehouseStatus.RSMProcessing)
-                    throw new AmazonFarmerException(_exceptions.planNotFound);
-                Plan.ChangeWarehouseStatus = (EChangeWarehouseStatus)Request.statusID;
-            }
-            else if (designationID == (int)EDesignation.National_Sales_Manager)
-            {
-                Plan = await QueryablePlan.Where(x => x.ID == Request.planID).FirstOrDefaultAsync();
-                if (Plan == null && Plan.ChangeWarehouseStatus == EChangeWarehouseStatus.NSMProcessing)
-                    throw new AmazonFarmerException(_exceptions.planNotFound);
-                Plan.ChangeWarehouseStatus = (EChangeWarehouseStatus)Request.statusID;
-            }
+        //    IQueryable<tblPlan> plans = await _repoWrapper.PlanRepo.getPlanList();
+        //    List<int> territoryIds = new List<int>();
+        //    if (designationID == (int)EDesignation.Territory_Sales_Officer)
+        //    {
+        //        territoryIds = await _repoWrapper.UserRepo.GetDistrictIDsForTSO(userID);
+        //        plans = plans.Where(x => territoryIds.Contains(x.Farm.DistrictID));
+        //        if (req.requestTypeID == 1)
+        //        {
+        //            plans = plans.Where(x => x.Status == EPlanStatus.TSOProcessing && (x.ChangeWarehouseStatus == EChangeWarehouseStatus.Default || x.ChangeWarehouseStatus == EChangeWarehouseStatus.Declined || x.ChangeWarehouseStatus == EChangeWarehouseStatus.Approved));
+        //        }
+        //        else if (req.requestTypeID == 2)
+        //        {
+        //            plans = plans.Where(x => x.ChangeWarehouseStatus == EChangeWarehouseStatus.RSMProcessing);
+        //        }
+        //        else if (req.requestTypeID == 3)
+        //        {
+        //            plans = plans.Where(x => x.ChangeWarehouseStatus == EChangeWarehouseStatus.NSMProcessing);
+        //        }
+        //    }
+        //    else if (designationID == (int)EDesignation.Regional_Sales_Manager)
+        //    {
+        //        territoryIds = await _repoWrapper.UserRepo.GetRegionIDsForRSM(userID);
+        //        plans = plans.Where(x => territoryIds.Contains(x.Farm.DistrictID));
+        //        if (req.requestTypeID == 1)
+        //        {
+        //            plans = plans.Where(x => x.Status == EPlanStatus.TSOProcessing && (x.ChangeWarehouseStatus == EChangeWarehouseStatus.Default || x.ChangeWarehouseStatus == EChangeWarehouseStatus.Declined || x.ChangeWarehouseStatus == EChangeWarehouseStatus.Approved));
+        //        }
+        //        else if (req.requestTypeID == 2)
+        //        {
+        //            plans = plans.Where(x => x.ChangeWarehouseStatus == EChangeWarehouseStatus.RSMProcessing);
+        //        }
+        //        else if (req.requestTypeID == 3)
+        //        {
+        //            plans = plans.Where(x => x.ChangeWarehouseStatus == EChangeWarehouseStatus.NSMProcessing);
+        //        }
+        //    }
+        //    else if (designationID == (int)EDesignation.National_Sales_Manager)
+        //    {
+        //        if (req.requestTypeID == 1)
+        //        {
+        //            plans = plans.Where(x => x.Status == EPlanStatus.TSOProcessing && (x.ChangeWarehouseStatus == EChangeWarehouseStatus.Default || x.ChangeWarehouseStatus == EChangeWarehouseStatus.Declined || x.ChangeWarehouseStatus == EChangeWarehouseStatus.Approved));
+        //        }
+        //        else if (req.requestTypeID == 2)
+        //        {
+        //            plans = plans.Where(x => x.ChangeWarehouseStatus == EChangeWarehouseStatus.RSMProcessing);
+        //        }
+        //        else if (req.requestTypeID == 3)
+        //        {
+        //            plans = plans.Where(x => x.ChangeWarehouseStatus == EChangeWarehouseStatus.NSMProcessing);
+        //        }
+        //    }
 
 
-            if (Plan != null)
-            {
-                await _repoWrapper.PlanRepo.updatePlan(Plan);
-                await _repoWrapper.SaveAsync();
-            }
-            else throw new AmazonFarmerException(_exceptions.planNotFound);
+        //    if (!string.IsNullOrEmpty(req.orderBy))
+        //    {
+        //        plans = sortPlan(plans, req.orderBy);
+        //    }
+        //    else plans = plans.OrderByDescending(x => x.ID);
 
-            return new JSONResponse { isError = false, message = "Request updated" };
-        }
+        //    List<Employee_getPlansDTO> lst = new List<Employee_getPlansDTO>();
+        //    pagResp.totalRecord = plans.Count();
+        //    //add search terms
+        //    if (!string.IsNullOrEmpty(req.search))
+        //    {
+        //        plans = filterPlan(plans, req.search);
+        //    }
+        //    pagResp.filteredRecord = plans.Count();
+        //    plans = plans.Skip(req.skip).Take(req.take);
+
+        //    pagResp.list = await plans.Select(x => new Employee_getPlansDTO
+        //    {
+        //        planID = x.ID,
+        //        viewablePlanID = x.ID.ToString().PadLeft(10, '0'),
+        //        farm = x.Farm.FarmName,
+        //        farmer = string.Concat(x.User.FirstName + " " + x.User.LastName),
+        //        season = x.Season.Name,
+        //        status = x.Status.ToString(),
+        //        statusID = (int)x.Status
+        //    }).ToListAsync();
+        //    resp.response = pagResp;
+
+        //    return resp;
+        //}
+
+        //[HttpPut("planWarehouseUpdate")]
+        //public async Task<JSONResponse> PlanWarehouseUpdate(PlanWarehouseUpdateRequest Request)
+        //{
+        //    var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Retrieving UserID from user claims
+        //    if (string.IsNullOrEmpty(userID))
+        //    {
+        //        throw new AmazonFarmerException(_exceptions.userIDNotFound);
+        //    }
+
+        //    if (!User.IsInRole("Employee"))
+        //        throw new AmazonFarmerException(_exceptions.userNotAuthorized);
+        //    List<int> territoryIds = new List<int>();
+        //    int designationID = Convert.ToInt32(User.FindFirst("designationID")?.Value); // Retrieving designation ID from user claims
+        //    IQueryable<tblPlan> QueryablePlan = await _repoWrapper.PlanRepo.getPlanList();
+        //    tblPlan? Plan = null;
+        //    if (designationID == (int)EDesignation.Territory_Sales_Officer)
+        //    {
+        //        if (string.IsNullOrEmpty(Request.reason))
+        //            throw new AmazonFarmerException(_exceptions.reasonRequired);
+
+        //        territoryIds = await _repoWrapper.UserRepo.GetDistrictIDsForTSO(userID);
+        //        //IQueryable<tblPlan> QueryablePlan = await _repoWrapper.PlanRepo.getPlanList();
+        //        Plan = await QueryablePlan.Where(x => x.ID == Request.planID && territoryIds.Contains(x.Farm.DistrictID)).FirstOrDefaultAsync();
+        //        if (Plan == null) throw new AmazonFarmerException(_exceptions.planNotFound);
+        //        Plan.ChangeWarehouseStatus = EChangeWarehouseStatus.RSMProcessing;
+        //        Plan.ChangeWarehouseReason = Request.reason;
+        //    }
+        //    else if (designationID == (int)EDesignation.Regional_Sales_Manager)
+        //    {
+        //        territoryIds = await _repoWrapper.UserRepo.GetRegionIDsForRSM(userID);
+        //        Plan = await QueryablePlan.Where(x => x.ID == Request.planID && territoryIds.Contains(x.Farm.DistrictID)).FirstOrDefaultAsync();
+        //        if (Plan == null && Plan.ChangeWarehouseStatus == EChangeWarehouseStatus.RSMProcessing)
+        //            throw new AmazonFarmerException(_exceptions.planNotFound);
+        //        Plan.ChangeWarehouseStatus = (EChangeWarehouseStatus)Request.statusID;
+        //    }
+        //    else if (designationID == (int)EDesignation.National_Sales_Manager)
+        //    {
+        //        Plan = await QueryablePlan.Where(x => x.ID == Request.planID).FirstOrDefaultAsync();
+        //        if (Plan == null && Plan.ChangeWarehouseStatus == EChangeWarehouseStatus.NSMProcessing)
+        //            throw new AmazonFarmerException(_exceptions.planNotFound);
+        //        Plan.ChangeWarehouseStatus = (EChangeWarehouseStatus)Request.statusID;
+        //    }
+
+
+        //    if (Plan != null)
+        //    {
+        //        await _repoWrapper.PlanRepo.updatePlan(Plan);
+        //        await _repoWrapper.SaveAsync();
+        //    }
+        //    else throw new AmazonFarmerException(_exceptions.planNotFound);
+
+        //    return new JSONResponse { isError = false, message = "Request updated" };
+        //}
+        #endregion
 
         private IQueryable<tblPlan> filterPlan(IQueryable<tblPlan> plans, string searchTerm)
         {

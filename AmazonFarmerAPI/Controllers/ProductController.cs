@@ -10,7 +10,9 @@ using Google.Api;
 using Google.Cloud.Vision.V1;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Org.BouncyCastle.Ocsp;
 using SimulatePrice;
 using System; // Added to use Exception class
 using System.Collections.Generic; // Added to use List<>
@@ -38,8 +40,8 @@ namespace AmazonFarmerAPI.Controllers
         }
 
         // Action method to get products
-        [HttpGet("getProducts")]
-        public async Task<APIResponse> getProducts()
+        [HttpGet("getProducts/{WarehouseID}")]
+        public async Task<APIResponse> getProducts(int WarehouseID)
         {
             APIResponse resp = new APIResponse();
             // Get the language code from the user claims
@@ -52,9 +54,49 @@ namespace AmazonFarmerAPI.Controllers
             string orderBufferTime = await _repoWrapper.CommonRepo.GetConfigurationValueByConfigType(EConfigType.OrderBufferTime);
 
             // Call repository method to get products by language ID
-            resp.response = await _repoWrapper.ProductRepo.getProductsByLangugageID(req, Convert.ToInt32(orderBufferTime));
+            var ProductCategories = await _repoWrapper.ProductRepo.getProductsByLangugageID(req, Convert.ToInt32(orderBufferTime));
+
+            resp.response = GetProductPrice(WarehouseID, ProductCategories);
+
             return resp;
         }
+
+
+        private async Task<List<categoryDTO_Resp>> GetProductPrice(int warehouseID, List<categoryDTO_Resp> productCategories)
+        {
+            // Initialize list to store product prices
+            var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Extracting user ID from claims
+            TblUser? loggedInUser = await _repoWrapper.UserRepo.getUserByUserID(userID);
+            IQueryable<tblService> QurableServices = _repoWrapper.ServiceRepo.GetService();
+            List<tblService> Services = await QurableServices.Where(x => x.Active == EActivityStatus.Active).ToListAsync();
+            tblwarehouse warehouse = await _repoWrapper.WarehouseRepo.getWarehouseByID(warehouseID);
+            List<string> ServiceCodes = Services.Select(x => x.Code).ToList();
+            List<int> ServiceIDs = Services.Select(x => x.ID).ToList();
+
+            foreach (var category in productCategories)
+            {
+                foreach (var product in category.products)
+                {
+                    PrivateFunc_GetProductPrice sapReq = new PrivateFunc_GetProductPrice()
+                    {
+                        serviceCode = ServiceCodes,
+                        sapFarmerCode = loggedInUser.FarmerProfile.FirstOrDefault().SAPFarmerCode,
+                        productDivision = product.Division,
+                        productCode = product.ProductCode,
+                        warehouseSalePoint = warehouse.SalePoint,
+                        productSalesOrg = product.SalesOrg,
+                        productUOM = product.uom,
+                        productQTY = 1
+                    };
+                    ProductPrice sapResp = await GetProductPrices(sapReq);
+
+                    product.actualPrice = sapResp.UnitTotalAmount;
+                    product.discountedPrice = sapResp.TotalAmount * 1.00m;
+                }
+            }
+            return productCategories;
+        }
+
 
         // Action method to get product prices
         [HttpPost("getProductPrices")]
@@ -214,7 +256,7 @@ namespace AmazonFarmerAPI.Controllers
                 resp.Add(sapResp);
             }
             return resp;
-        } 
+        }
         private async Task<ProductPrice> GetProductPrices(PrivateFunc_GetProductPrice req)
         {
             decimal newProductPrice = 0;

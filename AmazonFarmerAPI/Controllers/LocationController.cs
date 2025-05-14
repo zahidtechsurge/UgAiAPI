@@ -55,6 +55,20 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
             return resp; // Returning the API response
         }
 
+        [HttpGet("getWarehouses")]
+        public async Task<APIResponse> GetWarehouses()
+        {
+            List<LocationDTO> warehouseLocationDBs = await _repoWrapper.LocationRepo.getWarehouseLocationsByLanguageCode(User.FindFirst("languageCode")?.Value); // Retrieving warehouse locations by language code
+            if (warehouseLocationDBs == null || warehouseLocationDBs.Count() <= 0) // Checking if warehouse locations are found
+                throw new AmazonFarmerException(_exceptions.warehouseNotFound); // Throws exception if warehouse locations are not found
+            return new APIResponse()
+            {
+                isError = false,
+                message = string.Empty,
+                response = warehouseLocationDBs
+            };
+        }
+
         [AllowAnonymous]
         [HttpGet("getdirections/{origin}/{destination}")]
         public async Task<dynamic> getDirections(string origin, string destination)

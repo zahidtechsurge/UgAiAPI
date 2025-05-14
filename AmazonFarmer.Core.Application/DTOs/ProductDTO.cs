@@ -16,9 +16,14 @@
 
         // The duration after delivery
         public int postDeliveryIn { get; set; }
+        public decimal actualPrice { get; set; } = decimal.Zero;
+        public decimal discountedPrice { get; set; } = decimal.Zero;
 
         // The Unit of measure
         public string uom { get; set; }
+        public string Division { get; set; }
+        public string ProductCode { get; set; }
+        public string SalesOrg { get; set; }
     }
     /// <summary>
     /// Response Data Transfer Object (DTO) for product information.
