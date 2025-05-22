@@ -31,6 +31,9 @@ namespace AmazonFarmer.Core.Application.Interfaces
         tblTransaction UpdateTransaction(tblTransaction transaction);
         void AddTransactionLog(tblTransactionLog log);
         Task<decimal> getOrderPriceByComsumerNumber(string consumerNumber);
+        Task<tblTransaction?> GetTransactionByID(int Id);
+        Task<List<tblTransaction>> getAllPendingTransactions();
+        IQueryable<tblTransaction> getTransactions();
     }
 }
 

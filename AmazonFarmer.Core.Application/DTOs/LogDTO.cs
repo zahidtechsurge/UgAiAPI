@@ -7,6 +7,18 @@ using System.Threading.Tasks;
 
 namespace AmazonFarmer.Core.Application.DTOs
 {
+    public class PendingTransactionDTO
+    {
+        public int recID { get; set; }
+        public string orderType { get; set; } = string.Empty;
+        public string sAPOrderID { get; set; }
+        public int transactionStatusCheckAttempts { get; set; }
+        public string transactionStatus { get; set; }
+        public int transactionStatusID { get; set; }
+        public decimal amount { get; set; }
+        public string? paidDate { get; set; } = string.Empty;
+        public string? paidTime { get; set; } = string.Empty;
+    }
     public class LogDTO
     {
         public int recID { get; set; }
