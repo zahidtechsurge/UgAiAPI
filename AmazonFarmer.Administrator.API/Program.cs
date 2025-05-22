@@ -1,6 +1,7 @@
 using AmazonFarmer.Administrator.API.Extensions;
 using AmazonFarmer.Administrator.API.Middlewares;
 using AmazonFarmer.Core.Application;
+using AmazonFarmer.Core.Application.DTOs;
 using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence;
 using AmazonFarmer.Infrastructure.Services;
@@ -62,6 +63,7 @@ builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection(
 builder.Services.Configure<FcmConfiguration>(builder.Configuration.GetSection("Fcm"));
 
 builder.Services.Configure<SMSConfiguration>(builder.Configuration.GetSection("SMS"));
+builder.Services.Configure<Reconfirmation_API_Configuration>(builder.Configuration.GetSection("1LinkConfiguration:OrderReconfirmation"));
 builder.Services.AddTransient<NotificationService>();
 // Add services to the container.
 
