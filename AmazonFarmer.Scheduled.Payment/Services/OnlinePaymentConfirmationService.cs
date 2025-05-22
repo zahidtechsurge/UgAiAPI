@@ -44,7 +44,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
                 var _repoWrapper = scope.ServiceProvider.GetRequiredService<IRepositoryWrapper>();
                 var paymentService = scope.ServiceProvider.GetRequiredService<PaymentService>();
                 List<tblTransaction> pendingTransactions = await _repoWrapper.OnlinePaymentRepo.getAllPendingTransactions();
-                foreach (var transaction in pendingTransactions)
+                foreach (var transaction in pendingTransactions.Where(pt => pt.TransactionStatusCheckAttempts < 3).ToList())
                 {
                     request.Consumer_No = transaction.ConsumerCode;
                     request.UCID = "IN" + transaction.Prefix;
