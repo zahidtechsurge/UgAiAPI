@@ -156,6 +156,25 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                 .Include(t => t.Order).ThenInclude(o => o.Warehouse)
                 .Where(x => x.Tran_Auth_ID == Tran_Auth_ID && x.ConsumerCode == consumerCode).FirstOrDefaultAsync();
         }
+        public async Task<tblTransaction?> GetTransactionByID(int Id)
+        {
+            return await _context.Transactions.Where(x => x.Id == Id).FirstOrDefaultAsync();
+        }
+
+        public async Task<List<tblTransaction>> getAllPendingTransactions()
+        {
+            return await _context.Transactions
+                .Include(t => t.Order).ThenInclude(o => o.User).ThenInclude(u => u.FarmerProfile)
+                .Include(t => t.Order).ThenInclude(o => o.Plan).ThenInclude(p => p.OrderServices).ThenInclude(os => os.Service)
+                .Include(t => t.Order).ThenInclude(o => o.Products).ThenInclude(op => op.Product).ThenInclude(p => p.UOM)
+                .Include(t => t.Order).ThenInclude(o => o.Warehouse)
+                .Where(x => x.TransactionStatus == ETransactionStatus.Pending).ToListAsync();
+        }
+        public IQueryable<tblTransaction> getTransactions()
+        {
+            return _context.Transactions
+                .Include(x => x.Order);
+        }
 
         public tblTransaction UpdateTransaction(tblTransaction transaction)
         {

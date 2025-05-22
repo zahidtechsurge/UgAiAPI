@@ -56,7 +56,7 @@ namespace AmazonFarmerAPI.Controllers
             // Call repository method to get products by language ID
             var ProductCategories = await _repoWrapper.ProductRepo.getProductsByLangugageID(req, Convert.ToInt32(orderBufferTime));
 
-            resp.response = GetProductPrice(WarehouseID, ProductCategories);
+            resp.response = await GetProductPrice(WarehouseID, ProductCategories);
 
             return resp;
         }

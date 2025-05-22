@@ -15,6 +15,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
     using AmazonFarmer.Core.Domain.Entities;
     using AmazonFarmer.Infrastructure.Persistence;
     using AmazonFarmer.NotificationServices.Services;
+    using AmazonFarmer.Scheduled.Payment.DTOs;
     using Azure.Storage.Files.Shares;
     using Azure.Storage.Files.Shares.Models;
     using FirebaseAdmin.Messaging;
@@ -36,9 +37,43 @@ namespace AmazonFarmer.Scheduled.Payment.Services
             _serviceProvider = serviceProvider;
         }
 
+        
+
+        private async Task OrderPaymentReconfirmation()
+        {
+
+        }
+
         public async Task ProcessFilesAsync()
         {
 
+            FileExtractDTO fileExtract = await ExtractFile();
+
+
+            var localDirectories = Directory.GetDirectories(fileExtract.inputDirectory);
+
+            foreach (var directory in localDirectories)
+            {
+                string extractedDirectoryName = Path.GetFileName(directory);
+                if (extractedDirectoryName != null && extractedDirectoryName.StartsWith(fileExtract.companyFileName))
+                {
+                    var txtFiles = Directory.GetFiles(directory, fileExtract.extractedMISFileName, SearchOption.AllDirectories);
+
+                    foreach (var txtFile in txtFiles)
+                    {
+                        await ProcessFileAsync(txtFile);
+                    }
+
+                    //Move extracted directories in to archive folder
+                    Directory.Move(directory, Path.Combine(fileExtract.archiveDirectory, extractedDirectoryName));
+                }
+
+            }
+        }
+
+        private async Task<FileExtractDTO> ExtractFile()
+        {
+            var resp = new FileExtractDTO();
             string currentDirectory = Directory.GetCurrentDirectory();
 
             var inputDirectory = currentDirectory + _configuration["FileSettings:InputDirectory"];
@@ -100,26 +135,14 @@ namespace AmazonFarmer.Scheduled.Payment.Services
                 }
             }
 
-
-            var localDirectories = Directory.GetDirectories(inputDirectory);
-
-            foreach (var directory in localDirectories)
+            resp = new FileExtractDTO()
             {
-                string extractedDirectoryName = Path.GetFileName(directory);
-                if (extractedDirectoryName != null && extractedDirectoryName.StartsWith(companyFileName))
-                {
-                    var txtFiles = Directory.GetFiles(directory, extractedMISFileName, SearchOption.AllDirectories);
-
-                    foreach (var txtFile in txtFiles)
-                    {
-                        await ProcessFileAsync(txtFile);
-                    }
-
-                    //Move extracted directories in to archive folder
-                    Directory.Move(directory, Path.Combine(archiveDirectory, extractedDirectoryName));
-                }
-
-            }
+                companyFileName = companyFileName,
+                inputDirectory = inputDirectory,
+                extractedMISFileName = extractedMISFileName,
+                archiveDirectory = archiveDirectory,
+            };
+            return resp;
         }
 
         private async Task ProcessFileAsync(string filePath)

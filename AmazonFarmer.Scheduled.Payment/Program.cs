@@ -2,11 +2,13 @@
 using System.IO;
 using System.Threading.Tasks;
 using AmazonFarmer.Core.Application;
+using AmazonFarmer.Core.Application.DTOs;
 using AmazonFarmer.Core.Domain.Entities;
 using AmazonFarmer.Infrastructure.Persistence;
 using AmazonFarmer.Infrastructure.Services;
 using AmazonFarmer.NotificationServices.Helpers;
 using AmazonFarmer.NotificationServices.Services;
+using AmazonFarmer.Scheduled.Payment.DTOs;
 using AmazonFarmer.Scheduled.Payment.Services;
 using AmazonFarmer.WSDL.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -55,6 +57,7 @@ var host = Host.CreateDefaultBuilder(args)
 
         services.Configure<SMSConfiguration>(context.Configuration.GetSection("SMS")); 
         services.Configure<GoogleAPIConfiguration>(context.Configuration.GetSection("GoogleMaps")); 
+        services.Configure<Reconfirmation_API_Configuration>(context.Configuration.GetSection("1LinkConfiguration:OrderReconfirmation")); 
         
         // Register NotificationService
         services.AddTransient<NotificationService>();
@@ -64,4 +67,6 @@ var host = Host.CreateDefaultBuilder(args)
 
 
 var fileProcessor = host.Services.GetRequiredService<FileProcessorService>();
-await fileProcessor.ProcessFilesAsync();
+var OnlinePayment = host.Services.GetRequiredService<OnlinePaymentConfirmationService>();
+await OnlinePayment.ProcessPendingOnlinePaymentsAsync();
+//await fileProcessor.ProcessFilesAsync();

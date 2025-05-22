@@ -22,5 +22,13 @@ namespace AmazonFarmerAPI.Extensions
             var attribute = (DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
             return attribute == null ? value.ToString() : attribute.Description;
         }
+
+        public static TAttribute? GetAttribute<TEnum, TAttribute>(TEnum value)
+        where TEnum : Enum
+        where TAttribute : Attribute
+        {
+            var memberInfo = typeof(TEnum).GetMember(value.ToString()).FirstOrDefault();
+            return memberInfo?.GetCustomAttributes(typeof(TAttribute), false).FirstOrDefault() as TAttribute;
+        }
     }
 }

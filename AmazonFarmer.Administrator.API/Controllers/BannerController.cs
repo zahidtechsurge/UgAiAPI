@@ -133,7 +133,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
 
         #region New Banner
         [HttpPost("v_addBanner")]
-        public async Task<APIResponse> AddBanner(AddBanner Request)
+        public async Task<APIResponse> CR_AddBanner(AddBanner Request)
         {
             APIResponse resp = new APIResponse();
 

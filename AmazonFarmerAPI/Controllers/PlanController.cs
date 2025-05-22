@@ -395,6 +395,7 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
         {
             plan.FarmID = req.farmID;
             plan.SeasonID = req.seasonID;
+            plan.ModeOfPayment = (EModeOfPayment?)req.modeOfPayment ?? EModeOfPayment.Partial_Payment;
 
             #region new method 
             //new plan crops 
@@ -745,7 +746,7 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                     TblOrders? advanceOrderReconcile = orders.Where(x => x.OrderStatus != EOrderStatus.Blocked
                         && (x.OrderType == EOrderType.AdvancePaymentReconcile)).FirstOrDefault();
 
-                    if (advanceOrder == null)
+                    if (plan.ModeOfPayment != EModeOfPayment.Full_Payment && advanceOrder == null)
                         throw new AmazonFarmerException(_exceptions.advanceOrderNotFound);
                     else if (orders == null || orders.Count() <= 0)
                         throw new AmazonFarmerException(_exceptions.orderNotFound);
@@ -756,23 +757,23 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
 
                     resp.response = new getPlanOrder_Resp
                     {
-                        canPay = advanceOrder == null || advanceOrder.isLocked ? false :
+                        canPay = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder == null || advanceOrder.isLocked ? false :
                                     advanceOrder.DuePaymentDate < DateTime.UtcNow ? false :
                                         advanceOrder.PaymentStatus == EOrderPaymentStatus.NonPaid ? true :
-                                        false,
+                                        false) : true,
                         // Format planID as a 10-digit string with leading zeros
                         planID = plan.ID.ToString().PadLeft(10, '0'),
                         // Check if Farm is not null and assign farmName, otherwise assign null
                         farmName = farm != null ? farm.FarmName : null,
-                        advancestatusDescription = advanceOrder.PaymentStatus != EOrderPaymentStatus.Paid && advanceOrder.DuePaymentDate < DateTime.UtcNow ? ConfigExntension.GetEnumDescription(EOrderStatus.Expired) : ConfigExntension.GetEnumDescription(advanceOrder.PaymentStatus),
+                        advancestatusDescription = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder.PaymentStatus != EOrderPaymentStatus.Paid && advanceOrder.DuePaymentDate < DateTime.UtcNow ? ConfigExntension.GetEnumDescription(EOrderStatus.Expired) : ConfigExntension.GetEnumDescription(advanceOrder.PaymentStatus)) : string.Empty,
                         // Set advancePercent and advanceAmount values (hardcoded for demonstration)
-                        advancePercent = advanceOrder != null ? (advanceOrder.AdvancePercent.ToString() + " %") : "0",
-                        advanceAmount = advanceOrder != null ? advanceOrder.OrderAmount.ToString("N2") : "0",
-                        advancePaymentStatus = advanceOrder != null ? (int)advanceOrder.PaymentStatus : 0,
-                        advanceOrderStatus = advanceOrder != null ? !advanceOrder.isLocked ?
+                        advancePercent = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder != null ? (advanceOrder.AdvancePercent.ToString() + " %") : "0") : "0",
+                        advanceAmount = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder != null ? advanceOrder.OrderAmount.ToString("N2"): "0" ): "0",
+                        advancePaymentStatus = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder != null ? (int)advanceOrder.PaymentStatus : 0):0,
+                        advanceOrderStatus = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder != null ? !advanceOrder.isLocked ?
                             ((advanceOrder.PaymentStatus != EOrderPaymentStatus.Paid && advanceOrder.DuePaymentDate < DateTime.UtcNow)
-                                ? (int)EOrderStatus.Expired : (int)advanceOrder.OrderStatus) : (int)EOrderStatus.Blocked : 0,
-                        advancePaymentOrderID = advanceOrder != null ? Convert.ToInt64(advanceOrder.OrderID) : 0,
+                                ? (int)EOrderStatus.Expired : (int)advanceOrder.OrderStatus) : (int)EOrderStatus.Blocked : 0): 0,
+                        advancePaymentOrderID = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder != null ? Convert.ToInt64(advanceOrder.OrderID) : 0) : 0,
                         // Check if Season and SeasonTranslations are not null, assign seasonName, otherwise assign null
                         seasonName = season != null ?
                                 season.SeasonTranslations
@@ -1055,7 +1056,8 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                             }).ToList()
                         }).ToList(),
                         changeRequestStatus = plan.PlanChangeStatus,
-                        isEmptyCropsAllowed = plan!.Orders!.Any() ? true : false
+                        isEmptyCropsAllowed = plan!.Orders!.Any() ? true : false,
+                        modeOfPayment = (int?)plan!.ModeOfPayment ?? 0
                     };
                 }
             }
@@ -1163,7 +1165,8 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                             }).ToList()
                         }).ToList(),
                         changeRequestStatus = plan.PlanChangeStatus,
-                        isEmptyCropsAllowed = plan!.Orders!.Any() ? true : false
+                        isEmptyCropsAllowed = plan!.Orders!.Any() ? true : false,
+                        modeOfPayment = (int?)plan!.ModeOfPayment ?? 0
                     };
                 }
             }

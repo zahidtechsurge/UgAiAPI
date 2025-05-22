@@ -292,4 +292,9 @@ namespace AmazonFarmer.Core.Application.DTOs
         [Description("Address 1")]
         public string? address1 { get; set; } = string.Empty;
     }
+    public class GetSalesReportResult
+    {
+
+    }
 }
+

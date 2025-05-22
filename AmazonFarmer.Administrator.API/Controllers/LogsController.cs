@@ -22,7 +22,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             _repoWrapper = repoWrapper;
         }
 
-        [AllowAnonymous]
+
         [HttpPost("getEventLogs")]
         public async Task<APIResponse> Get_Event_Logs(ReportPagination_Req req)
         {
@@ -143,7 +143,7 @@ namespace AmazonFarmer.Administrator.API.Controllers
             resp.response = InResp;
             return resp;
         }
-        [AllowAnonymous]
+
         [HttpPost("getEmailLogs")]
         public async Task<APIResponse> Get_Email_Logs(ReportPagination_Req req)
         {

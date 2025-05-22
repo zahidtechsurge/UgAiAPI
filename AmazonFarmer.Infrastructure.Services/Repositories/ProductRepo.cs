@@ -53,6 +53,9 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
                         x.ProductTranslations.Where(pt => pt.LanguageCode == req.languageCode).FirstOrDefault().Image.Replace("/", "%2F").Replace(" ", "%20")), // Get product image icon from ProductTranslations
                         productName = x.ProductTranslations.Where(pt => pt.LanguageCode == req.languageCode).FirstOrDefault().Text, // Get product name from ProductTranslations
                         uom = x.UOM.UnitOfMeasureTranslation.FirstOrDefault().Text, // Get product name from ProductTranslations
+                        Division = x.Division,
+                        ProductCode = x.ProductCode,
+                        SalesOrg = x.SalesOrg
                     }).ToList()
 
                 }).ToListAsync();

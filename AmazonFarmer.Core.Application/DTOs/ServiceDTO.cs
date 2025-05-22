@@ -2,6 +2,16 @@
 
 namespace AmazonFarmer.Core.Application.DTOs
 {
+    public class SoilSampleRequest
+    {
+        public int farmID { get; set; }
+        public string selectedDate { get; set; } = string.Empty;
+    }
+    public class FFMSoilSampleAPIResponse
+    {
+
+    }
+
     /// <summary>
     /// Data Transfer Object (DTO) for Service information.
     /// </summary>

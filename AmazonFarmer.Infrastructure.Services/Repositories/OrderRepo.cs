@@ -168,6 +168,7 @@ namespace AmazonFarmer.Infrastructure.Services.Repositories
         public async Task<TblOrders> getOrderByID(Int64 orderID)
         {
             return await _context.Orders
+                .Include(x=>x.Warehouse)
                 .Include(x => x.User)
                     .ThenInclude(x => x.FarmerProfile)
                 .Include(x => x.Products)

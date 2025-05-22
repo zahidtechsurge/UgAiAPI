@@ -262,7 +262,7 @@ namespace AmazonFarmerAPI.Extensions
                 ";
             #endregion pdfString
 
-            return await _htmlToPDF(resp, Path.Combine("private-documents", "temp-SalesTaxCertificate"), string.Concat("MaterialCode ", DTO.materialCode, " - SapOrderID ", DTO.sAPOrderID + "-" + DateTime.UtcNow.ToString("ddMMyyyy_hhmmff") + ".pdf"));
+            return await _htmlToPDF(pdfString, Path.Combine("private-documents", "temp-SalesTaxCertificate"), string.Concat("MaterialCode ", DTO.materialCode, " - SapOrderID ", DTO.sAPOrderID + "-" + DateTime.UtcNow.ToString("ddMMyyyy_hhmmff") + ".pdf"));
         }
 
         public async Task<string> generatePlanSummary(planSummary summary, EPlanSummaryType summaryType)

@@ -1246,7 +1246,8 @@ namespace AmazonFarmerAPI.Controllers
                             }).ToList()
                         }).ToList(),
                         changeRequestStatus = plan.PlanChangeStatus,
-                        isEmptyCropsAllowed = plan!.Orders!.Any() ? true : false
+                        isEmptyCropsAllowed = plan!.Orders!.Any() ? true : false,
+                        modeOfPayment = (int?)plan!.ModeOfPayment ?? 0
                     };
                 }
             }

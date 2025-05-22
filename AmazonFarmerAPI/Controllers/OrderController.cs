@@ -592,23 +592,26 @@ namespace AmazonFarmerAPI.Controllers
                 payableAmount = orderPrice;
             }
 
-            WSDLFunctions wSDLFunctions = new WSDLFunctions(_repoWrapper, _wsdlConfig);
-            ZSD_AMAZON_CUSTOMER_BAL requestWsdl = new ZSD_AMAZON_CUSTOMER_BAL
-            {
-                CREDIT_SEGMENT = "2013",
-                CUST_NUM = profile.SAPFarmerCode
-
-            };
-            var wsdlResponse = await wSDLFunctions.CustomerBalance(requestWsdl);
             decimal customerBalance = 0;
-
-            if (wsdlResponse != null
-              && (wsdlResponse.MessageType.ToUpper() == "S" || wsdlResponse.MessageType.ToUpper() == "E")
-             )
+            if (plan.ModeOfPayment != EModeOfPayment.Full_Payment)
             {
-                customerBalance = wsdlResponse.CustomerBalance;
-                customerBalance = Math.Floor(customerBalance);
-                customerBalance = customerBalance * 1.00m;
+                WSDLFunctions wSDLFunctions = new WSDLFunctions(_repoWrapper, _wsdlConfig);
+                ZSD_AMAZON_CUSTOMER_BAL requestWsdl = new ZSD_AMAZON_CUSTOMER_BAL
+                {
+                    CREDIT_SEGMENT = "2013",
+                    CUST_NUM = profile.SAPFarmerCode
+
+                };
+                var wsdlResponse = await wSDLFunctions.CustomerBalance(requestWsdl);
+
+                if (wsdlResponse != null
+                  && (wsdlResponse.MessageType.ToUpper() == "S" || wsdlResponse.MessageType.ToUpper() == "E")
+                 )
+                {
+                    customerBalance = wsdlResponse.CustomerBalance;
+                    customerBalance = Math.Floor(customerBalance);
+                    customerBalance = customerBalance * 1.00m;
+                }
             }
 
             if (planOrder.OrderType == EOrderType.Advance

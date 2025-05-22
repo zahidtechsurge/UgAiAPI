@@ -86,5 +86,11 @@ namespace AmazonFarmerAPI.Controllers
             resp.response = InResp;
             return resp;
         }
+
+        [HttpPost("getSalesReport")]
+        public async Task<APIResponse> GetSalesReport(pagination_Req req)
+        {
+            return new APIResponse() { isError=true,message="not implemented"};
+        }
     }
 }

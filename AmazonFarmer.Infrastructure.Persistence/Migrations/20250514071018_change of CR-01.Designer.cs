@@ -4,6 +4,7 @@ using AmazonFarmer.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AmazonFarmer.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AmazonFarmerContext))]
-    partial class AmazonFarmerContextModelSnapshot : ModelSnapshot
+    [Migration("20250514071018_change of CR-01")]
+    partial class changeofCR01
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3407,9 +3410,6 @@ namespace AmazonFarmer.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("TransactionStatus")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TransactionStatusCheckAttempts")
                         .HasColumnType("int");
 
                     b.HasKey("Id");

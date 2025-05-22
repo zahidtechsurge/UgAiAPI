@@ -7,6 +7,7 @@ using AmazonFarmer.WSDL;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Claims;
+using Microsoft.Extensions.Options;
 
 namespace AmazonFarmerAPI.Controllers
 {
@@ -17,10 +18,10 @@ namespace AmazonFarmerAPI.Controllers
     {
         private IRepositoryWrapper _repoWrapper;
         private WsdlConfig _wsdlConfig;
-        public TaxCertificateController(IRepositoryWrapper repositoryWrapper, WsdlConfig wsdlConfig)
+        public TaxCertificateController(IRepositoryWrapper repositoryWrapper, IOptions<WsdlConfig> wsdlConfig)
         {
             _repoWrapper = repositoryWrapper;
-            _wsdlConfig = wsdlConfig;
+            _wsdlConfig = wsdlConfig.Value;
         }
 
         [HttpGet("getCompanyCodes")]

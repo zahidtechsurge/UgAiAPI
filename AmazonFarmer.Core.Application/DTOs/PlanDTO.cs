@@ -88,6 +88,11 @@ namespace AmazonFarmer.Core.Application.DTOs
         /// </summary>
         public int requestType { get; set; }
         public string farmerComment { get; set; }
+        /// <summary>
+        /// 0: partial payment: 5/95
+        /// 1: full payment: 100%
+        /// </summary>
+        public int? modeOfPayment { get; set; } = 0;
     }
 
     /// <summary>
@@ -310,6 +315,11 @@ namespace AmazonFarmer.Core.Application.DTOs
         public List<planCrops_getPlanDetail> crops { get; set; } = new List<planCrops_getPlanDetail>();
         public EPlanChangeRequest changeRequestStatus { get; set; }
         public bool isEmptyCropsAllowed { get; set; }
+        /// <summary>
+        /// 0: partial payment: 5/95
+        /// 1: full payment: 100%
+        /// </summary>
+        public int? modeOfPayment { get; set; } = 0;
     }
     public class planCropGroup_get
     {

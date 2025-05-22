@@ -593,7 +593,7 @@ namespace AmazonFarmer.WSDL
         }
         public async Task<dynamic> SendTaxCertificate(TaxCertificateRequest request)
         {
-            return string.Empty;
+            return 2;
         }
         public async Task<InvoiceDTO> GetSalesTaxInvoice(SalesTaxCertificateRequest request)
         {

@@ -1,85 +1,205 @@
-﻿using AmazonFarmer.Core.Application;
+﻿using AmazonFarmer.Administrator.API.Services;
+using AmazonFarmer.Core.Application;
 using AmazonFarmer.Core.Application.DTOs;
-using AmazonFarmer.Core.Application.Exceptions;
 using AmazonFarmer.Core.Domain.Entities;
-using AmazonFarmer.NotificationServices.Helpers;
 using AmazonFarmer.NotificationServices.Services;
 using AmazonFarmer.WSDL;
 using AmazonFarmer.WSDL.Helpers;
 using ChangeCustomerPayment;
 using CreateOrder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PaymentCustomer;
+using System.Linq.Expressions;
+using System.Net.Http;
+using System.Text;
 
-namespace AmazonFarmer.Scheduled.Payment.Services
+namespace AmazonFarmer.Administrator.API.Controllers
 {
-    public class PaymentService
+    [Route("api/Admin/[controller]")]
+    [ApiController]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public class TransactionController : ControllerBase
     {
+        private static readonly HttpClient _httpClient = new HttpClient();
         private readonly IRepositoryWrapper _repoWrapper;
-        private WsdlConfig _wsdlConfig;
-        private GoogleAPIConfiguration _googleApiConfig;
+        private readonly IConfiguration _configuration;
+        private readonly IServiceProvider _serviceProvider;
         private readonly NotificationService _notificationService;
+        private WsdlConfig _wsdlConfig;
+        private Reconfirmation_API_Configuration _reconfirmationConfiguration = new Reconfirmation_API_Configuration();
 
-        public PaymentService(IRepositoryWrapper repoWrapper, IOptions<WsdlConfig> wsdlConfig, IOptions<GoogleAPIConfiguration> googleApiConfig, NotificationService notificationService)
+
+        public TransactionController(
+            IRepositoryWrapper repoWrapper,
+            IConfiguration configuration,
+            IOptions<WsdlConfig> wsdlConfig,
+            IServiceProvider serviceProvider,
+            NotificationService notificationService,
+            IOptions<Reconfirmation_API_Configuration> reconfirmationConfiguration
+            )
         {
             _repoWrapper = repoWrapper;
-            _wsdlConfig = wsdlConfig.Value;
+            _configuration = configuration;
+            _serviceProvider = serviceProvider;
             _notificationService = notificationService;
-            _googleApiConfig = googleApiConfig.Value;
+            _wsdlConfig = wsdlConfig.Value;
+            _reconfirmationConfiguration = reconfirmationConfiguration.Value;
         }
 
-        public async Task PostTransactionAcknowledgmentUpdate(PaymentAcknowledgmentRequest req, IServiceScope scope, IConfiguration _configuration)
+        [HttpPost("getPendingTransactions")]
+        public async Task<APIResponse> GetPendingTransactions(ReportPagination_Req req)
         {
-            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.getTransactionByTranAuthID(req.Tran_Auth_ID, req.ConsumerNumber);
+            APIResponse resp = new APIResponse();
+            pagination_Resp InResp = new pagination_Resp();
+            IQueryable<tblTransaction> logs = _repoWrapper.OnlinePaymentRepo.getTransactions();
 
-            Console.WriteLine(req.ConsumerNumber);
-            Console.WriteLine(transaction.ConsumerCode);
+            #region Search Filter
+            if (!string.IsNullOrEmpty(req.search))
+                logs = logs.Where(x =>
+                    x.Id.ToString().Contains(req.search) ||
+                    x.OrderID.ToString().Contains(req.search) ||
+                    x.SAPOrderID.Contains(req.search) ||
+                    x.PaidDate.ToString().Contains(req.search));
+            #endregion
 
-            if (transaction != null
-                && transaction.Order != null
-                && transaction.Order.OrderStatus != EOrderStatus.Deleted
-                && transaction.Order.PaymentStatus == EOrderPaymentStatus.PaymentProcessing
-                && transaction.Amount == req.Amount
-                && transaction.ConsumerCode == req.ConsumerNumber)
+            #region Sorting Filter
+            logs = SortPendingTransactions(logs, req.sortColumn, req.sortOrder);
+            #endregion
+
+            #region Pagination
+            InResp.totalRecord = await logs.CountAsync();
+            logs = logs.Skip(req.pageNumber * req.pageSize)
+                         .Take(req.pageSize);
+            var logsList = await logs.ToListAsync();
+            InResp.filteredRecord = logsList.Count();
+            #endregion
+
+            #region Preparing Object
+            InResp.list = logsList.Select(l => new PendingTransactionDTO
             {
-                transaction.TransactionStatus = ETransactionStatus.Acknowledged;
-                transaction = _repoWrapper.OnlinePaymentRepo.UpdateTransaction(transaction);
-                _repoWrapper.OnlinePaymentRepo.AddTransactionLog(new tblTransactionLog { CreatedDateTime = DateTime.UtcNow, TransactionID = transaction.Id, TransactionStatus = transaction.TransactionStatus });
+                recID = l.Id,
+                orderType = l.OrderType.ToString(),
+                sAPOrderID = l.SAPOrderID,
+                transactionStatusCheckAttempts = l.TransactionStatusCheckAttempts ?? 0,
+                transactionStatus = l.TransactionStatus.ToString(),
+                transactionStatusID = (int)l.TransactionStatus,
+                amount = l.Amount,
+                paidDate = l.PaidDate != default ? l.PaidDate.ToString("yyyy-MM-dd") : string.Empty,
+                paidTime = l.PaidTime != default ? l.PaidTime.ToString("HH:mm:ss") : string.Empty
+            }).ToList();
+            resp.response = InResp;
+            #endregion
 
-                await _repoWrapper.SaveAsync();
+            return resp;
+        }
 
-                await TransactionLedgeUpdate(transaction);
-                await TransactionFulfilment(transaction, scope, _configuration);
+        private IQueryable<tblTransaction> SortPendingTransactions(
+        IQueryable<tblTransaction> query, string sortColumn, string sortOrder)
+        {
+            if (string.IsNullOrWhiteSpace(sortColumn))
+                return query.OrderByDescending(x => x.Id);
+
+            var sortMap = new Dictionary<string, Expression<Func<tblTransaction, object>>>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "recID", x => x.Id },
+                { "orderType", x => x.OrderType.ToString() },
+                { "sAPOrderID", x => x.SAPOrderID },
+                { "transactionStatusCheckAttempts", x => x.TransactionStatusCheckAttempts ?? 0 },
+                { "transactionStatus", x => x.TransactionStatus.ToString() },
+                { "amount", x => x.Amount },
+                { "paidDate", x => x.PaidDate },
+                { "paidTime", x => x.PaidTime }
+            };
+
+            if (sortMap.TryGetValue(sortColumn, out var expression))
+            {
+                return string.Equals(sortOrder, "asc", StringComparison.OrdinalIgnoreCase)
+                    ? query.OrderBy(expression)
+                    : query.OrderByDescending(expression);
+            }
+
+            return query.OrderByDescending(x => x.Id); // fallback
+        }
+
+
+
+        [HttpPost("reconfirmPayment/{TransactionID}")]
+        public async Task<APIResponse> ReconfirmPayment(int TransactionID)
+        {
+            APIResponse response = new APIResponse();
+            tblTransaction? transaction = await _repoWrapper.OnlinePaymentRepo.GetTransactionByID(TransactionID);
+            if (transaction == null)
+            {
+                response.message = "transaction not found";
+                response.isError = true;
             }
             else
             {
-                if (transaction == null || transaction.Order == null)
+                if (transaction.TransactionStatus == ETransactionStatus.Fulfilled)
                 {
-                    throw new AmazonFarmerException("Transaction not valid");
+                    response.message = "transaction is already completed";
+                    response.isError = true;
                 }
-                else if (transaction.Order.OrderStatus == EOrderStatus.Deleted)
+                else
                 {
-                    throw new AmazonFarmerException("Order is deleted");
-                }
-                else if (transaction.Order.PaymentStatus != EOrderPaymentStatus.PaymentProcessing)
-                {
-                    throw new AmazonFarmerException("Order payment is not in processing state.");
-                }
-                else if (transaction.Amount != req.Amount)
-                {
-                    Console.WriteLine(transaction.Amount);
-                    Console.WriteLine(req.Amount);
-                    throw new AmazonFarmerException("Amount mismatch");
-                }
-                else if (transaction.ConsumerCode != req.ConsumerNumber)
-                {
-                    throw new AmazonFarmerException("Consumer number not valid");
+                    var request = new Reconfirmation_API_Request
+                    {
+                        Username = _reconfirmationConfiguration.Username,
+                        Password = _reconfirmationConfiguration.Password,
+                        Consumer_No = transaction.ConsumerCode,
+                        UCID = "IN" + transaction.Prefix
+                    };
+                    Reconfirmation_API_Response? Reconfirmation = await ReconfirmAsync(request);
+                    if (Reconfirmation!.Response_Code == "00")
+                    {
+                        if (transaction.TransactionStatus == ETransactionStatus.Pending)
+                        {
+                            await TransactionLedgeUpdate(transaction);
+                            using (var scope = _serviceProvider.CreateScope())
+                                await TransactionFulfilment(transaction, scope, _configuration);
+                        }
+                        else if (transaction.TransactionStatus == ETransactionStatus.SapLedgerUpdated)
+                        {
+                            using (var scope = _serviceProvider.CreateScope())
+                                await TransactionFulfilment(transaction, scope, _configuration);
+                        }
+
+                        response.message = "transaction processed";
+                    }
+                    else
+                    {
+                        transaction.TransactionStatusCheckAttempts = (transaction.TransactionStatusCheckAttempts ?? 0) + 1;
+                        _repoWrapper.OnlinePaymentRepo.UpdateTransaction(transaction);
+                        response.message = "transaction failure";
+                        response.isError = true;
+                    }
+                    await _repoWrapper.SaveAsync();
+
                 }
             }
+            return response;
         }
-        public async Task TransactionLedgeUpdate(tblTransaction transaction)
+        private async Task<Reconfirmation_API_Response?> ReconfirmAsync(Reconfirmation_API_Request request)
+        {
+            string url = _reconfirmationConfiguration.URL;// "https://api-dev.engro.com/1-link/v1/ps";
+            string apiKey = _reconfirmationConfiguration.APIKey;// "PWKq06wDQP7HDwwqiB0BZAuD4Xv00iBzpO7JDPJHtHFe9vkU";
+
+            var jsonContent = new StringContent(System.Text.Json.JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("apikey", apiKey);
+
+            HttpResponseMessage response = await _httpClient.PostAsync(url, jsonContent);
+            response.EnsureSuccessStatusCode();
+
+            string responseBody = await response.Content.ReadAsStringAsync();
+
+            return System.Text.Json.JsonSerializer.Deserialize<Reconfirmation_API_Response?>(responseBody);
+        }
+
+        private async Task TransactionLedgeUpdate(tblTransaction transaction)
         {
             tblFarmerProfile profile = transaction.Order.User.FarmerProfile.FirstOrDefault();
             TblOrderProducts orderProduct = transaction.Order.Products.FirstOrDefault();
@@ -115,7 +235,6 @@ namespace AmazonFarmer.Scheduled.Payment.Services
 
             order.PaymentDate = DateTime.UtcNow;
             //order.PaymentDatePrice = transaction.Amount / 100;
-
             order.PaymentDatePrice = transaction.Amount;
 
             order.SAPTransactionID = wsdlResponse.DOC_NUM;
@@ -144,12 +263,9 @@ namespace AmazonFarmer.Scheduled.Payment.Services
                 || order.OrderType == EOrderType.OrderReconcile
                 )
             {
-
                 List<NotificationRequest> notifications = new();
                 NotificationReplacementDTO replacementDTO = new NotificationReplacementDTO();
-                replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
                 NotificationDTO notificationDTO = null;
-
                 if (order.OrderType == EOrderType.Advance
                 || order.OrderType == EOrderType.AdvancePaymentReconcile)
                 {
@@ -201,8 +317,8 @@ namespace AmazonFarmer.Scheduled.Payment.Services
                     notifications.Add(farmerDevice);
 
                     replacementDTO.PKRAmount = "Rs" + transaction.Amount.ToString("N2");
-                    replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
                     replacementDTO.ConsumerNumber = transaction.ConsumerCode;
+                    replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
 
                     await _notificationService.SendNotifications(notifications, replacementDTO);
                 }
@@ -210,16 +326,52 @@ namespace AmazonFarmer.Scheduled.Payment.Services
             }
 
         }
-
-        public async Task TransactionUpdate(tblTransaction transaction)
+        private async Task<ZSD_AMAZON_CUSTOMER_PAYMENTResponse> DoPaymentWSDL(decimal payableAmount, string SAPFarmerCode, EOrderType orderType, string companyCode)
         {
-            transaction = _repoWrapper.OnlinePaymentRepo.UpdateTransaction(transaction);
-            //_repoWrapper.OnlinePaymentRepo.AddTransactionLog(new tblTransactionLog { CreatedDateTime = DateTime.UtcNow, TransactionID = transaction.Id, TransactionStatus = transaction.TransactionStatus });
-            await _repoWrapper.SaveAsync();
+            decimal oldProductPrice = 0;
+            string ePaymentText = "";
+            string reasonCode = "";
+            if (orderType == EOrderType.Advance || orderType == EOrderType.AdvancePaymentReconcile)
+            {
+                ePaymentText = EPaymentText.Initial5Percent;
+                reasonCode = "FA";
+            }
+            else if (orderType == EOrderType.Product || orderType == EOrderType.OrderReconcile)
+            {
+                ePaymentText = EPaymentText.OrderPayment;
+                reasonCode = "";
+            }
+
+            ZSD_AMAZON_CUSTOMER_PAYMENT request = new()
+            {
+                AMOUNT = payableAmount,
+                AMOUNTSpecified = true,
+                BASELINE_DATE = DateTime.Now.ToString(WSDLFunctions.WSDLDateFormat),
+                COMPANY_CODE = "2000",
+                CUST_ACC = SAPFarmerCode,
+                DOC_DATE = DateTime.Now.ToString(WSDLFunctions.WSDLDateFormat),
+                DOC_HEADER = "XYZ111",
+                POSTING_DATE = DateTime.Now.ToString(WSDLFunctions.WSDLDateFormat),
+                REASON_CODE = reasonCode,
+                REF = ePaymentText,
+                TEXT = ePaymentText
+            };
+            WSDLFunctions wSDLFunctions = new WSDLFunctions(_repoWrapper, _wsdlConfig);
+
+            var wsdlResponse = await wSDLFunctions.CustomerPayment(request);
+
+            if (wsdlResponse != null && wsdlResponse.ET_RETURN.Count() > 0
+              && (wsdlResponse.ET_RETURN.FirstOrDefault().MSGTYP.ToUpper() == "S")
+             )
+            {
+                return wsdlResponse;
+            }
+            else
+            {
+                throw new Exception(wsdlResponse.ET_RETURN.FirstOrDefault().MSG);
+            }
         }
-
-
-        public async Task TransactionFulfilment(tblTransaction transaction, IServiceScope scope, IConfiguration _configuration)
+        private async Task TransactionFulfilment(tblTransaction transaction, IServiceScope scope, IConfiguration _configuration)
         {
             string salesOrderNumber = "";
             TblOrders order = transaction.Order;
@@ -259,7 +411,6 @@ namespace AmazonFarmer.Scheduled.Payment.Services
                             }
                         }
                     }
-                    //TO BE UNCOMMENTED 
                     salesOrderNumber = await CreateOrderWSDL(profile.SAPFarmerCode, plan, orderProduct);
                 }
                 catch (Exception ex)
@@ -334,58 +485,36 @@ namespace AmazonFarmer.Scheduled.Payment.Services
             replacementDTO.PlanID = order.PlanID.ToString().PadLeft(10, '0');
             replacementDTO.WarehouseId = order.WarehouseID.ToString();
             replacementDTO.WarehouseName = order.Warehouse.Name;
-            replacementDTO.GoogleMapLinkWithCoordinated = string.Format(_googleApiConfig.ApiKey, order.Warehouse.latitude, order.Warehouse.longitude);
-            replacementDTO.PickupDate = order.ExpectedDeliveryDate.HasValue ? order.ExpectedDeliveryDate.Value.ToString("MM/dd/yyyy") : string.Empty;
+            replacementDTO.PickupDate = order.ExpectedDeliveryDate.Value.ToString("MM/dd/yyyy");
 
             if (notifications != null & notifications.Count() > 0)
                 await notificationService.SendNotifications(notifications, replacementDTO);
         }
-
-
-        private async Task<ZSD_AMAZON_CUSTOMER_PAYMENTResponse> DoPaymentWSDL(decimal payableAmount, string SAPFarmerCode, EOrderType orderType, string companyCode)
+        private async Task<bool> ChangeCustomerPaymentWSDL(TblOrders order)
         {
-            decimal oldProductPrice = 0;
-            string ePaymentText = "";
-            string reasonCode = "";
-            if (orderType == EOrderType.Advance || orderType == EOrderType.AdvancePaymentReconcile)
+            ZSD_AMAZON_CUSTOMER_PAY_CHG request = new()
             {
-                ePaymentText = EPaymentText.Initial5Percent;
-                reasonCode = "FA";
-            }
-            else if (orderType == EOrderType.Product || orderType == EOrderType.OrderReconcile)
-            {
-                ePaymentText = EPaymentText.OrderPayment;
-                reasonCode = "";
-            }
-
-            ZSD_AMAZON_CUSTOMER_PAYMENT request = new()
-            {
-                AMOUNT = payableAmount,
-                AMOUNTSpecified = true,
-                BASELINE_DATE = DateTime.Now.ToString(WSDLFunctions.WSDLDateFormat),
-                COMPANY_CODE = "2000",
-                CUST_ACC = SAPFarmerCode,
-                DOC_DATE = DateTime.Now.ToString(WSDLFunctions.WSDLDateFormat),
-                DOC_HEADER = "XYZ111",
-                POSTING_DATE = DateTime.Now.ToString(WSDLFunctions.WSDLDateFormat),
-                REASON_CODE = reasonCode,
-                REF = ePaymentText,
-                TEXT = ePaymentText
+                COMPANY_CODE = order.CompanyCode,
+                DOC_NUM = order.SAPTransactionID,
+                FISCAL_YEAR = order.FiscalYear,
+                REASON_CODE = "",
+                TEXT = "Z041"
             };
             WSDLFunctions wSDLFunctions = new WSDLFunctions(_repoWrapper, _wsdlConfig);
 
-            var wsdlResponse = await wSDLFunctions.CustomerPayment(request);
+            var wsdlResponse = await wSDLFunctions.ChangeCustomerPaymentRequest(request);
 
             if (wsdlResponse != null && wsdlResponse.ET_RETURN.Count() > 0
               && (wsdlResponse.ET_RETURN.FirstOrDefault().MSGTYP.ToUpper() == "S")
              )
             {
-                return wsdlResponse;
+                return true;
             }
             else
             {
                 throw new Exception(wsdlResponse.ET_RETURN.FirstOrDefault().MSG);
             }
+
         }
         private async Task<string> CreateOrderWSDL(string SAPFarmerCode, tblPlan plan, TblOrderProducts orderProduct)
         {
@@ -430,31 +559,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
 
         }
 
-        private async Task<bool> ChangeCustomerPaymentWSDL(TblOrders order)
-        {
-            ZSD_AMAZON_CUSTOMER_PAY_CHG request = new()
-            {
-                COMPANY_CODE = order.CompanyCode,
-                DOC_NUM = order.SAPTransactionID,
-                FISCAL_YEAR = order.FiscalYear,
-                REASON_CODE = "",
-                TEXT = "Z041"
-            };
-            WSDLFunctions wSDLFunctions = new WSDLFunctions(_repoWrapper, _wsdlConfig);
 
-            var wsdlResponse = await wSDLFunctions.ChangeCustomerPaymentRequest(request);
 
-            if (wsdlResponse != null && wsdlResponse.ET_RETURN.Count() > 0
-              && (wsdlResponse.ET_RETURN.FirstOrDefault().MSGTYP.ToUpper() == "S")
-             )
-            {
-                return true;
-            }
-            else
-            {
-                throw new Exception(wsdlResponse.ET_RETURN.FirstOrDefault().MSG);
-            }
-
-        }
     }
 }

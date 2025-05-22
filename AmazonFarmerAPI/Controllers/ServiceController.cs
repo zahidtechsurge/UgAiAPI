@@ -41,16 +41,34 @@ namespace AmazonFarmerAPI.Controllers
         public async Task<APIResponse> getServices()
         {
             APIResponse resp = new APIResponse();
-                // Create LanguageReq object with language code obtained from User's claims
-                //LanguageReq req = new LanguageReq() { languageCode = User.FindFirst("languageCode")?.Value };
-                getServicesRequestDTO req = new getServicesRequestDTO()
-                {
-                    languageCode = User.FindFirst("languageCode")?.Value,
-                    basePath = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL")
-                };
+            // Create LanguageReq object with language code obtained from User's claims
+            //LanguageReq req = new LanguageReq() { languageCode = User.FindFirst("languageCode")?.Value };
+            getServicesRequestDTO req = new getServicesRequestDTO()
+            {
+                languageCode = User.FindFirst("languageCode")?.Value,
+                basePath = ConfigExntension.GetConfigurationValue("Locations:PublicAttachmentURL")
+            };
 
-                // Call repository method to get services by language ID and specified configuration value
-                resp.response = await _repoWrapper.ServiceRepo.getServicesByLanguageID(req, Convert.ToInt32(ConfigExntension.GetConfigurationValue("productSettings:ServicePostDeliveryIn")));
+            // Call repository method to get services by language ID and specified configuration value
+            var services = await _repoWrapper.ServiceRepo.getServicesByLanguageID(req, Convert.ToInt32(ConfigExntension.GetConfigurationValue("productSettings:ServicePostDeliveryIn")));
+            List<EConfigType> types = new List<EConfigType>() { EConfigType.FullPayment, EConfigType.PartialPayment };
+            List<tblConfig> Configurations = await _repoWrapper.CommonRepo.GetConfigurationValueByConfigType(types);
+            var config = Configurations
+                .Where(x=>x.Status == EConfigStatus.Active)
+                .Select(c => new
+                {
+                    modeOfPayment = c.Id,
+                    modeOfPaymentID = c.Value,
+                    modeOfPaymentName = c.Name,
+                    modeOfPaymentDesc = c.Description,
+                })
+                .ToList();
+            resp.response = new
+            {
+                services,
+                config
+            };
+
             return resp;
         }
 
@@ -187,7 +205,16 @@ namespace AmazonFarmerAPI.Controllers
 
             return apiResp;
         }
-        [HttpGet("")]
+        [HttpPost("soilSampleRequest")]
+        public async Task<APIResponse> SoilSampleRequest(SoilSampleRequest Request)
+        {
+            APIResponse Response = new APIResponse();
+            reportAPIExtension reportAPIExtension = new reportAPIExtension();
+            FFMSoilSampleAPIResponse? requestFFM = await reportAPIExtension.RequestForSoilSampleReport(Request);
+            Response.isError = false;
+            Response.message = "request submitted";
+            return Response;
+        }
         /// <summary>
         /// login Afrilift for Drone Footage
         /// </summary>
@@ -286,7 +313,7 @@ namespace AmazonFarmerAPI.Controllers
         /// <param name="take">Number of files to take for pagination.</param>
         /// <returns>Paginated response <see cref="pagination_Resp"/> containing a list of soil sample files.</returns>
         private async Task<pagination_Resp> getServiceReportListing(string startsWith)
-         {
+        {
             // Initialize the pagination response object
             pagination_Resp pagResp = new pagination_Resp();
             List<getSoilSampleList> lst = new List<getSoilSampleList>();
@@ -333,9 +360,9 @@ namespace AmazonFarmerAPI.Controllers
                 // Connect to the SFTP server
                 sftp.Connect();
                 // Download a file
-                 var remoteFiles = sftp.ListDirectory(remoteDirectory)
-                            .Where(file => file.IsRegularFile && file.Name.EndsWith(".pdf"))
-                            .ToList();
+                var remoteFiles = sftp.ListDirectory(remoteDirectory)
+                           .Where(file => file.IsRegularFile && file.Name.EndsWith(".pdf"))
+                           .ToList();
                 foreach (var file in remoteFiles)
                 {
                     if (file.Name.ToLower().StartsWith(startsWith.ToLower()) && file.Name.ToLower().EndsWith(".pdf"))
@@ -363,7 +390,7 @@ namespace AmazonFarmerAPI.Controllers
             await foreach (ShareFileItem item in directoryClient.GetFilesAndDirectoriesAsync())
             {
 
-                if (!item.IsDirectory)   
+                if (!item.IsDirectory)
                 {
                     if (item.Name.ToLower().StartsWith(startsWith.ToLower()) && item.Name.ToLower().EndsWith(".pdf"))
                     {
@@ -381,7 +408,7 @@ namespace AmazonFarmerAPI.Controllers
             }
             return reportFiles;
         }
-        private static  string ReturnDateTime(string FileName)
+        private static string ReturnDateTime(string FileName)
         {
             string formattedDateTime = string.Empty;
             if (FileName.Contains("_"))

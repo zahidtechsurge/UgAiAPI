@@ -116,6 +116,7 @@ namespace AmazonFarmerAPI.Controllers
 
         }
 
+        [AllowAnonymous]
         [HttpGet("getOrderDetail/{OrderID}")]
         public async Task<APIResponse> GetOrderDetail(Int64 OrderID)
         {
@@ -148,6 +149,11 @@ namespace AmazonFarmerAPI.Controllers
                         farmerName = string.Concat(OrderDetail.User.FirstName, " ", OrderDetail.User.LastName ?? string.Empty),
                         farmerPhoneNumber = OrderDetail.User.PhoneNumber,
                         farmerEmail = OrderDetail.User.Email,
+                        farmerCNICNumber = OrderDetail.User.CNICNumber,
+                        farmerDateOfBirth = OrderDetail.User.FarmerProfile.FirstOrDefault()?.DateOfBirth ?? string.Empty,
+                        farmerFatherName = OrderDetail.User.FarmerProfile.FirstOrDefault()?.FatherName ?? string.Empty,
+                        farmerNTNNumber = OrderDetail.User.FarmerProfile.FirstOrDefault()?.NTNNumber ?? string.Empty,
+                        farmerSTRNNumber = OrderDetail.User.FarmerProfile.FirstOrDefault()?.STRNNumber ?? string.Empty,
                         orderExpiredDate = OrderDetail.DuePaymentDate,
                         orderDeliveryDate = OrderDetail.ExpectedDeliveryDate,
                         orderID = OrderDetail.OrderID,

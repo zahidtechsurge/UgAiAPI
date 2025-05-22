@@ -228,5 +228,8 @@ namespace AmazonFarmer.Core.Application.Exceptions
 
         //Order
         public const string orderAlreadyBlocked = "Order is already blocked or removed";
+
+        //FFM Soil Sample Report Request
+        public const string ffmSoilSampleRequestRetrieveFailure = "Please check back later or contact technical support";
     }
 }

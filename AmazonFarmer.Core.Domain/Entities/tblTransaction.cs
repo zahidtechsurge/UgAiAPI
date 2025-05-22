@@ -25,6 +25,7 @@ namespace AmazonFarmer.Core.Domain.Entities
         public EOrderType OrderType { get; set; }
         public int? BillPaymentRequestID { get; set; }
         public ETransactionStatus TransactionStatus { get; set; }
+        public int? TransactionStatusCheckAttempts { get; set; } = 0;
         public DateTime CreatedDateTime { get; set; }
         [ForeignKey("OrderID")]
         public TblOrders Order { get; set; }
