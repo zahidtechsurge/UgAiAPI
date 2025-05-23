@@ -537,7 +537,7 @@ namespace AmazonFarmerAPI.Controllers
 
                         //Sum of all plan Prices
                         decimal newPlanTotalPrice = planCropProductPrices.Sum(pp => pp.TotalAmount);
-                        decimal AdvancePaymentAmount = (newPlanTotalPrice * percentageValue) / 100;
+                        decimal AdvancePaymentAmount = plan.ModeOfPayment == EModeOfPayment.Full_Payment ? 0 : ((newPlanTotalPrice * percentageValue) / 100);
 
                         //making amount decimal to ceiling and assing 2 rupee
                         AdvancePaymentAmount = Math.Ceiling(AdvancePaymentAmount);

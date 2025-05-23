@@ -171,6 +171,7 @@ namespace AmazonFarmer.Core.Application.DTOs
         public List<getPlanOrder> orders { get; set; } = new List<getPlanOrder>();
         public bool canPay { get; set; } = false;
         public string advancestatusDescription { get; set; } = "";
+        public int modeOfPayment { get; set; }
     }
 
     /// <summary>

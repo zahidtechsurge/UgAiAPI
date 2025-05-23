@@ -54,11 +54,11 @@ namespace AmazonFarmerAPI.Controllers
             List<EConfigType> types = new List<EConfigType>() { EConfigType.FullPayment, EConfigType.PartialPayment };
             List<tblConfig> Configurations = await _repoWrapper.CommonRepo.GetConfigurationValueByConfigType(types);
             var config = Configurations
-                .Where(x=>x.Status == EConfigStatus.Active)
+                .Where(x => x.Status == EConfigStatus.Active)
                 .Select(c => new
                 {
                     modeOfPayment = c.Id,
-                    modeOfPaymentID = c.Value,
+                    modeOfPaymentID = Convert.ToInt16(c.Value),
                     modeOfPaymentName = c.Name,
                     modeOfPaymentDesc = c.Description,
                 })

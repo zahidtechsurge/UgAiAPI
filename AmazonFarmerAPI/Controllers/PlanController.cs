@@ -757,10 +757,11 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
 
                     resp.response = new getPlanOrder_Resp
                     {
+                        modeOfPayment = (int)(plan.ModeOfPayment ?? EModeOfPayment.Partial_Payment),
                         canPay = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder == null || advanceOrder.isLocked ? false :
                                     advanceOrder.DuePaymentDate < DateTime.UtcNow ? false :
                                         advanceOrder.PaymentStatus == EOrderPaymentStatus.NonPaid ? true :
-                                        false) : true,
+                                        false) : false,
                         // Format planID as a 10-digit string with leading zeros
                         planID = plan.ID.ToString().PadLeft(10, '0'),
                         // Check if Farm is not null and assign farmName, otherwise assign null
@@ -768,11 +769,11 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                         advancestatusDescription = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder.PaymentStatus != EOrderPaymentStatus.Paid && advanceOrder.DuePaymentDate < DateTime.UtcNow ? ConfigExntension.GetEnumDescription(EOrderStatus.Expired) : ConfigExntension.GetEnumDescription(advanceOrder.PaymentStatus)) : string.Empty,
                         // Set advancePercent and advanceAmount values (hardcoded for demonstration)
                         advancePercent = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder != null ? (advanceOrder.AdvancePercent.ToString() + " %") : "0") : "0",
-                        advanceAmount = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder != null ? advanceOrder.OrderAmount.ToString("N2"): "0" ): "0",
-                        advancePaymentStatus = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder != null ? (int)advanceOrder.PaymentStatus : 0):0,
+                        advanceAmount = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder != null ? advanceOrder.OrderAmount.ToString("N2") : "0") : "0",
+                        advancePaymentStatus = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder != null ? (int)advanceOrder.PaymentStatus : 0) : 0,
                         advanceOrderStatus = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder != null ? !advanceOrder.isLocked ?
                             ((advanceOrder.PaymentStatus != EOrderPaymentStatus.Paid && advanceOrder.DuePaymentDate < DateTime.UtcNow)
-                                ? (int)EOrderStatus.Expired : (int)advanceOrder.OrderStatus) : (int)EOrderStatus.Blocked : 0): 0,
+                                ? (int)EOrderStatus.Expired : (int)advanceOrder.OrderStatus) : (int)EOrderStatus.Blocked : 0) : 0,
                         advancePaymentOrderID = plan.ModeOfPayment != EModeOfPayment.Full_Payment ? (advanceOrder != null ? Convert.ToInt64(advanceOrder.OrderID) : 0) : 0,
                         // Check if Season and SeasonTranslations are not null, assign seasonName, otherwise assign null
                         seasonName = season != null ?
@@ -830,7 +831,7 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                             canPay = !o.isLocked ?
                                         o.OrderStatus != EOrderStatus.Active || o.DuePaymentDate < DateTime.UtcNow ?
                                         false : o.PaymentStatus == EOrderPaymentStatus.NonPaid ?
-                                            advanceOrder == null || (advanceOrder?.PaymentStatus != EOrderPaymentStatus.Paid) ? false :
+                                            (plan.ModeOfPayment != EModeOfPayment.Full_Payment && (advanceOrder == null || (advanceOrder?.PaymentStatus != EOrderPaymentStatus.Paid))) ? false :
                                                 advanceOrderReconcile == null || (advanceOrderReconcile?.PaymentStatus == EOrderPaymentStatus.Paid || o.OrderType == EOrderType.AdvancePaymentReconcile) ? true :
                                                 false :
                                         false :
@@ -880,7 +881,7 @@ namespace AmazonFarmerAPI.Controllers // Defining namespace for the controller
                             canPay = !o.isLocked ?
                                         o.OrderStatus != EOrderStatus.Active || o.DuePaymentDate < DateTime.UtcNow ?
                                         false : o.PaymentStatus == EOrderPaymentStatus.NonPaid ?
-                                            advanceOrder == null || (advanceOrder?.PaymentStatus != EOrderPaymentStatus.Paid) ? false :
+                                            (plan.ModeOfPayment != EModeOfPayment.Full_Payment && (advanceOrder == null || (advanceOrder?.PaymentStatus != EOrderPaymentStatus.Paid))) ? false :
                                                 advanceOrderReconcile == null || (advanceOrderReconcile?.PaymentStatus == EOrderPaymentStatus.Paid) ? true :
                                                 false :
                                         false :
