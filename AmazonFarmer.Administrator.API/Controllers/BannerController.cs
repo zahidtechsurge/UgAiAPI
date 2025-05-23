@@ -132,13 +132,13 @@ namespace AmazonFarmer.Administrator.API.Controllers
         #endregion
 
         #region New Banner
-        [HttpPost("v_addBanner")]
-        public async Task<APIResponse> AddBanner(AddBanner Request)
-        {
-            APIResponse resp = new APIResponse();
+        //[HttpPost("v_addBanner")]
+        //public async Task<APIResponse> AddBanner(AddBanner Request)
+        //{
+        //    APIResponse resp = new APIResponse();
 
-            return resp;
-        }
+        //    return resp;
+        //}
         #endregion
     }
 }
