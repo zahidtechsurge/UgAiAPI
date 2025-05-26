@@ -46,7 +46,7 @@ namespace AmazonFarmer.Scheduled.Payment.Services
                 foreach (var transaction in pendingTransactions)
                 {
                     request.Consumer_No = transaction.ConsumerCode;
-                    request.UCID = transaction.Tran_Auth_ID;
+                    request.UCID = "IN" + transaction.Prefix;
                     Reconfirmation_API_Response? Reconfirmation = await ReconfirmAsync(request);
                     if (Reconfirmation!.Response_Code == "00")
                     {
